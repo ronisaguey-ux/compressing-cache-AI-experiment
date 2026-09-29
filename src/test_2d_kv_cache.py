@@ -194,6 +194,7 @@ class Rope:
     def apply(self, x, positions):
         """Rotate x [B,H,T,D] by per-position offsets. Pure, returns a new tensor."""
         cos, sin = self.cos_sin(positions)
+        cos = cos.to(x.dtype); sin = sin.to(x.dtype)
         cos = cos.unsqueeze(0).unsqueeze(0)              # [1,1,T,D]
         sin = sin.unsqueeze(0).unsqueeze(0)
         x1, x2 = x[..., 0::2], x[..., 1::2]
@@ -225,12 +226,27 @@ def detect_rope(model, head_dim):
 class Harness:
     def __init__(self, model_id=MODEL_ID):
         self.tok = AutoTokenizer.from_pretrained(model_id)
+        # CCAI_QUANT=8bit loads through bitsandbytes. That is needed for 7B on this
+        # box (28 GB fp32 / 14 GB bf16 against 15.7 GB shared RAM) but it CHANGES
+        # THE NUMERICS -- bnb casts to float16 internally -- so the delta is
+        # measured rather than assumed; see quant_delta.py.
+        quant = os.environ.get("CCAI_QUANT", "").strip().lower()
+        self.quant = quant or "none"
         # Arm 2b needs real attention weights, and sdpa returns none -- it would
         # silently yield attentions=None and the oracle arm would be empty.
-        self.model = AutoModelForCausalLM.from_pretrained(
-            model_id, dtype=torch.float32,
-            attn_implementation=os.environ.get("CCAI_ATTN", "sdpa"),
-        )
+        if quant in ("8bit", "8", "int8"):
+            from transformers import BitsAndBytesConfig
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_id,
+                quantization_config=BitsAndBytesConfig(load_in_8bit=True),
+                device_map="cpu",
+                attn_implementation=os.environ.get("CCAI_ATTN", "sdpa"),
+            )
+        else:
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_id, dtype=torch.float32,
+                attn_implementation=os.environ.get("CCAI_ATTN", "sdpa"),
+            )
         self.model.eval()
         cfg = self.model.config
         self.n_layers = cfg.num_hidden_layers
@@ -603,7 +619,11 @@ def self_attn_scores(h, cache, qcap, c0, c1, block=256):
             q = q_all[:, c0 + s:c0 + e]
             q = q.reshape(1, e - s, h.n_q_heads, h.head_dim).permute(0, 2, 1, 3).contiguous()
             q = h.rope.apply(q, list(range(c0 + s, c0 + e)))
-            sc = torch.matmul(q, k.transpose(2, 3)) / math.sqrt(h.head_dim)
+            # bnb (8-bit) returns bf16 activations while the cached keys are fp16.
+            # Cast both sides to fp32 for the saliency arithmetic only: selection
+            # ranks scores, so precision beyond fp32 buys nothing, and it keeps the
+            # scorer identical between the fp32 and quantised runs.
+            sc = torch.matmul(q.float(), k.float().transpose(2, 3)) / math.sqrt(h.head_dim)
             # Sum over heads and over this block of QUERIES; the key axis is global,
             # so the block's contribution is a full-length [c1] vector.
             acc += torch.softmax(sc, dim=-1)[0].float().sum(0).sum(0)

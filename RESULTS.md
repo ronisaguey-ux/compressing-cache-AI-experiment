@@ -342,6 +342,27 @@ cannot settle the question** — the effect sizes are smaller than the variance.
   result is not a like-for-like rerun of this harness** and the difference must be measured, not
   assumed.
 
+## Finding 10 — 8-bit quantisation works on CPU, and it does change the verdict
+
+7B cannot run on this box unquantised (28 GB fp32 / 14 GB bf16 against 15.7 GB of shared RAM),
+so 8-bit is not optional. `bitsandbytes` 0.50.2 installs and loads on CPU here even though
+`torch.cuda.is_available()` is False — measured: Qwen2.5-0.5B loads quantised in 5.9 s and
+correctly answers `The capital of France is` → ` Paris`.
+
+It is not free of consequence. bnb casts activations to float16 internally and its `MatMul8bitLt`
+kernel warns `inputs will be cast from torch.bfloat16 to float16 during quantization`. In this
+harness that surfaced as a hard dtype error (`expected m1 and m2 to have the same dtype, but got:
+float != c10::BFloat16`) in the saliency scorer, because cached keys were fp16 while the captured
+query projections were bf16. Both sides are now cast to fp32 for the saliency arithmetic only —
+selection ranks scores, so precision beyond fp32 buys nothing and it keeps the scorer identical
+between precisions.
+
+**With that fixed, 8-bit changes the result at depth 15%:** fp32 with line pooling **passed**;
+8-bit with the same configuration fails, degenerating into an `eliac` repetition loop. So the
+quantisation delta is real and large enough to flip a verdict, and **any 7B number must be
+reported alongside the precision it was measured at.** Treating 8-bit as "the same experiment,
+smaller" would be wrong.
+
 ## Limits
 
 - **0.5B model.** It degenerates under mild perturbation (`1.0.0.0.0.0` loops). Absolute quality is
