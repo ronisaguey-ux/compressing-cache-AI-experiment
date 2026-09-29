@@ -159,6 +159,7 @@ Eviction is viable, and the recipe that works is narrower than the original desi
    below it for all of them.
 2. **Score with chunk-1 self-attention**, which needs no query — the only shippable selector found.
 3. **Always apply the delta re-rotation.** Without it the same kept set degenerates.
+   *(Finding 8 bounds this recipe: it is validated at one needle depth.)*
 4. **Do not mask attention sinks by position.**
 5. **Dense positions only.** Sparse strides were rejected before implementation (see RESEARCH.md).
 
@@ -230,6 +231,40 @@ but because it is the one that ranks consistently. **A selector must be validate
 needles before its rank is trusted**; this is the same class of error as choosing a keep fraction
 from a curve sampled at the wrong points.
 
+## Finding 8 — the recipe is not robust to WHERE the fact sits
+
+Findings 5-7 measured one layout with the error line 67% through the region. This moves it.
+The shipped recipe (all-layer self-attention ranking, 60% keep, delta rotation **on**) was run
+against four needle depths:
+
+| needle depth | chunk1 tok | needle rank | keep | KV saved | result |
+|---|---|---|---|---|---|
+| 15% | 906 | 365 | 59.9% | 40.1% | ❌ recites the system prompt |
+| 35% | 1,428 | 498 | 59.9% | 40.1% | ❌ `0x9.` — wrong |
+| **55%** | 1,960 | 366 | 60.0% | 40.0% | ✅ **`0x9AF4`** |
+| 75% | 2,189 | 393 | 60.0% | 40.0% | ❌ `arianarianarian…` |
+
+**One of four.** And the failure is not "the fact was evicted": at 15% the needle ranks 365 of 906,
+comfortably inside a 544-position keep budget, and the model still recites the system prompt.
+
+That separates the two failure modes cleanly:
+
+- **Retention failure** — the selector dropped the fact. Fixable by ranking better.
+- **Utilisation failure** — the fact is present in the cache and the model cannot use it.
+  Not fixable by ranking at all.
+
+Depth 15% is a utilisation failure, which means **the selector's rank is not sufficient as a
+success criterion.** A high rank is necessary and it is not enough, and Finding 6's floor — derived
+from rank alone — is therefore optimistic. The 36.6% figure holds for the canonical layout and
+must not be quoted as a general property.
+
+This is also the most likely reason the published methods report their wins on specific benchmark
+layouts rather than on arbitrary needle placement.
+
+Next experiment this implies: hold the layout long (as at depth 15%, 906 tok) and sweep the keep
+fraction upward until utilisation succeeds, which measures the *utilisation* floor separately from
+the *retention* floor. That number is what a production budget would have to be set against.
+
 ## Limits
 
 - **0.5B model.** It degenerates under mild perturbation (`1.0.0.0.0.0` loops). Absolute quality is
@@ -237,7 +272,8 @@ from a curve sampled at the wrong points.
 - **The full literal was never retrieved at 50%.** A higher keep fraction is untested for the
   literal; the retention curve shows 75% keeps the needle for every selector, which would make
   selection non-diagnostic, so the informative band is between 50% and 75%.
-- **One model, one task, one needle position.** No claim about other architectures or MLA/GQA.
+- **One model, one task.** Finding 8 shows even one needle POSITION is not enough: the
+  recipe passes at 55% depth and fails at 15/35/75%, so no single-layout result generalises. No claim about other architectures or MLA/GQA.
 - **Saliency is measured from the query pass**, so 2b/2c are oracles.
 - **Greedy decoding against a fixed cache is deterministic**, so these deltas are reproducible,
   not sampling noise.

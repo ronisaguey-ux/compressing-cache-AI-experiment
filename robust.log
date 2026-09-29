@@ -1,0 +1,8 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights:  22%|██▏       | 65/290 [00:00<00:00, 629.98it/s]Loading weights:  48%|████▊     | 139/290 [00:00<00:00, 683.15it/s]Loading weights:  76%|███████▌  | 220/290 [00:00<00:00, 733.85it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 720.78it/s]
+needle depth | c1tok | rank  keep%%  save%% | answer
+--------------------------------------------------------------------------
+0.15         |   906 |  365  59.9  40.1 | fail  'You are a build assistant.\nSYSTEM_FLAG_A = ALPHA_VERIFIED\n'
+0.35         |  1428 |  498  59.9  40.1 | fail  'The failure code in the build log is 0x9.'
+0.55         |  1960 |  366  60.0  40.0 | PASS  'The failure code in the build log is 0x9AF4. This indicate'
+0.75         |  2189 |  393  60.0  40.0 | fail  'arian\narian\narian\narian\narian\narian\narian\narian\narian\naria'
