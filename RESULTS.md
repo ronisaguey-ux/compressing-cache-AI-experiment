@@ -197,6 +197,39 @@ points on the number.
 Rotation remains mandatory at every budget measured: at 60% with the same kept set, switching it
 off changes the answer from the exact code to a refusal loop, worth +2.010 nats.
 
+## Finding 7 — combining signals makes selection WORSE, and the best-looking rank is a trap
+
+Rank is the floor (Finding 6), so a higher-ranking selector directly means more memory saved.
+Six candidates, each scored against **two** needles — the real error code and a decoy factual
+line elsewhere in the same log. A selector tuned to one needle is not a selector.
+
+| selector | real `0x9AF4` | decoy `ld: bad value` |
+|---|---|---|
+| self-attn all 24 layers | #195 → save 40.4% | **#197 → save 39.8%** |
+| self-attn mid layers 10-19 | **#168 → save 48.6%** | #221 → save 32.5% |
+| key-norm | #235 → save 28.3% | #304 → save 7.3% |
+| mid + key-norm | #244 → save 25.5% | #309 → save 5.8% |
+| all + key-norm | #241 → save 26.4% | #300 → save 8.5% |
+| mid + key-norm + entropy proxy | #241 → save 26.4% | #310 → save 5.5% |
+
+**Two conclusions, both negative for the obvious next move:**
+
+1. **Adding signals hurts.** Every combination ranks worse than its best component alone
+   (mid: 168 → 244 when key-norm is added). Key-norm is not a complementary signal here; it is
+   noise that dilutes a working one. More features is not the direction.
+
+2. **The best-looking row is a one-needle artefact.** Mid-layer self-attention ranks the real
+   needle best (#168) and the decoy worst-but-one (#221) — a 32% relative gap between two
+   needles it treats very differently. All-layer self-attention ranks them almost identically
+   (#195 vs #197, a 1% gap). **A selector whose rank swings that much between two factual lines
+   in the same region is fitting the needle, not the task.** With one needle it would have looked
+   like a 48.6% win over 40.4% and been reported as such.
+
+**The robust selector is all-layer self-attention at ~40% saving** — not because it ranks best,
+but because it is the one that ranks consistently. **A selector must be validated on at least two
+needles before its rank is trusted**; this is the same class of error as choosing a keep fraction
+from a curve sampled at the wrong points.
+
 ## Limits
 
 - **0.5B model.** It degenerates under mild perturbation (`1.0.0.0.0.0` loops). Absolute quality is
