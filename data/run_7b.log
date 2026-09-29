@@ -1,0 +1,10 @@
+[18:49:15] 7B run start, model=Qwen/Qwen2.5-7B
+[18:49:15] depth=0.15 mode=baseline avail=10473MB
+    rc=0 avail_after=11132MB
+[19:00:29] depth=0.15 mode=line avail=11139MB
+    rc=0 avail_after=10614MB
+[19:09:26] depth=0.15 mode=posnorm avail=10614MB
+    rc=0 avail_after=10536MB
+[19:23:30] depth=0.35 mode=baseline avail=10536MB
+    rc=0 avail_after=11159MB
+[19:37:26] depth=0.35 mode=line avail=11159MB

@@ -1,0 +1,1 @@
+REFUSING TO RUN depth=0.15 mode=line model=Qwen/Qwen2.5-7B: 8082 MB available, need 9000 MB. Reclaim memory first (the box watchdog SIGSTOPs on RAM pressure and a paused process still accepts sockets, so an OOM here looks like a hang).

@@ -1,0 +1,1 @@
+{"depth": 0.15, "mode": "line", "c1": 906, "c0": 32, "keep_frac": 0.6, "keep": 543, "rank": 564, "rank_frac": 0.623, "needle_kept": true, "kv_saved_pct": 34.97, "pass_": true, "answer": "The failure code in the build log is `0x9AF4_STACK_FAIL`.", "prefill_s": 243.7}

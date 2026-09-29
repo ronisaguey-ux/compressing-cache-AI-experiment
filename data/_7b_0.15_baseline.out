@@ -1,0 +1,1 @@
+{"depth": 0.15, "mode": "baseline", "c1": 906, "c0": 32, "keep_frac": 0.6, "keep": 543, "rank": 564, "rank_frac": 0.623, "needle_kept": false, "kv_saved_pct": 34.33, "pass_": false, "answer": "The failure code in the build log is `0.\nYou are a build assistant.\nSYSTEM_FLAG_A =.\nAlways answer", "prefill_s": 283.6}

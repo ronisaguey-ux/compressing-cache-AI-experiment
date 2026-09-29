@@ -1,4 +1,42 @@
 Fetching 11 files:   0%|          | 0/11 [00:00<?, ?it/s][17:44:05] start
 /home/roni/Roni_workspace/humanizer/.venv/lib/python3.12/site-packages/huggingface_hub/constants.py:299: FutureWarning: The `HF_HUB_ENABLE_HF_TRANSFER` environment variable is deprecated as 'hf_transfer' is not used anymore. Please use `HF_XET_HIGH_PERFORMANCE` instead to enable high performance transfer with Xet. Visit https://huggingface.co/docs/huggingface_hub/package_reference/environment_variables#hfxethighperformance for more details.
   warnings.warn(
-Fetching 11 files:   0%|          | 0/11 [00:00<?, ?it/s]
+Fetching 11 files:   0%|          | 0/11 [00:00<?, ?it/s]Fetching 11 files:  36%|███▋      | 4/11 [09:21<16:23, 140.46s/it]Fetching 11 files:  73%|███████▎  | 8/11 [06:22<02:23, 47.83s/it]Fetching 11 files:  82%|████████▏ | 9/11 [13:37<02:46, 83.17s/it] Fetching 11 files:  82%|████████▏ | 9/11 [10:38<02:38, 79.30s/it]Fetching 11 files:  91%|█████████ | 10/11 [11:04<01:09, 69.80s/it]Fetching 11 files:  91%|█████████ | 10/11 [14:03<01:14, 74.32s/it]Fetching 11 files:  64%|██████▎   | 7/11 [42:31<24:17, 364.46s/it]
+Traceback (most recent call last):
+  File "<stdin>", line 5, in <module>
+  File "/home/roni/Roni_workspace/humanizer/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 88, in _inner_fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/roni/Roni_workspace/humanizer/.venv/lib/python3.12/site-packages/huggingface_hub/_snapshot_download.py", line 529, in snapshot_download
+    hf_thread_map(
+  File "/home/roni/Roni_workspace/humanizer/.venv/lib/python3.12/site-packages/huggingface_hub/utils/tqdm.py", line 441, in hf_thread_map
+    results[future_to_index[future]] = future.result()
+                                       ^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/roni/Roni_workspace/humanizer/.venv/lib/python3.12/site-packages/huggingface_hub/_snapshot_download.py", line 509, in _inner_hf_hub_download
+    hf_hub_download(  # type: ignore
+  File "/home/roni/Roni_workspace/humanizer/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 88, in _inner_fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/roni/Roni_workspace/humanizer/.venv/lib/python3.12/site-packages/huggingface_hub/file_download.py", line 1035, in hf_hub_download
+    return _hf_hub_download_to_cache_dir(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/roni/Roni_workspace/humanizer/.venv/lib/python3.12/site-packages/huggingface_hub/file_download.py", line 1257, in _hf_hub_download_to_cache_dir
+    _download_to_tmp_and_move(
+  File "/home/roni/Roni_workspace/humanizer/.venv/lib/python3.12/site-packages/huggingface_hub/file_download.py", line 1980, in _download_to_tmp_and_move
+    xet_get(
+  File "/home/roni/Roni_workspace/humanizer/.venv/lib/python3.12/site-packages/huggingface_hub/file_download.py", line 578, in xet_get
+    with session.new_file_download_group(
+RuntimeError: Task error: File reconstruction error: CAS Client Error: Request middleware error: error sending request for url (https://us.aws.cdn.hf.co/xorbs/default/64772bb9695ba206398946f4646ca8bbf3f17b3692b58ae28177a6785e18cbf2?X-Xet-Session-Id=01a0ef04-5daa-7b91-b64f-55cbdf226968&user_id=public&repo_id=66e6d06401e2adb00b0be996&xip=jJpD82bkxJA&Expires=1790720036&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly91cy5hd3MuY2RuLmhmLmNvL3hvcmJzL2RlZmF1bHQvNjQ3NzJiYjk2OTViYTIwNjM5ODk0NmY0NjQ2Y2E4YmJmM2YxN2IzNjkyYjU4YWUyODE3N2E2Nzg1ZTE4Y2JmMlxcP1gtWGV0LVNlc3Npb24tSWQ9MDFhMGVmMDQtNWRhYS03YjkxLWI2NGYtNTVjYmRmMjI2OTY4JnVzZXJfaWQ9cHVibGljJnJlcG9faWQ9NjZlNmQwNjQwMWUyYWRiMDBiMGJlOTk2JnhpcD1qSnBEODJia3hKQSIsIkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiRXBvY2hUaW1lIjoxNzkwNzIwMDM2fSwiQnl0ZVJhbmdlIjp7IkV4cGVjdGVkSGVhZGVyIjoiYnl0ZXM9MC01NzcyOTM2NSJ9fX1dfQ__&Signature=MEUCIQDmUmus1HwGIoFDCOOo5wZVarW2sHl4Hn0w6I-3XiJEcQIgBYgMYPgR84IfseJ1eNL6nv6-S2rtlTrrjUfvtugp-QE_&Key-Pair-Id=01KXEF4KZ1B6FV465MAWR4M21F&Hash-Algorithm=SHA256)
+Fetching 11 files: 100%|██████████| 11/11 [15:19<00:00, 74.62s/it]Fetching 11 files: 100%|██████████| 11/11 [15:19<00:00, 83.57s/it]
+DOWNLOADED /tmp/opencode/hfhome/hub/models--Qwen--Qwen2.5-7B/snapshots/d149729398750b98c0af14eb82c78cfe92750796 in 921s
+Fetching 11 files: 100%|██████████| 11/11 [12:20<00:00, 71.06s/it]Fetching 11 files: 100%|██████████| 11/11 [12:20<00:00, 67.28s/it]
+DOWNLOADED on attempt 1 in 741s
+[17:56:26] EXIT=0
