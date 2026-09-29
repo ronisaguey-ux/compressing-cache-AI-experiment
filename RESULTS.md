@@ -116,6 +116,52 @@ chat template. Two claims from that revision **do not survive** and are retracte
 Finding 1 (the retention curve) and Finding 2 (rotation) were unaffected — both are either pure
 index arithmetic or a same-cache comparison, so neither depends on the output format.
 
+## Finding 5 — a query-AGNOSTIC selector does work, at 75% retention
+
+The blocker stated in Finding 3 was that the working selectors were oracles. This arm removes
+that: it scores chunk-1 positions by **chunk 1's own self-attention**, which is available the
+moment the log arrives, before any question exists.
+
+Keep 75% (247 of 329 positions, **22.7% of KV memory saved**):
+
+| arm | needle | Q2 emitted | nll Q2 | Δ |
+|---|---|---|---|---|
+| Arm 0 baseline | yes | `0x9AF4_STACK_FAIL` ✅ | 2.268 | — |
+| **Arm 4a self-attn chunk1 (agnostic)** | yes | **`0x9AF4_STACK_FAIL` ✅** | **2.556** | **+0.288** |
+| Arm 2c query-attn (mid, oracle) | yes | `0x9af4` ◐ | 2.632 | +0.364 |
+| Arm 4c arm4b, **no rotation** | yes | *"CI failed. CI_FLAG_A = 0…"* ❌ | — | +1.000 |
+| Arm 2c arm2c, no rotation | yes | *"CI failed" ×9* ❌ | — | +1.146 |
+
+**Arm 4a produces the complete literal answer, not a truncated one**, and it is the closest to
+baseline of any arm. The rotation-off row is the control that matters: the same kept set without
+phase correction loops on `CI failed`, so the recovery is the rotation, not the selector alone.
+
+### The sink guard is a regression and should not be used
+
+Scoring chunk 1 against the whole prefix made position 4 win — an attention sink, high by
+position rather than content. Masking the first 4 positions was the obvious fix. Measured:
+
+| keep | Arm 4a (raw) | Arm 4b (+sink guard) |
+|---|---|---|
+| 50% | nll 3.970 | nll 3.579 (better) |
+| 75% | **nll 2.556, answers correctly** | nll 3.123 (worse) |
+
+The guard helps where nothing worked anyway and **costs the correct answer where it did work**,
+because it discards positions 0-4 of the log — and the first lines of a build log carry the
+command and target. **The sink is real; masking it by position is the wrong instrument.**
+Recorded as a rejected approach rather than deleted, so it is not retried.
+
+## Where this leaves the design
+
+Eviction is viable, and the recipe that works is narrower than the original design assumed:
+
+1. **Budget at 75%, not 10%.** The retention floor for every selector tested is above 50%; 10% is
+   below it for all of them.
+2. **Score with chunk-1 self-attention**, which needs no query — the only shippable selector found.
+3. **Always apply the delta re-rotation.** Without it the same kept set degenerates.
+4. **Do not mask attention sinks by position.**
+5. **Dense positions only.** Sparse strides were rejected before implementation (see RESEARCH.md).
+
 ## Limits
 
 - **0.5B model.** It degenerates under mild perturbation (`1.0.0.0.0.0` loops). Absolute quality is

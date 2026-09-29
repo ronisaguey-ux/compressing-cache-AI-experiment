@@ -543,6 +543,76 @@ def capture_query_attention(h, prefix_cache, query_text):
     return acc, out.past_key_values
 
 
+
+
+def capture_self_attention(h, prefix_cache, prefix_text, chunk1_start, chunk1_len):
+    """Query-AGNOSTIC saliency: what does chunk 1 attend to within itself?
+
+    This is the shippable variant. Every other working selector in this file needs
+    the downstream question before it can decide what to keep, which is fine for an
+    offline study and useless in production -- the log arrives before anyone has
+    asked anything. Chunk-1 self-attention needs only the region itself.
+
+    Implementation note: the first attempt at this scored chunk 1 against the whole
+    prefix, which just re-measures attention sinks (position 4 won). Restricting
+    both sides to chunk-1 positions asks the question that matters -- which lines
+    matter to the other lines in this log -- and a sink guard drops the first few
+    positions, which are high-attention by position rather than by content.
+    """
+    import contextlib
+    enc = h.tok(prefix_text, return_tensors="pt")["input_ids"]
+    captured = {}
+
+    def make_hook(i):
+        def hook(module, args, output):
+            captured[i] = output.detach()
+        return hook
+
+    handles = []
+    try:
+        for i, layer in enumerate(h.model.model.layers):
+            handles.append(layer.self_attn.q_proj.register_forward_hook(make_hook(i)))
+        with contextlib.redirect_stdout(io.StringIO()):
+            with torch.no_grad():
+                h.model(input_ids=enc, use_cache=False)
+    finally:
+        for hd in handles:
+            hd.remove()
+
+    c1 = slice(chunk1_start, chunk1_start + chunk1_len)
+    acc = None
+    for i in sorted(captured):
+        q = captured[i]                                    # [1, T, Hq*D]
+        b, t, _ = q.shape
+        q = q[:, c1].reshape(b, chunk1_len, h.n_q_heads, h.head_dim)
+        q = q.permute(0, 2, 1, 3).contiguous()
+        q = h.rope.apply(q, list(range(chunk1_start, chunk1_start + chunk1_len)))
+        k = prefix_cache.layers[i].keys[:, :, c1, :]
+        if h.n_q_heads != h.n_kv_heads:
+            k = k.repeat_interleave(h.n_q_heads // h.n_kv_heads, dim=1)
+        scores = torch.matmul(q, k.transpose(2, 3)) / math.sqrt(h.head_dim)
+        probs = torch.softmax(scores, dim=-1)[0]            # [Hq, Tc1, Tc1]
+        s = probs.float().sum(0).sum(0)                     # [Tc1] received attention
+        acc = s if acc is None else acc + s
+    return acc
+
+
+SINK_GUARD = 4
+
+
+def sel_attention_nosink(scores, k, guard=SINK_GUARD):
+    """Top-k by attention, refusing to spend budget on attention sinks.
+
+    Position 0 (and here position 4) absorb attention in almost every transformer
+    regardless of content. If the keep budget goes to sinks, the eviction is blind
+    again. Mask their scores to -inf before ranking so the budget is spent on
+    content-carrying positions.
+    """
+    s = scores.clone()
+    s[:guard] = float("-inf")
+    order = torch.argsort(s, descending=True)[:k]
+    return sorted(int(i) for i in order.tolist())
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -652,6 +722,7 @@ def main():
     for i in mid_layers[1:]:
         attn_mid = attn_mid + h.per_layer_saliency[i]
     c1_norm_keys = full_cache.layers[0].keys[:, :, chunk1_start:, :]
+    self_attn = capture_self_attention(h, full_cache, prefix_text, chunk1_start, chunk1_len)
 
     rel = None if needle_pos is None else needle_pos - chunk1_start
 
@@ -662,7 +733,8 @@ def main():
         cols = [0.05, 0.10, 0.15, 0.25, 0.50, 0.75]
         print("  %-32s %s" % ("selector", "".join("%7s" % ("%d%%" % (f * 100)) for f in cols)))
         for label in ("first-k/2 + last-k/2", "random-k", "top-k key-norm",
-                      "top-k query-attn (all layers)", "top-k query-attn (mid layers)"):
+                      "top-k query-attn (all layers)", "top-k query-attn (mid layers)",
+                      "top-k self-attn chunk1 (agnostic)", "top-k self-attn + sink guard"):
             cells = []
             for f in cols:
                 kk = max(1, int(round(chunk1_len * f)))
@@ -674,8 +746,12 @@ def main():
                     got = rel in set(sel_norm(c1_norm_keys, kk))
                 elif label == "top-k query-attn (all layers)":
                     got = rel in set(sel_attention(attn_all, kk))
-                else:
+                elif label == "top-k query-attn (mid layers)":
                     got = rel in set(sel_attention(attn_mid, kk))
+                elif label == "top-k self-attn chunk1 (agnostic)":
+                    got = rel in set(sel_attention(self_attn, kk))
+                else:
+                    got = rel in set(sel_attention_nosink(self_attn, kk))
                 cells.append("yes" if got else "-")
             print("  %-32s %s" % (label, "".join("%7s" % c for c in cells)))
 
@@ -719,6 +795,8 @@ def main():
         idx_attn = sel_attention(attn_all, keep_k)
         idx_mid = sel_attention(attn_mid, keep_k)
         idx_rand = sel_random(chunk1_len, keep_k, seed=0)
+        idx_self = sel_attention(self_attn, keep_k)
+        idx_self_ns = sel_attention_nosink(self_attn, keep_k)
 
         specs = [
             ("Arm 1k naive first5+last5", dict(kind="evict", keep=idx_first_last, rot=True)),
@@ -728,6 +806,9 @@ def main():
             ("Arm R  random-k control", dict(kind="evict", keep=idx_rand, rot=True)),
             ("Arm 3  arm2a, NO delta rotation", dict(kind="evict", keep=idx_norm, rot=False)),
             ("Arm 3b arm2c, NO delta rotation", dict(kind="evict", keep=idx_mid, rot=False)),
+            ("Arm 4a self-attn chunk1 (agnostic)", dict(kind="evict", keep=idx_self, rot=True)),
+            ("Arm 4b self-attn + sink guard", dict(kind="evict", keep=idx_self_ns, rot=True)),
+            ("Arm 4c arm4b, NO delta rotation", dict(kind="evict", keep=idx_self_ns, rot=False)),
         ]
 
         print()
@@ -811,7 +892,9 @@ def summary(h, results, baseline, fracs, chunk0_len, chunk1_len, rel):
     print("=" * 80)
     pairs = [("top-k key-norm", "Arm 2a top-k key-norm (agnostic)", "Arm 3  arm2a, NO delta rotation"),
              ("top-k query-attn (mid)", "Arm 2c top-k query-attn (mid layers)",
-              "Arm 3b arm2c, NO delta rotation")]
+              "Arm 3b arm2c, NO delta rotation"),
+             ("self-attn + sink guard", "Arm 4b self-attn + sink guard",
+              "Arm 4c arm4b, NO delta rotation")]
     print("  %-26s %7s %10s %10s %10s %8s" %
           ("kept set", "cache", "nll2 rot", "nll2 off", "improve", "verdict"))
     print("  " + "-" * 78)
