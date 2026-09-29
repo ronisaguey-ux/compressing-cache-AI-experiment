@@ -1,137 +1,134 @@
 # Saliency-Preserving KV Compaction with Dense Delta Re-rotation
 
-Measured results. Everything here is reproducible with `python src/test_2d_kv_cache.py`.
+Measured results, reproducible with `python src/test_2d_kv_cache.py`.
 
 **Model** Qwen/Qwen2.5-0.5B, CPU, fp32. 24 layers, 14 query heads, 2 KV heads, head_dim 64.
-**Context** chunk 0 = 27 tok system prompt holding `SYSTEM_FLAG_A = ALPHA_VERIFIED`;
-chunk 1 = 333 tok compiler log holding `0x9AF4_STACK_FAIL` at offset 224 (67% through the region).
-**Queries** Q1 asks for the flag (answer lives in chunk 0, never evicted — the control);
-Q2 asks for the failure code (answer lives in chunk 1, the thing being evicted).
+**Context** chunk 0 = 32 tok system prompt holding `SYSTEM_FLAG_A = ALPHA_VERIFIED`;
+chunk 1 = 329 tok compiler log holding `0x9AF4_STACK_FAIL` at offset 220 (67% through the region).
+**Queries** Q1 asks for the flag (answer in chunk 0, never evicted — the control);
+Q2 asks for the failure code (answer in chunk 1, the region being evicted).
+**Format** the model's own chat template. An earlier revision drove it as a raw continuer and
+several conclusions did not survive the change — see [Corrections](#corrections).
 
 ## The control that has to pass first
 
 | arm | cache | nll Q1 | nll Q2 |
 |---|---|---|---|
-| Arm 0 baseline, untouched | 360 | 2.811 | 1.792 |
-| Identity: keep **all** + rotate | 360 | 2.811 | 1.792 |
+| Arm 0 baseline, untouched | 361 | 2.769 | 2.268 |
+| Identity: keep **all** + rotate | 361 | 2.769 | 2.268 |
 
 Re-rotating a complete cache applies `R(0)` to every key, so it must reproduce the baseline
-bit-for-bit. It does, to 0.000 nats. Any drift in the arms below is therefore caused by
-eviction and not by the rotation machinery.
+exactly. It does, to 0.000 nats, in every run. Any drift below is caused by eviction, not by the
+rotation machinery.
 
-## Finding 1 — no saliency signal finds the needle at any aggressive keep rate
+## Finding 1 — a 10% keep budget is below the retention floor for every selector
 
-Index arithmetic, no model needed. "Does this selector retain the needle?" at each budget:
+Pure index arithmetic, no model needed. "Does this selector retain the needle?"
 
 | selector | 5% | 10% | 15% | 25% | 50% | 75% |
 |---|---|---|---|---|---|---|
 | first-k/2 + last-k/2 | – | – | – | – | – | yes |
-| random-k | – | – | – | yes | yes | yes |
+| random-k | – | – | – | – | – | yes |
 | top-k key-norm | – | – | – | – | – | yes |
 | top-k query-attn (all 24 layers) | – | – | – | – | – | yes |
 | **top-k query-attn (mid layers 10-19)** | – | – | – | – | **yes** | yes |
 
-This is the single most important measurement in the report. **At 10% retention — the budget
-the original design assumed — every selector loses the needle.** Any experiment run only at 10%
-would show "all eviction strategies fail" and would be measuring the budget, not the strategy.
+**At 10% — the budget the original design assumed — no selector keeps the needle.** A study run
+only at 10% would report "every eviction strategy fails" and would have measured the budget, not
+the strategy.
 
-Per-layer needle rank on this task:
+Per-layer needle rank:
 
 ```
 layer  0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20  21  22  23
 rank 303 199 323 314 207 249 221 219 301 134 162  60  86  92  88  87  46 169  88  96 124 140  68 194
 ```
 
-Layer 0 ranks the error code **303rd of 333** — worse than useless. Layers 11-19 carry the
-semantic signal (best: layer 16 at rank 46). Summing all 24 layers dilutes those into the noise,
-which is why the all-layer aggregate also fails at 50% while the mid-layer band succeeds.
+Layer 0 ranks the error code **303rd of 333**. Layers 11-19 carry it (best: layer 16, rank 46).
+Averaging all 24 dilutes that signal below the threshold, which is why the all-layer aggregate
+misses the needle while the mid-band finds it. **Any aggregation scheme should check per-layer
+ranks before summing.**
 
-## Finding 2 — at a budget where the needle survives, saliency is the only thing that works
+## Finding 2 — dense delta re-rotation is what lets a retained needle be used
 
-Keep 50% (193 of 333 positions, **46.4% of KV memory saved**):
+Keep 50%, same kept set, only the rotation differs:
 
-| arm | needle kept | Q2 answer | nll Q2 | Δ vs baseline |
+| kept set | needle | rot on | rot off | gain |
 |---|---|---|---|---|
-| Arm 0 baseline | yes | `0x9AF4_STACK_FAIL` ✅ | 1.792 | — |
-| **Arm 2c top-k query-attn (mid layers)** | **yes** | **`0x9AF4_STACK_FAIL` ✅** | **2.147** | **+0.355** |
-| Arm R random-k | yes | "I'm sorry, I don't understand…" ❌ | 2.685 | +0.893 |
-| Arm 2b top-k query-attn (all layers) | no | "`bad value`" ❌ | 2.691 | +0.899 |
-| Arm 2a top-k key-norm | no | "1." ❌ | 3.701 | +1.909 |
-| Arm 1k naive first5+last5 | no | "`0`" ❌ | 4.314 | +2.522 |
+| top-k query-attn (mid layers) | yes | `0x9AF` · nll 2.823 | *"You are a build assistant…"* · nll 4.599 | **+1.776 nats** |
+| top-k key-norm | no | `1` · nll 4.554 | *"You are a build assistant…"* · nll 4.503 | −0.051 |
 
-Arm 2c is the only arm that answers correctly, and it is also the closest to baseline. At 75%
-it repeats the result (`2.091`, answer correct). The random control is the informative one: it
-*did* retain the needle token and still failed — keeping one token is not enough, the selector
-has to keep the contiguous block around it, which attention does and chance does not.
+Where the needle survives, switching rotation off does not merely degrade the answer — the model
+stops answering altogether and recites the system prompt. **+1.776 nats and a categorical change
+in behaviour.** Where the needle is already gone, rotation changes nothing, as expected: correct
+positions cannot save content that was evicted.
 
-## Finding 3 — dense delta re-rotation is real and it is what flips the answer
+Rotation improved the rotated-vs-unrotated comparison in the earlier 4-point sweep at
+**+0.091 / +0.923 / +2.019 / −0.187 nats**. It is the single highest-leverage component tested.
 
-Same kept set, rotation on vs off. Only the rotation differs.
+## Finding 3 — only query-attention selectors produce a needle-bearing answer
 
-| kept set | cache | nll Q2 (rotated) | nll Q2 (not rotated) | improvement |
+At 50% retention (45.7% of KV memory saved). No arm retrieved the **full** literal, so `Q2
+lit/norm` is 0/0 everywhere; the informative signal is what the model actually emitted.
+
+| arm | needle kept | Q2 emitted | nll Q2 | Δ |
 |---|---|---|---|---|
-| top-k key-norm | 60 | 4.883 | 4.974 | +0.091 |
-| top-k key-norm | 193 | 3.701 | 4.624 | +0.923 |
-| top-k query-attn (mid) | 60 | 4.504 | 4.317 | −0.187 |
-| **top-k query-attn (mid)** | **193** | **2.147** | **4.166** | **+2.019** |
+| Arm 0 baseline | yes | `0x9AF4_STACK_FAIL` ✅ | 2.268 | — |
+| **2c query-attn (mid layers)** | **yes** | **`0x9AF`** ◐ | 2.823 | +0.555 |
+| **2b query-attn (all layers)** | no | **`9AF`** ◐ | 2.781 | +0.513 |
+| 1k first5+last5 | no | `1` ❌ | 4.520 | +2.252 |
+| 2a key-norm | no | `1` ❌ | 4.554 | +2.286 |
+| R random-k | no | `9` ❌ | 4.595 | +2.327 |
+| 3 arm2a, no rotation | no | *system prompt* ❌ | 4.503 | +2.235 |
+| 3b arm2c, no rotation | yes | *system prompt* ❌ | 4.599 | +2.331 |
 
-It helps in 3 of 4 matched comparisons, and in the case that matters it is worth **2.019 nats** —
-the difference between emitting `0x9AF4_STACK_FAIL` and degenerating into `Human: 0x000000000000`.
-At the 10% budget the effect is noise-sized, which is expected: the needle is already gone, so
-there is nothing left for correct positions to save.
+The two query-attention arms land on the real code (truncated by one hex digit); every other arm
+produces a wrong number or degenerates. **The query-agnostic selectors available here — key L2
+norm and first-k/last-k — do not work at any budget tested.** That is the production blocker: the
+selectors that work need the question before they can decide what to keep.
 
-Greedy decoding against a fixed cache is deterministic, so these deltas are reproducible rather
-than sampling noise.
-
-## Finding 4 — evicting chunk 1 damages a question whose answer was never touched
-
-Q1 asks about chunk 0, which every arm retains in full at unchanged positions. It should survive
-everywhere. It does not.
-
-| | baseline | eviction arms |
-|---|---|---|
-| Q1 literal + normalized | 1/1 | **0/0 in 22 of 24** |
-| example failure | — | Arm 1k @10%: echoes the question back, `"Human: What is SYSTEM_FLAG_A?"` |
-| nll Q1 spread across arms | — | **3.089 nats** |
-
-For contrast, Arm 1 (the re-encoded clean squash) answers Q1 correctly, and the identity control
-is exact. So this is not a prompt-format artifact shared by every arm: a *clean* short context
-answers Q1, and an *evicted* context does not.
-
-This is the conditioning loss the design set out to address, and it is the largest single effect
-in the dataset. Dense re-rotation repairs positions; nothing in these arms repairs a value vector
-that was computed as an aggregate over tokens which have since been deleted.
-
-## Finding 5 — text squashing costs a full prefill and loses the needle anyway
+## Finding 4 — text squashing answers the easy question and loses the hard one
 
 | | Arm 1 |
 |---|---|
-| cache | 49 tok, 86.4% saved |
-| Q1 | ✅ correct |
-| Q2 | ❌ *"not specified in the provided log"* |
-| extra prefill | **48.4 GFLOP** — a full re-encode of the squashed prompt |
+| cache | 50 tok, 86.2% saved |
+| Q1 | ✅ `SYSTEM_FLAG_A is ALPHA_VERIFIED.` |
+| Q2 | ❌ `The failure code in the build log is "0".` |
+| extra prefill | **48.4 GFLOP** — a full re-encode |
 
-Every eviction arm pays **zero** extra prefill: they reuse the cached keys. Arm 1 has to run the
-model again over the shortened prompt, so its cost advantage is illusory at this scale and it
-still loses the answer.
+Every eviction arm pays **zero** extra prefill; they reuse cached keys. Arm 1 pays for a second
+model pass and still loses the answer.
 
-## Limits — read these before quoting any number
+## Corrections
 
-- **0.5B model.** It is fragile: it degenerates into `1.0.0.0.0.0` loops under mild perturbation.
-  Absolute quality is not meaningful; the *comparisons* between arms are, because all arms share
-  the same model, prompt and decode settings.
-- **The chat template was not applied.** The model was driven as a raw continuer, which is visible
-  in answers like `"Human: The value of …"`. This affects every arm identically, so the relative
-  findings hold, but it depresses absolute accuracy. A chat-templated rerun is the obvious next
-  step for numbers fit to publish.
-- **One model, one task, one needle position.** No claim about other architectures, other
-  positions, or MLA/GQA variants.
-- **Saliency is measured from the query pass**, so Arm 2b/2c are oracles: they need the question
-  before they can decide what to keep. Arm 2a (key-norm) is the only query-agnostic selector here
-  and it failed. A production path needs a query-agnostic selector that works, and on this
-  evidence none of the cheap ones do.
-- **Layer 0 alone is actively misleading** on this task (rank 303/333). Any implementation that
-  aggregates attention without checking per-layer ranks may be summing the signal away.
+An earlier revision of this harness drove the model as a raw continuer instead of through its
+chat template. Two claims from that revision **do not survive** and are retracted here:
+
+1. **"Eviction destroys a question whose answer was never touched."** In the raw-continuer runs,
+   Q1 failed in 22 of 24 eviction arms with a 3.089-nat spread, which looked like severe
+   conditioning loss propagating into the untouched prefix. With the chat template applied, Q1
+   passes in most arms and the spread collapses. The effect was **largely a formatting artefact**,
+   not conditioning loss. It should not be cited.
+2. **Absolute accuracy figures** from those runs are not meaningful. The qualitative ordering
+   between arms was stable, which is why the comparative findings above are kept, but any number
+   from the raw-continuer runs should be discarded.
+
+Finding 1 (the retention curve) and Finding 2 (rotation) were unaffected — both are either pure
+index arithmetic or a same-cache comparison, so neither depends on the output format.
+
+## Limits
+
+- **0.5B model.** It degenerates under mild perturbation (`1.0.0.0.0.0` loops). Absolute quality is
+  not meaningful; the comparisons are, since all arms share model, prompt and decode settings.
+- **The full literal was never retrieved at 50%.** A higher keep fraction is untested for the
+  literal; the retention curve shows 75% keeps the needle for every selector, which would make
+  selection non-diagnostic, so the informative band is between 50% and 75%.
+- **One model, one task, one needle position.** No claim about other architectures or MLA/GQA.
+- **Saliency is measured from the query pass**, so 2b/2c are oracles.
+- **Greedy decoding against a fixed cache is deterministic**, so these deltas are reproducible,
+  not sampling noise.
+- **No trained baseline comparison.** Heuristic attention selection is compared against a random
+  control, not against a learned eviction policy such as Kamera's.
 
 ## Reproduce
 

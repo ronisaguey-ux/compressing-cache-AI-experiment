@@ -147,14 +147,29 @@ def locate_needle(tok, prefix_text):
 
 
 def build_prefix(tok, target_tokens=300):
+    """Build the prompt in the model's OWN chat format.
+
+    The first version of this harness drove the model as a raw continuer, which is
+    why it answered with "Human: The value of ...". Qwen2.5 has a real chat template,
+    so run with it: the model was instruction-tuned against these markers and
+    bypassing them depresses accuracy in a way that has nothing to do with KV
+    eviction. Split into two tokenisable pieces so the chunk boundary stays exact
+    rather than inferred from a separator search.
+    """
     system = (
         "You are a build assistant.\n"
         "SYSTEM_FLAG_A = " + SYSTEM_FLAG_A + "\n"
         "Always answer with the exact value requested, quoting it verbatim.\n"
     )
     log = build_log(tok, target_tokens)
-    prefix = "<|system|>\n" + system + "\n<|build_log|>\n" + log + "\n</|build_log|>\n"
-    return prefix, system, log
+    sys_part = "<|im_start|>system\n" + system + "<|im_end|>\n"
+    log_part = "<|im_start|>user\n<build_log>\n" + log + "\n</build_log><|im_end|>\n"
+    return sys_part + log_part, sys_part, log_part
+
+
+def build_question(text):
+    """The question as a new user turn, with the assistant generation prompt."""
+    return "<|im_start|>user\n" + text + "<|im_end|>\n<|im_start|>assistant\n"
 
 
 # ---------------------------------------------------------------------------
@@ -550,10 +565,10 @@ def measure_arm(h, name, cache, full_kv, baseline, extra_flops=0, needle_kept=No
     """Run both queries against a prepared cache and collect every metric."""
     t0 = time.time()
     c = h.cache_len(cache)
-    q1, _ = h.generate(Q1_TEXT, h.clone_cache(cache))
-    q2, _ = h.generate(Q2_TEXT, h.clone_cache(cache))
-    nll1, _, _ = h.answer_logprobs(Q1_TEXT, cache, Q1_ANSWER)
-    nll2, _, _ = h.answer_logprobs(Q2_TEXT, cache, Q2_ANSWER)
+    q1, _ = h.generate(build_question(Q1_TEXT), h.clone_cache(cache))
+    q2, _ = h.generate(build_question(Q2_TEXT), h.clone_cache(cache))
+    nll1, _, _ = h.answer_logprobs(build_question(Q1_TEXT), cache, Q1_ANSWER)
+    nll2, _, _ = h.answer_logprobs(build_question(Q2_TEXT), cache, Q2_ANSWER)
     elapsed = time.time() - t0
     size = kv_bytes(cache)
     s1, s2 = score_answer(q1, "flag"), score_answer(q2, "err")
@@ -601,7 +616,12 @@ def main():
 
     sys_ids = h.tok(system, add_special_tokens=False)["input_ids"]
     pre_ids = h.tok(prefix_text, add_special_tokens=False)["input_ids"]
+    whole_ids = h.tok(prefix_text, add_special_tokens=False)["input_ids"]
     chunk0_len = len(sys_ids)
+    assert pre_ids[:chunk0_len] == sys_ids, (
+        "chat-format boundary mismatch: the system half must be a token-exact prefix "
+        "of the whole prompt, or the chunk boundary is approximate and every arm scores "
+        "a differently-shaped context")
     chunk1_len = len(pre_ids) - chunk0_len
     h.chunk1_len = chunk1_len
     chunk1_start = chunk0_len
@@ -626,7 +646,7 @@ def main():
     n_params = sum(p.numel() for p in h.model.parameters())
     print("prefill         : %.2fs, %.2f MiB KV, %d tok" % (prefill_s, full_kv / 2**20, len(pre_ids)))
 
-    attn_all, _ = capture_query_attention(h, full_cache, Q2_TEXT)
+    attn_all, _ = capture_query_attention(h, full_cache, build_question(Q2_TEXT))
     mid_layers = [i for i in sorted(h.per_layer_saliency) if 10 <= i <= 19]
     attn_mid = h.per_layer_saliency[mid_layers[0]]
     for i in mid_layers[1:]:
@@ -741,7 +761,7 @@ def main():
     print("=" * 80)
     print("ARM 1 -- NAIVE TEXT SQUASH (re-encoded; pays a full extra prefill)")
     print("=" * 80)
-    squashed_prefix = ("<|system|>\n" + system + "\n<|build_log|>\nLOG: build ok.\n</|build_log|>\n")
+    squashed_prefix = (system + "<|im_start|>user\n<build_log>\nLOG: build ok.\n</build_log><|im_end|>\n")
     ids = h.tok(squashed_prefix, return_tensors="pt")["input_ids"]
     with torch.no_grad():
         scache = h.model(input_ids=ids, use_cache=True).past_key_values
