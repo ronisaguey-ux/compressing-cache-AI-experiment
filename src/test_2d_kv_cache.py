@@ -545,27 +545,21 @@ def capture_query_attention(h, prefix_cache, query_text):
 
 
 
-def capture_self_attention(h, prefix_cache, prefix_text, chunk1_start, chunk1_len):
-    """Query-AGNOSTIC saliency: what does chunk 1 attend to within itself?
+def prefill_capture_q(h, text):
+    """One forward that returns BOTH the cache and every layer's q.
 
-    This is the shippable variant. Every other working selector in this file needs
-    the downstream question before it can decide what to keep, which is fine for an
-    offline study and useless in production -- the log arrives before anyone has
-    asked anything. Chunk-1 self-attention needs only the region itself.
-
-    Implementation note: the first attempt at this scored chunk 1 against the whole
-    prefix, which just re-measures attention sinks (position 4 won). Restricting
-    both sides to chunk-1 positions asks the question that matters -- which lines
-    matter to the other lines in this log -- and a sink guard drops the first few
-    positions, which are high-attention by position rather than by content.
+    Hooking q_proj during a use_cache=True prefill means the expensive pass is paid
+    once. Capturing the q's costs ~8 MB per layer at the largest depth; the previous
+    version materialised a full c1 x c1 attention matrix per layer instead, which is
+    268 MB each at 2189 tokens and is what took the box into an OOM.
     """
     import contextlib
-    enc = h.tok(prefix_text, return_tensors="pt")["input_ids"]
-    captured = {}
+    ids = h.tok(text, return_tensors="pt")["input_ids"]
+    cap = {}
 
     def make_hook(i):
         def hook(module, args, output):
-            captured[i] = output.detach()
+            cap[i] = output.detach()
         return hook
 
     handles = []
@@ -574,27 +568,78 @@ def capture_self_attention(h, prefix_cache, prefix_text, chunk1_start, chunk1_le
             handles.append(layer.self_attn.q_proj.register_forward_hook(make_hook(i)))
         with contextlib.redirect_stdout(io.StringIO()):
             with torch.no_grad():
-                h.model(input_ids=enc, use_cache=False)
+                out = h.model(input_ids=ids, use_cache=True)
     finally:
         for hd in handles:
             hd.remove()
+    return out.past_key_values, cap, ids
 
-    c1 = slice(chunk1_start, chunk1_start + chunk1_len)
-    acc = None
-    for i in sorted(captured):
-        q = captured[i]                                    # [1, T, Hq*D]
-        b, t, _ = q.shape
-        q = q[:, c1].reshape(b, chunk1_len, h.n_q_heads, h.head_dim)
-        q = q.permute(0, 2, 1, 3).contiguous()
-        q = h.rope.apply(q, list(range(chunk1_start, chunk1_start + chunk1_len)))
-        k = prefix_cache.layers[i].keys[:, :, c1, :]
+
+def self_attn_scores(h, cache, qcap, c0, c1, block=256):
+    """Query-AGNOSTIC saliency, blocked so peak memory is O(block * c1), not O(c1^2 * layers).
+
+    Scores each chunk-1 position by the attention chunk 1 pays to it, which needs only
+    the log itself -- available before any question exists. This is the shippable
+    selector.
+
+    Scoring is deliberately NON-CAUSAL over the chunk: no causal mask is applied to the
+    chunk-1 x chunk-1 score matrix. Cached K is a linear projection of each token, so it
+    carries no causal information; only the weight matrix would, and that is built here.
+    A causal mask would starve early positions of contributors, which is exactly the
+    positional bias that broke the depth sweep.
+
+    Each layer's captured q is freed as soon as it is scored, and the query axis is
+    processed in blocks, so a long log cannot blow the memory budget.
+    """
+    acc = torch.zeros(c1, dtype=torch.float32)
+    sl = slice(c0, c0 + c1)
+    for i in sorted(qcap):
+        q_all = qcap.pop(i)                      # free as we go
+        k = cache.layers[i].keys[:, :, sl, :]
         if h.n_q_heads != h.n_kv_heads:
             k = k.repeat_interleave(h.n_q_heads // h.n_kv_heads, dim=1)
-        scores = torch.matmul(q, k.transpose(2, 3)) / math.sqrt(h.head_dim)
-        probs = torch.softmax(scores, dim=-1)[0]            # [Hq, Tc1, Tc1]
-        s = probs.float().sum(0).sum(0)                     # [Tc1] received attention
-        acc = s if acc is None else acc + s
+        for s in range(0, c1, block):
+            e = min(s + block, c1)
+            q = q_all[:, c0 + s:c0 + e]
+            q = q.reshape(1, e - s, h.n_q_heads, h.head_dim).permute(0, 2, 1, 3).contiguous()
+            q = h.rope.apply(q, list(range(c0 + s, c0 + e)))
+            sc = torch.matmul(q, k.transpose(2, 3)) / math.sqrt(h.head_dim)
+            # Sum over heads and over this block of QUERIES; the key axis is global,
+            # so the block's contribution is a full-length [c1] vector.
+            acc += torch.softmax(sc, dim=-1)[0].float().sum(0).sum(0)
+            del sc, q
     return acc
+
+
+def capture_self_attention(h, cache, text, c0, c1, block=256):
+    """Backwards-compatible wrapper: prefill already has the cache, so re-capture q.
+
+    Kept so existing callers keep working; new code should use prefill_capture_q plus
+    self_attn_scores so the prefill is not paid twice.
+    """
+    _, qcap, _ = prefill_capture_q(h, text)
+    return self_attn_scores(h, cache, qcap, c0, c1, block)
+
+
+def mem_available_mb():
+    """MemAvailable is the honest figure; free's 'free' column reads ~0 on a healthy box."""
+    with open("/proc/meminfo") as f:
+        for line in f:
+            if line.startswith("MemAvailable:"):
+                return float(line.split()[1]) / 1024.0
+    return 0.0
+
+
+def require_memory(need_mb, label=""):
+    """Refuse to start rather than walk into an OOM. Never let the box freeze."""
+    avail = mem_available_mb()
+    if avail < need_mb:
+        raise SystemExit(
+            "REFUSING TO RUN %s: %.0f MB available, need %.0f MB. "
+            "Reclaim memory first (the box watchdog SIGSTOPs on RAM pressure and a "
+            "paused process still accepts sockets, so an OOM here looks like a hang)."
+            % (label, avail, need_mb))
+    return avail
 
 
 SINK_GUARD = 4
@@ -612,6 +657,73 @@ def sel_attention_nosink(scores, k, guard=SINK_GUARD):
     s[:guard] = float("-inf")
     order = torch.argsort(s, descending=True)[:k]
     return sorted(int(i) for i in order.tolist())
+
+
+
+def line_spans(tok, prefix_text, chunk1_start, chunk1_len):
+    """Map each chunk-1 token position to a line index of the log.
+
+    Sub-word tokens are not a natural unit for a log: cutting inside a line leaves
+    half a symbol and half an identifier. Every selection strategy here operates on
+    tokens, so it can and does split lines. This returns the line grouping token
+    positions, which is what line pooling needs to keep a whole line.
+    """
+    enc = tok(prefix_text, add_special_tokens=False, return_offsets_mapping=True)
+    offs = enc["offset_mapping"]
+    starts = [0]
+    for i, ch in enumerate(prefix_text):
+        if ch == "\n":
+            starts.append(i + 1)
+    def line_of(pos):
+        lo, hi = 0, len(starts) - 1
+        while lo < hi:
+            mid = (lo + hi + 1) // 2
+            if starts[mid] <= pos:
+                lo = mid
+            else:
+                hi = mid - 1
+        return lo
+    out = {}
+    for t in range(chunk1_start, min(chunk1_start + chunk1_len, len(offs))):
+        out.setdefault(line_of(offs[t][0]), []).append(t - chunk1_start)
+    return [out[k] for k in sorted(out)]
+
+
+def sel_line_pooled(scores, spans, k):
+    """Select whole lines, by the best token in each line, until the budget is spent.
+
+    A line is the unit a reader would use. If any token of a line matters, the line
+    matters, and keeping it intact costs a few tokens. Measured effect in RESULTS
+    Finding 9.
+    """
+    scored = []
+    for line in spans:
+        if not line:
+            continue
+        best = max(float(scores[i]) for i in line)
+        scored.append((best, line))
+    scored.sort(key=lambda x: -x[0])
+    chosen = []
+    for _, line in scored:
+        if len(chosen) >= k:
+            break
+        chosen.extend(line)
+    return sorted(set(chosen[:max(k, 1)]))
+
+
+def sel_position_normalized(scores, chunk1_len):
+    """Divide received attention by each position's causal horizon.
+
+    With causal masking, a position at index i can be attended to only by the
+    (T - i) queries at or after it. A raw sum of received attention therefore
+    rewards EARLY positions purely for having more potential contributors, which is
+    a positional artefact rather than a measure of importance. Dividing by the
+    horizon leaves the average attention per potential query, which is comparable
+    across positions. (Raised by the owner as the likely cause of the depth bias.)
+    """
+    import torch as _t
+    horizon = _t.arange(chunk1_len, 0, -1, dtype=_t.float32)
+    return scores.float() / horizon
 
 # ---------------------------------------------------------------------------
 # Main

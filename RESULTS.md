@@ -265,6 +265,83 @@ Next experiment this implies: hold the layout long (as at depth 15%, 906 tok) an
 fraction upward until utilisation succeeds, which measures the *utilisation* floor separately from
 the *retention* floor. That number is what a production budget would have to be set against.
 
+## Finding 9 — selection is not the bottleneck, so no selector fixes depth fragility
+
+Finding 8 showed the recipe passes at only one of four needle depths. Three candidate fixes were
+tested across all four: position normalisation, line pooling, and a non-causal scoring mask.
+**None passes all four, and the reason is that none of them addresses the actual failure.**
+
+### The causal-mask hypothesis is wrong, and the measurement is the opposite of the prediction
+
+The claim was that causal masking starves early positions of contributors, creating a recency
+bias. My scorer **already computes chunk-1 x chunk-1 attention with no causal mask** — cached K is
+a linear projection of each token and carries no causal information, so only the weight matrix
+would impose causality. Scored with the mask added, the needle ranks *worse*, not better:
+
+| depth | non-causal rank (shipped) | causal rank | effect of adding the mask |
+|---|---|---|---|
+| 0.15 | 365 | 349 | marginally better |
+| 0.35 | 498 | 625 | **worse** |
+| 0.55 | 366 | 743 | **much worse** |
+| 0.75 | 393 | 981 | **much worse** |
+
+The mask hurts at three of four depths, by up to 2.7x in rank. **The shipped scorer is already the
+non-causal one; adding causality would degrade it.** Not a bug to fix — a hypothesis that the
+measurement refutes.
+
+### The needle is retained almost everywhere, and the answer fails anyway
+
+Across 16 (mode, depth) combinations the needle survived the cut in **15**. Results:
+
+| depth | baseline | posnorm | line | both |
+|---|---|---|---|---|
+| 0.15 | fail | fail | **PASS** | **PASS** |
+| 0.35 | fail | **PASS** | fail | fail |
+| 0.55 | **PASS** | fail | fail | fail |
+| 0.75 | fail | fail | **PASS** | fail |
+
+Each depth is passed by a *different* mode. Only one of the sixteen combinations failed to retain
+the needle — so **retention is not the failure mode**, and a better selector cannot fix a failure
+that selection does not cause.
+
+### Raising the budget does not repair it either, and the result is non-monotonic
+
+| keep | mode | 0.15 | 0.35 | 0.55 | 0.75 | passes | saved |
+|---|---|---|---|---|---|---|---|
+| 75% | line | PASS | PASS | PASS | fail | 3/4 | 20.5% |
+| 75% | baseline | PASS | fail | fail | PASS | 2/4 | 19.8% |
+| 90% | line | PASS | fail | PASS | PASS | 3/4 | 6.0% |
+| 90% | baseline | PASS | fail | fail | PASS | 2/4 | 6.0% |
+
+**90% keep fails at depth 0.35 where 75% keep passed.** A monotonic failure (more context, better
+answer) is what conditioning loss would predict; a *non-monotonic* one is a different signature.
+At 90% keep the saved memory is down to 6% while still failing, so paying for context does not buy
+reliability either. This is the 0.5B model's own noise showing through, and it means **this model
+cannot settle the question** — the effect sizes are smaller than the variance.
+
+### What is actually established
+
+- **Two of the three fixes are useful; none is sufficient.** Line pooling is the best single
+  change (3/4 at both budgets vs baseline's 2/4). Position normalisation actively hurts at depth
+  0.15 (rank 365 → 550), contradicting its hypothesis.
+- **Conditioning loss, not selection, is the wall.** The needle is present and unusable. No
+  ranking, pooling or rotation change can restore a value vector whose context has been deleted;
+  this is the same conclusion Kamera reached, now reproduced as a selector-independent effect.
+- **The result at 36.6% is layout-specific.** Finding 6's figure came from the layout with the
+  needle 67% through the region. It is a valid measurement of that layout and not a general
+  property.
+
+### Limits that bound this conclusion
+
+- **0.5B only.** Non-monotonic results at this scale mean the model cannot separate signal from
+  variance. Bob's direction was explicit: understand the mechanics first (done above), then
+  validate on a larger model.
+- **A 7B run is not free on this box.** Qwen2.5-7B is 28 GB in fp32 and 14 GB in bf16 against
+  15.7 GB total RAM shared with other services, so it needs 8-bit (~7 GB) or 4-bit (~3.5 GB)
+  quantisation. `bitsandbytes` is not installed. **Quantisation changes the numerics, so a 7B
+  result is not a like-for-like rerun of this harness** and the difference must be measured, not
+  assumed.
+
 ## Limits
 
 - **0.5B model.** It degenerates under mild perturbation (`1.0.0.0.0.0` loops). Absolute quality is
