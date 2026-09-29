@@ -132,8 +132,8 @@ Keep 75% (247 of 329 positions, **22.7% of KV memory saved**):
 | Arm 4c arm4b, **no rotation** | yes | *"CI failed. CI_FLAG_A = 0…"* ❌ | — | +1.000 |
 | Arm 2c arm2c, no rotation | yes | *"CI failed" ×9* ❌ | — | +1.146 |
 
-**Arm 4a produces the complete literal answer, not a truncated one**, and it is the closest to
-baseline of any arm. The rotation-off row is the control that matters: the same kept set without
+**Arm 4a produces a complete literal answer at this budget** — see Finding 6, where the
+needed keep fraction is measured properly and the query-aware selector turns out to be stronger. The rotation-off row is the control that matters: the same kept set without
 phase correction loops on `CI failed`, so the recovery is the rotation, not the selector alone.
 
 ### The sink guard is a regression and should not be used
@@ -161,6 +161,41 @@ Eviction is viable, and the recipe that works is narrower than the original desi
 3. **Always apply the delta re-rotation.** Without it the same kept set degenerates.
 4. **Do not mask attention sinks by position.**
 5. **Dense positions only.** Sparse strides were rejected before implementation (see RESEARCH.md).
+
+## Finding 6 — the budget floor is 59.6%, not 75% (corrects Finding 5)
+
+Finding 5 reported 75% as the working budget. That was an artefact of the retention curve
+sampling only 5/10/15/25/50/75% — it showed "no" at 50 and "yes" at 75 and I read the requirement
+as 75. The needle's actual **rank** under each selector gives the floor exactly:
+
+| selector | needle rank | keep needed | KV saved at that budget |
+|---|---|---|---|
+| self-attn (agnostic) | 195 / 329 | 196 (59.6%) | 40.4% |
+| key-norm | 235 / 329 | 236 (71.7%) | 28.3% |
+| self-attn + sink guard | 191 / 329 | 192 (58.4%) | **41.6%** |
+
+Confirmed by running at 60% and 65%:
+
+| keep | KV saved | arm | Q2 emitted | Δ nll |
+|---|---|---|---|---|
+| 60% | 36.6% | **2c query-attn (mid layers)** | **`0x9AF4_STACK_FAIL`** ✅ | **+0.051** |
+| 60% | 36.6% | 4a self-attn (agnostic) | `0x9AF.` ◐ | +0.558 |
+| 65% | 31.9% | **2c query-attn (mid layers)** | **`0x9AF4_STACK_FAIL`** ✅ | **+0.099** |
+| 65% | 31.9% | 4b self-attn + sink guard | `0x9AF.` ◐ | +0.387 |
+| 60% | 36.6% | 4c (4b, no rotation) | *"You are not allowed to continue."* ❌ | +2.010 |
+
+**The saving figure improves from 22.7% to 36.6% of KV memory**, with the query-aware selector
+producing the complete literal at +0.051 nats — essentially baseline.
+
+### A rank is a better instrument than a pass/fail curve
+
+A curve answers "does it work at this budget"; a rank answers "how much budget does it need",
+which is the question a tuning decision turns on. The curve said 75%; the rank said 59.6% and was
+right. **Report the rank, not just the curve.** The two agree on the binary and disagree by 15
+points on the number.
+
+Rotation remains mandatory at every budget measured: at 60% with the same kept set, switching it
+off changes the answer from the exact code to a refusal loop, worth +2.010 nats.
 
 ## Limits
 
