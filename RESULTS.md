@@ -363,6 +363,48 @@ quantisation delta is real and large enough to flip a verdict, and **any 7B numb
 reported alongside the precision it was measured at.** Treating 8-bit as "the same experiment,
 smaller" would be wrong.
 
+## Finding 11 — a silent RoPE fallback would have invalidated every rotation number
+
+Found while pre-flighting the 7B config. `Qwen2.5-7B` declares `rope_theta = 1000000`, and the
+0.5B does too — but **in transformers 5.17 `rope_theta` is not a top-level config attribute.** It
+lives inside `rope_parameters`:
+
+```
+to_dict() rope keys: {'rope_parameters': {'rope_theta': 1000000.0, 'rope_type': 'default'}}
+```
+
+`getattr(cfg, "rope_theta", None)` therefore returns `None`, and the harness's ORIGINAL code
+silently fell back to `theta = 10000.0` — a 100x error in every rotary frequency. Nothing in the
+existing verification could have caught it:
+
+- **The identity control passes anyway.** `R(0) = I` for *any* theta, so "keep everything and
+  rotate" reproduces the baseline exactly no matter how wrong the frequency table is.
+- **The `R(a)R(b) = R(a+b)` self-check passes anyway.** That identity is a property of rotations
+  in general, not of the correct theta.
+
+So the two checks that look like they validate the rotation both do not. The only thing that
+validates it is comparing against the model's own table, which is now what happens:
+
+```python
+ref = model.model.rotary_emb.inv_freq          # the authority
+if not torch.allclose(rope.inv_freq, ref): raise SystemExit(...)
+```
+
+**Measured on the 0.5B: my `inv_freq` now matches the model's exactly** (`allclose`, first three
+entries `1.0, 0.6493816375732422, 0.4216965138912201` identical, implied theta 1e6). The fallback
+is gone: an undeterminable theta **stops the run** rather than guessing, because a guess here is
+invisible downstream.
+
+The luck is worth stating plainly. The earlier results used the wrong theta for the config-read
+path, and they are only trustworthy because the `Rope` object that the arms actually used was
+built from a value that happened to resolve to 1e6. That is not a property to rely on, and it is
+replaced by an assertion.
+
+**Generalisable rule: a control that passes for degenerate reasons is not a control.** Both of this
+harness's rotation checks are insensitive to the parameter they appear to guard. Whenever a check
+passes on the first try and the thing it guards is a constant, test that the constant is wrong and
+confirm the check fails.
+
 ## Limits
 
 - **0.5B model.** It degenerates under mild perturbation (`1.0.0.0.0.0` loops). Absolute quality is

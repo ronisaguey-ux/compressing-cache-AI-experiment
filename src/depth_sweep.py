@@ -71,13 +71,16 @@ def main():
     ap.add_argument("--mode", required=True,
                     choices=["baseline", "posnorm", "line", "both"])
     ap.add_argument("--keep-frac", type=float, default=0.60)
+    ap.add_argument("--model", default=None,
+                    help="override the model id (e.g. Qwen/Qwen2.5-7B)")
     ap.add_argument("--check-causal", action="store_true",
                     help="also score WITH a causal mask, to prove the scorer is non-causal")
     args = ap.parse_args()
 
-    T.require_memory(3500, "depth=%.2f mode=%s" % (args.depth, args.mode))
+    T.require_memory(9000 if (args.model and "7B" in args.model) else 3500,
+                "depth=%.2f mode=%s model=%s" % (args.depth, args.mode, args.model or "default"))
 
-    h = T.Harness()
+    h = T.Harness(args.model) if args.model else T.Harness()
     log = log_at(args.depth)
     text = SYS + "<|im_start|>user\n<build_log>\n" + log + "\n</build_log><|im_end|>\n"
     c0 = len(h.tok(SYS, add_special_tokens=False)["input_ids"])

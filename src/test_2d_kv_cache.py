@@ -206,17 +206,59 @@ class Rope:
 
 
 def detect_rope(model, head_dim):
-    """Get rotary theta + head_dim from the model config; fail loud if absent."""
+    """Build the RoPE table and PROVE it matches the model's own rotary embedding.
+
+    Reading theta out of the config is not reliable: on this transformers version
+    `config.rope_theta` is absent as an attribute while the value lives in
+    `rope_parameters`, so a getattr-and-default silently produced theta=10000 for a
+    model that uses 1e6. Nothing downstream would have complained -- the identity
+    control still passes, because R(0) = I for ANY theta, and the R(a)R(b)=R(a+b)
+    self-check holds for any theta too. A wrong frequency table would have quietly
+    corrupted every rotation measurement in the report.
+
+    So the config value is only a hint. The authority is the model's own inv_freq,
+    and a mismatch is fatal rather than a fallback.
+    """
     cfg = model.config
-    theta = getattr(cfg, "rope_theta", None)
-    if theta is None:
-        rope_scaling = getattr(cfg, "rope_scaling", None)
-        if isinstance(rope_scaling, dict):
-            theta = rope_scaling.get("rope_theta") or rope_scaling.get("base")
-    if theta is None:
-        theta = 10000.0
+    theta = None
+    for src in (getattr(cfg, "rope_theta", None),
+                (cfg.to_dict().get("rope_theta") if hasattr(cfg, "to_dict") else None),
+                (getattr(cfg, "rope_parameters", None) or {}).get("rope_theta")
+                if isinstance(getattr(cfg, "rope_parameters", None), dict) else None,
+                (getattr(cfg, "rope_scaling", None) or {}).get("rope_theta")
+                if isinstance(getattr(cfg, "rope_scaling", None), dict) else None):
+        if src is not None:
+            theta = float(src)
+            break
     hd = getattr(cfg, "head_dim", None) or head_dim
-    return Rope(hd, float(theta)), float(theta), int(hd)
+    if theta is None:
+        # Deliberately NOT defaulting to 10000: a guess here silently invalidates
+        # every rotation number, so an unknown theta must stop the run.
+        raise SystemExit(
+            "cannot determine rope_theta from the config; refusing to guess. "
+            "Provide it explicitly or set CCAI_ROPE_THETA.")
+
+    rope = Rope(int(hd), float(theta))
+
+    # The authority: the model's real rotary table.
+    ref = None
+    for path in (lambda: model.model.rotary_emb.inv_freq,
+                 lambda: model.model.layers[0].self_attn.rotary_emb.inv_freq):
+        try:
+            ref = path()
+            break
+        except Exception:
+            continue
+    if ref is None:
+        raise SystemExit("cannot read the model's rotary inv_freq; refusing to guess.")
+    ref = ref.detach().float().reshape(-1)
+    mine = rope.inv_freq.float().reshape(-1)
+    if mine.shape != ref.shape or not torch.allclose(mine, ref, atol=1e-7, rtol=1e-5):
+        raise SystemExit(
+            "RoPE table does NOT match the model. config theta=%r gives inv_freq[:2]=%s "
+            "but the model uses %s. Every rotation number would be meaningless."
+            % (theta, [float(x) for x in mine[:2]], [float(x) for x in ref[:2]]))
+    return rope, float(theta), int(hd)
 
 
 # ---------------------------------------------------------------------------
