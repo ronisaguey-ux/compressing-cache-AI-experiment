@@ -427,3 +427,47 @@ and 21 reached from a different direction.
 
 Artifact: `modal/scratchpad.py`. Cost: this run was UNINSTRUMENTED (imported `track()` and never
 called it); the wrapper is now applied so future runs record.
+
+## Finding 41 (2026-09-30) — the RECOMPUTE path DOES close the state-update case
+
+**The open defect from Finding 40 is solvable, and this is the measurement.** Three arms, identical
+randomised task (three sequential moves, three distinct places from ten, two different actors),
+same final question, 10 trials per model:
+
+| arm | qwen2.5-7b | mistral-7b-instruct |
+|---|---|---|
+| **full** (every block, one causal sequence — upper bound) | 100% | 100% |
+| **block** (block table + contiguity fix — the shipped runtime) | **30%** | **10%** |
+| **recompute** (survivors re-prefilled as ONE contiguous span) | **100%** | **100%** |
+
+**⇒ ASSEMBLING INDEPENDENTLY-PREFILLED BLOCKS CANNOT PERFORM A SEQUENTIAL STATE UPDATE, AND
+RE-PREFILLING THE SURVIVORS AS ONE SEQUENCE CAN.** Both `block` arms fail in the same way — they
+answer with an EARLIER place (`garden shed`, `kitchen drawer`, `hallway closet`) or with nothing
+(`The blue key`), never the last one. The recompute arm answers the final place on every trial of
+both models.
+
+**★ THE COST, IN RAW COMPUTE (measured per query, averaged):**
+
+| | qwen2.5-7b | mistral-7b-instruct |
+|---|---|---|
+| block — prefill tokens | 22 | 17 |
+| recompute — prefill tokens | 73 | 73 |
+| block — wall | 34.2 ms | 35.0 ms |
+| recompute — wall | 39.7 ms | 42.5 ms |
+| block — resident KV | 6.0 MB | 12.3 MB |
+| recompute — resident KV | 5.8 MB | 12.4 MB |
+
+**The recompute path costs ~3.3-4.3x the prefill tokens per query and ~16-21% more wall clock.**
+It buys 10-30% → 100% correctness. **This is the same trade Findings 18 and 21 priced from the
+drift direction**: correctness costs a re-prefill of the surviving text, and the block table's
+zero-recompute eviction is exactly what forfeits the update.
+
+**★ SO THE DESIGN SPLITS BY OPERATION, AND THAT IS THE USABLE RESULT:**
+| operation | correct engine | why |
+|---|---|---|
+| lookup / concatenation across blocks | **block table** (contiguity fix) | 10/10 at 3.3x cheaper; no cross-block dependency beyond the join |
+| sequential state update across blocks | **recompute** | independent prefills cannot carry a later fact that must supersede an earlier one |
+
+**Verified non-vacuous:** the `full` arm is 100% on both models, so the task IS answerable and the
+block arm's failure is attributable to the assembly rather than to the model. The task is
+randomised per trial so no answer is memorisable. Artifact: `modal/recompute_state.py`.
