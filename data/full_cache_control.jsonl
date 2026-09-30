@@ -1,0 +1,12 @@
+{"arm": "full", "kv_saved_pct": 0.0, "pass_": true, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL.", "depth": 0.15, "c1": 899, "needle_rel": 414, "sec": 16.2}
+{"arm": "identity", "kv_saved_pct": 0.0, "pass_": true, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL.", "depth": 0.15, "c1": 899, "needle_rel": 414, "sec": 19.4}
+{"depth": 0.15, "arm": "evict", "c1": 899, "needle_rel": 414, "rank": 356, "keep": 539, "needle_kept": true, "kv_saved_pct": 34.01, "pass_": false, "answer": "The failure code in the build log is 0x0000000000000", "sec": 36.8}
+{"arm": "full", "kv_saved_pct": 0.0, "pass_": true, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL.", "depth": 0.35, "c1": 1421, "needle_rel": 936, "sec": 21.9}
+{"arm": "identity", "kv_saved_pct": 0.0, "pass_": true, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL.", "depth": 0.35, "c1": 1421, "needle_rel": 936, "sec": 25.3}
+{"depth": 0.35, "arm": "evict", "c1": 1421, "needle_rel": 936, "rank": 493, "keep": 852, "needle_kept": true, "kv_saved_pct": 36.16, "pass_": true, "answer": "The failure code in the build log is 0x9AF4. This indicates that there was an error during", "sec": 49.8}
+{"arm": "full", "kv_saved_pct": 0.0, "pass_": true, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL.", "depth": 0.55, "c1": 1953, "needle_rel": 1468, "sec": 28.7}
+{"arm": "identity", "kv_saved_pct": 0.0, "pass_": true, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL.", "depth": 0.55, "c1": 1953, "needle_rel": 1468, "sec": 32.3}
+{"depth": 0.55, "arm": "evict", "c1": 1953, "needle_rel": 1468, "rank": 361, "keep": 1171, "needle_kept": true, "kv_saved_pct": 37.2, "pass_": false, "answer": "arian\narian\narian\narian\narian\narian\narian\narian\narian\narian\narian\narian", "sec": 67.2}
+{"arm": "full", "kv_saved_pct": 0.0, "pass_": true, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL.", "depth": 0.75, "c1": 2182, "needle_rel": 1697, "sec": 31.2}
+{"arm": "identity", "kv_saved_pct": 0.0, "pass_": true, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL.", "depth": 0.75, "c1": 2182, "needle_rel": 1697, "sec": 34.7}
+{"depth": 0.75, "arm": "evict", "c1": 2182, "needle_rel": 1697, "rank": 389, "keep": 1309, "needle_kept": true, "kv_saved_pct": 37.46, "pass_": true, "answer": "The failure code in the build log is 0x9af4_stack_fail. This indicates that there was an e", "sec": 73.9}

@@ -514,6 +514,78 @@ attention.
 RoPE high-frequency phase clash and "line pooling averages out phase noise" remain open,
 and both predict a positional gradient that this data does not show.
 
+## Finding 14 — the missing control: compaction IS the cause, and there is no shallow-depth problem
+
+**Every result in this document up to now compared one compaction mode against another.
+`src/full_cache_control.py` adds the control that was missing: the identical prompt and
+needle position with NO compaction at all.**
+
+| depth | full (no eviction) | identity (keep all + rotate) | evict (60% + re-rotation) |
+|---|---|---|---|
+| 0.15 | **PASS** | **PASS** | fail |
+| 0.35 | **PASS** | **PASS** | PASS |
+| 0.55 | **PASS** | **PASS** | fail |
+| 0.75 | **PASS** | **PASS** | PASS |
+
+**Three conclusions, and the first one forces a correction.**
+
+**1. The uncompacted cache passes at EVERY depth — including 15%.** The prompt is fine.
+The needle position is fine. There is no shallow-depth retrieval problem and there never
+was one. Every earlier statement about "the 15% failure" — including Finding 12's claim
+that the shallow position is a non-capacity *mechanism* — was describing a failure that
+compaction causes, not one that the layout causes. **Finding 12's "two causes" framing is
+withdrawn**: there is one cause (compaction) whose severity varies with layout, and scaling
+the model reduces how often it bites. The depth axis is not special; it is merely how the
+layout was varied.
+
+**2. `identity` equals `full` at all four depths.** Keeping everything and re-rotating by
+zero displacement is a behavioural no-op, which is a second, stronger check on the rotation
+path than `R(0)=I` (Finding 11's trap: an identity that holds for degenerate reasons proves
+nothing; this one is exercised against real attention and still matches).
+
+**3. Compaction is the cause, and no scalar metric predicts when it fails.**
+
+| depth | c1 | needle pos | rank | keep | margin | verdict |
+|---|---|---|---|---|---|---|
+| 0.15 | 899 | 414 | **356** (best) | 539 | 183 | **fail** |
+| 0.35 | 1421 | 936 | **493** (worst) | 852 | 359 | **PASS** |
+| 0.55 | 1953 | 1468 | 361 | 1171 | 810 | **fail** |
+| 0.75 | 2182 | 1697 | 389 | 1309 | 920 | **PASS** |
+
+**The best-ranked needle fails and the worst-ranked needle passes.** Rank, margin,
+attention mass (Finding 13) and line contiguity (below) all fail to predict the verdict.
+The pattern is a clean alternation **F P F P** which is either 0.5B instability at the
+edge of competence or a periodicity none of these instruments can see. It is stated, not
+explained.
+
+**What this leaves standing.** Retention is *necessary* (across 41 recorded rows, the
+needle was never once absent from the cache and the answer correct — `needle gone + PASS`
+is 0) but not *sufficient* (17 rows retained it and still failed). The failure mode is
+consistent: the model produces the correct **frame** with a wrong **value** — `"The failure
+code in the build log is 1."`, `"...is 0x9999999999999"`, `"...was 00:03:41."` It knows the
+question and the answer's shape; it does not reproduce `0x9AF4_STACK_FAIL`.
+
+So the question is no longer "which tokens should we keep" (that is measurable and mostly
+solved) but **"what property of the retained SET makes it usable"** — a property that none
+of rank, mass, or contiguity captures.
+
+## Finding 13b — sequence fragmentation is REFUTED (my own hypothesis)
+
+The frame-with-wrong-value symptom suggested the code `0x9AF4_STACK_FAIL` was arriving as
+fragments: token-level top-k keeps high-scoring tokens and drops the ones between them, so
+the model sees `0x` and `4` and invents a plausible digit. `src/fragmentation.py` measures
+the needle line's survival directly (`line_tokens_kept`, `max_run`, `line_intact`).
+
+**Refuted.** The needle's whole 16-token line survived intact in **11 of 12** rows, and the
+pass rate among intact rows is still **45% (5/11)** — identical to the pass rate among rows
+where the needle token itself was retained. `line_intact`, `max_run >= 3` and `needle_kept`
+produce the *same* partition, so contiguity carries no information the retention flag did
+not already carry.
+
+The one row where the line was genuinely broken (`posnorm`, 0.15: 12 of 16 tokens, longest
+run 7) failed — consistent with fragmentation mattering *when it happens*, but it happens
+once in twelve, so it is not the mechanism behind the other failures.
+
 ## Limits
 
 - **The 7B column is 8-bit and covers three of four depths.** Quantisation changes numerics
