@@ -1,4 +1,13 @@
-"""Cost accounting for Modal GPU runs — Bob asked to "log the cost differences in compute per thing".
+"""BUDGET MONITORING ONLY -- not the cost metric.
+
+★ OWNER DIRECTIVE (2026-09-30): *"dont calculate cost based on modal, calculate it based on raw
+compute metrics"*. A vendor price list is a property of one vendor on one day, so a cost expressed
+in dollars cannot be compared against another runtime, another GPU, or next quarter's pricing.
+**The reported cost for this project is `modal/compute_metrics.py`**: prefill tokens, attention
+pairs, FLOPs, wall-clock, KV bytes. Compute is the transferable quantity.
+
+This file is kept ONLY so the spend against the $30 credit is visible while running experiments.
+Do not quote its output in a result.
 
 WHY A LEDGER AND NOT AN ESTIMATE. Every number in this project is measured, and cost should be
 no different. Modal bills per GPU-second, so the honest quantity is wall-clock spent inside the
