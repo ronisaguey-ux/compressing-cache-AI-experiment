@@ -18,22 +18,38 @@ index at the end of this file.
 ```
 1. prefill the full sequence, capturing per-token self-attention
 2. score the evictable region by the attention each token receives
-3. keep the top 60%
-4. build the shortened sequence and run a FRESH FORWARD PASS over it
-5. decode against that
+3. keep the first 15% of that region outright, then the top attention-scoring remainder
+4. take the pristine leading KV prefix from the original cache (up to the first eviction)
+5. forward only the rest against it, with cache_position resuming at the prefix length
+6. decode against that
 ```
 
-KV memory drops 34–37%. Retrieval holds at every depth measured. There is no rotation step, no
-per-layer band, no line pooling, and no conditioning patch — all four were tried, and all four
-turned out to be unnecessary once step 4 was done correctly.
+KV memory drops 34–37%. Retrieval holds at every depth measured, on the 0.5B and the 7B. There
+is no rotation step, no per-layer band, no line pooling, and no conditioning patch — all four
+were tried, and all four turned out to be unnecessary once the cache was built by a correct
+forward pass rather than by surgery.
 
 ## What this costs
 
 The recompute is the price. For a single request the sequence is prefilled twice — once to
 score, once compacted — in exchange for a smaller decode-time cache. That is worth it for long
-generations and not for short ones. For prefix-cache reuse, where the point is to avoid a
-recompute at all, this method does not apply: avoiding the recompute is exactly what the
-rotation approach was for, and it does not work.
+generations and not for short ones.
+
+**Part of that cost can be recovered without any new mechanism.** Causal attention runs
+left-to-right, so any token whose whole prefix survived untouched has the same hidden state and
+the same RoPE phase as in the uncompacted run — the leading `k` entries of the original cache
+are pristine and need not be recomputed. Slice them off, forward only what remains with
+`cache_position` starting at `k`, and the recompute shrinks. That is Finding 21, worth **7.7%
+wall-clock** as measured.
+
+The size of the win is set by the *selection pattern*, not the caching code. Scattered top-k
+evicts early, so the pristine prefix is short. Force-keeping the first 15% of the evictable
+region triples the reusable prefix (9.2% → 28.4%) **at no cost in retrieval** — Finding 22.
+That is the recommended configuration.
+
+For prefix-cache reuse across *requests*, where the point is to avoid a recompute at all, this
+method still does not apply: avoiding the recompute is exactly what the rotation approach was
+for, and it does not work.
 
 ## Run it
 
@@ -51,6 +67,8 @@ runs are 8-bit and need ~10 GB. CPU only, no CUDA, no vLLM, no Triton — delibe
 | `src/selectors_corrected.py` | selector comparison **against the corrected pipeline** |
 | `src/cache_vs_native.py` | how far the cache tensors drift from a correct forward |
 | `src/native_7b.py` | the 7B confirmation, three failure modes separated |
+| `src/prefix_cache.py` | prefix-preserving re-prefill; asserts the prefix is bit-identical |
+| `src/prefix_tradeoff.py` | reuse vs retrieval as the forced-prefix fraction varies |
 | `src/sink_probe.py` | where attention mass actually goes |
 | `src/decode_divergence.py` | first token where a compacted decode diverges from full |
 | `src/depth_sweep.py` | the original depth sweep, rotation pipeline |
@@ -91,6 +109,8 @@ work.
 | **18** | **the root cause** — cache surgery, not selection |
 | **19** | the 7B separates selection failure from rotation failure |
 | **20** | **with the pipeline fixed, the selector barely matters** |
+| **21** | prefix-preserving re-prefill: exact (bit-identical, not cosine), correct, worth 7.7% |
+| **22** | **the selection pattern is the lever** — force 15% of chunk 1, 3x the reuse, verdicts unchanged |
 
 ## Prior art
 
