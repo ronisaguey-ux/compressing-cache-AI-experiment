@@ -15,7 +15,7 @@ ARMS:
   control   both blocks in ONE causal sequence, no blocks          can the model do it at all?
   vanilla   surviving blocks in one causal sequence, no distractor  can it do it without the spam?
   runtime   block table, middle EVICTED, query as its own tier      the actual claim
-  gap       block table, block 3 ADJACENT to block 1 (no gap)       F35's control: is it the gap?
+  gap       block table, survivors RE-INDEXED CONTIGUOUSLY (the Finding 37 fix)       F35's control: is it the gap?
 
 ★ THE `gap` ARM IS THE ONE THAT SEPARATES THE TWO CAUSES and it is included per trial, not just
 once. If `gap` passes and `runtime` fails across trials, the eviction GAP is the defect. If both
@@ -152,7 +152,7 @@ def run_trials(model: str = "qwen2.5-7b", trials: int = 10, spam_lines: int = 60
                  if use_chatml else Q + " [/INST]")
         qids = tok(qturn, add_special_tokens=False)["input_ids"]
 
-        r_tbl = TC.concat_caches([g_cache, blk[0], blk[2]])
+        r_tbl = TC.concat_caches([g_cache, blk[0], blk[2]])  # GAPPED: the shipped behaviour
         ids_t = torch.tensor([qids], dtype=torch.long, device=dev)
         p = torch.arange(total, total + len(qids), dtype=torch.long, device=dev)
         with torch.no_grad():
@@ -173,7 +173,7 @@ def run_trials(model: str = "qwen2.5-7b", trials: int = 10, spam_lines: int = 60
                   position_ids=torch.tensor([p_adj], dtype=torch.long, device=dev),
                   cache_position=torch.tensor(p_adj, dtype=torch.long, device=dev))
         blk3_adj = TC.slice_cache(o.past_key_values, G, G + len(b3_ids))
-        g_tbl = TC.concat_caches([g_cache, blk[0], blk3_adj])
+        g_tbl = TC.assemble_contiguous(g_cache, [blk[0], blk3_adj])
         qpos_adj = G + n1 + n3
         p2 = torch.arange(qpos_adj, qpos_adj + len(qids), dtype=torch.long, device=dev)
         with torch.no_grad():

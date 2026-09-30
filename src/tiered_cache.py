@@ -152,6 +152,41 @@ def build_table(h, global_text, chunks, verbose=True):
     return g_ids, global_cache, blocks, pos, G, cur
 
 
+def assemble_contiguous(g_cache, kept_blocks):
+    """Assemble the table with survivors RE-INDEXED CONTIGUOUSLY over the global anchor.
+
+    ★ THIS IS THE FINDING 37 FIX, and it is the difference between 0/10 and 10/10 on the
+    cross-block join (10 randomised trials, Qwen2.5-7B and Mistral-7B-Instruct).
+
+    The bug it repairs: `build_table` gives every block a DISJOINT range in POSITION space, so
+    evicting a middle block leaves a hole. With the distractor gone the table holds ~90 rows but
+    block 3's keys still carry position ids ~3300, and block 1's carry ~60. RoPE is relative, so
+    the query lands ~3200 positions from block 1 instead of ~60 -- the geometry of a context that
+    still CONTAINS the distractor, with the content removed. Block 1 falls out of range and the
+    join fails.
+
+    ★ WHY RE-INDEXING IS LEGAL HERE. Each block's KV was produced in its own forward pass, so its
+    keys are a function of its own tokens and its own position ids only -- never of another
+    block's. Applying a constant offset to a block's position ids would change every key, but
+    moving the ASSEMBLY so the survivors occupy a contiguous span is exactly what a context with
+    no eviction would look like. The survivors stay bit-identical; only the gap closes.
+
+    ⚠️ A caller that re-indexes must ALSO position the query contiguously (at the assembled
+    length), not at the original `total`. `generate(h, tbl, qids, cache_len(tbl))` does that.
+    """
+    from transformers import DynamicCache
+    live = [c for c in [g_cache] + list(kept_blocks) if c is not None and len(c.layers) > 0]
+    if not live:
+        return DynamicCache()
+    n_layers = len(live[0].layers)
+    data = []
+    for li in range(n_layers):
+        k = torch.cat([c.layers[li].keys for c in live], dim=2).contiguous()
+        v = torch.cat([c.layers[li].values for c in live], dim=2).contiguous()
+        data.append((k, v))
+    return DynamicCache(ddp_cache_data=data)
+
+
 def generate(h, cache, qids, qpos, max_new=24):
     dev = h.model.device
     ids = torch.tensor([qids], dtype=torch.long, device=dev)
