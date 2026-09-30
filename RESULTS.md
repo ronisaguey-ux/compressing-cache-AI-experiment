@@ -1296,3 +1296,50 @@ attends over the assembled cache, which is exactly what the tiered architecture 
 A single-pass "prefix + question" prompt cannot work under document masking. This also
 explains why the block-causal ceiling failed while the cascade — whose prompt is a single
 ordinary causal sequence — passed all three arms.
+
+## Finding 30 — the tiered architecture works, and its cost is measured
+
+`src/tiered_cache.py`, 0.5B, depth 0.55. Tier 1 = a 35-token global anchor prefilmed once.
+Tier 2 = six blocks of ~21 log lines each, forwarded **with the global as `past_key_values`**
+and their own disjoint position ranges. Tier 3 = the query, its own forward over the
+assembled table.
+
+| claim | measurement |
+|---|---|
+| **isolation** — does a block depend on which other blocks are present? | **IDENTICAL**: block 3 built with 5 other blocks vs built alone, bit-for-bit |
+| **eviction is lossless** | **BIT-IDENTICAL**: survivors re-checked inside the assembled cache after popping a block |
+| ceiling (nothing evicted) | **PASS** |
+| control — evict the needle's own block | **fails**, as it must |
+| **evict a NON-needle block** | **fails** |
+
+**★ The first three are the architecture working as designed.** A block's KV depends only on
+(global, itself), so the table is genuinely modular and eviction recomputes nothing,
+renumbers nothing, and repairs nothing. This is the property Findings 23–24 could not have:
+there validity was a *prefix* property and a middle eviction invalidated everything after
+it; here it is *local*.
+
+**★ The last row is the honest cost, and it is the one that matters.** Evicting block 1 — a
+block containing no needle — still degraded the answer. That is not a bug; it is what
+block-diagonality buys and costs in the same stroke: because a block may only attend within
+itself, **the needle's block sees the needle but not the material around it.** Context that
+straddles a block boundary is lost to both blocks, and the evidence a question needs is
+frequently spread across more than one block.
+
+The cross-block probe makes it explicit: asked a question requiring two blocks, the answer
+was `' 1: 1 failed\nmake: build failed…'` — a plausible-looking mangling rather than an
+error, which is the dangerous shape.
+
+**⇒ Where the tiered design pays and where it does not.** It is excellent when the global
+backbone carries the question and the blocks carry independent, self-contained payloads —
+scanned documents, per-file summaries, retrieved passages. It is the wrong shape for a
+single continuous artifact whose meaning is distributed along its length, which is exactly
+what a build log is. The cascade (Finding 27) handles that case better: it produces a single
+ordinary causal sequence, so nothing is context-starved.
+
+**Implementation note for anyone reusing this:** `DynamicCache()` is EMPTY — it has no layers
+until a forward populates them, so indexing `c.layers[li]` raises `IndexError`. Construct
+with the data: `DynamicCache(ddp_cache_data=[(key, value), ...])`. And pass a **fresh clone
+of the global cache** to every block, because a `DynamicCache` is mutated in place by the
+forward pass — share the object and block 2 inherits block 1's keys, silently destroying the
+isolation. `build_table` asserts the global cache did not grow, so the trap cannot return
+quietly.

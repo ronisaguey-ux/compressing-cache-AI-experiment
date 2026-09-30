@@ -63,28 +63,33 @@ def forward(h, ids, past=None, position_ids=None):
 
 
 def slice_cache(cache, lo, hi):
-    """Deep copy of cache positions [lo, hi) into a fresh DynamicCache."""
+    """Fresh DynamicCache holding positions [lo, hi).
+
+    ★ `DynamicCache()` is EMPTY -- it has no layers until a forward populates them, so
+    indexing `c.layers[li]` on a fresh one raises IndexError (which is how the first
+    version of this file failed). The constructor takes the data directly:
+    `DynamicCache(ddp_cache_data=[(key, value), ...])`.
+    """
     from transformers import DynamicCache
-    c = DynamicCache()
-    for li in range(len(cache.layers)):
-        c.layers[li].keys = cache.layers[li].keys[:, :, lo:hi, :].contiguous().clone()
-        c.layers[li].values = cache.layers[li].values[:, :, lo:hi, :].contiguous().clone()
-    return c
+    data = [(cache.layers[li].keys[:, :, lo:hi, :].contiguous().clone(),
+             cache.layers[li].values[:, :, lo:hi, :].contiguous().clone())
+            for li in range(len(cache.layers))]
+    return DynamicCache(ddp_cache_data=data)
 
 
 def concat_caches(caches):
     """Concatenate several caches along the sequence axis, in the given order."""
     from transformers import DynamicCache
-    if not caches:
+    live = [c for c in caches if c is not None and len(c.layers) > 0]
+    if not live:
         return DynamicCache()
-    out = DynamicCache()
-    n_layers = len(caches[0].layers)
+    n_layers = len(live[0].layers)
+    data = []
     for li in range(n_layers):
-        k = torch.cat([c.layers[li].keys for c in caches], dim=2).contiguous()
-        v = torch.cat([c.layers[li].values for c in caches], dim=2).contiguous()
-        out.layers[li].keys = k
-        out.layers[li].values = v
-    return out
+        k = torch.cat([c.layers[li].keys for c in live], dim=2).contiguous()
+        v = torch.cat([c.layers[li].values for c in live], dim=2).contiguous()
+        data.append((k, v))
+    return DynamicCache(ddp_cache_data=data)
 
 
 def cache_len(cache):
@@ -224,18 +229,29 @@ def main():
 
     # ------------------------------------------------------ 1. isolation / bit-exact
     print()
-    print("1. ISOLATION — recompute a block in a DIFFERENT table order and compare")
-    # rebuild with the blocks in reverse; each block's own KV must be unchanged
-    rev_chunks = list(reversed(chunks))
-    _, _, rblocks, rpos, _, _ = build_table(h, global_text, rev_chunks, verbose=False)
+    print("1. ISOLATION — does a block depend on WHICH OTHER blocks are in the table?")
+    # ★ HOLD THE BLOCK'S OWN POSITIONS FIXED. The first version of this test compared a
+    # chunk built at one position range against the same chunk built at another, and
+    # reported DIFFERS -- which is correct and meaningless, because RoPE is a function of
+    # absolute position, so moving a block legitimately changes its keys. That tests
+    # position-dependence, not isolation. The real question is whether the PRESENCE of
+    # other blocks changes this one.
     bi = args.needle_block if args.needle_block < len(blocks) else 0
-    # find the same chunk in the reversed table
-    ri = len(chunks) - 1 - bi
-    same = eq(blocks[bi], rblocks[ri])
-    print("     block %d (forward) vs same chunk built at a different table position: %s"
-          % (bi, "IDENTICAL" if same else "DIFFERS"))
-    print("     => %s" % ("blocks are order-independent; the table is genuinely modular"
-                          if same else "blocks DEPEND on table order -- isolation claim fails"))
+    if blocks[bi] is None:
+        same = None
+        print("     target block empty; skipped")
+    else:
+        c_ids = h.tok(chunks[bi], add_special_tokens=False)["input_ids"]
+        p_only = list(range(pos[bi][0], pos[bi][0] + len(c_ids)))
+        # built with ONLY the global behind it -- no other block exists
+        o_alone = forward(h, c_ids, past=slice_cache(g_cache, 0, G), position_ids=p_only)
+        alone = slice_cache(o_alone.past_key_values, G, G + len(c_ids))
+        same = eq(blocks[bi], alone)
+        print("     block %d built with 5 other blocks present vs built alone: %s"
+              % (bi, "IDENTICAL" if same else "DIFFERS"))
+        print("     => %s" % ("a block's KV depends only on (global, itself) -- the table "
+                              "is genuinely modular" if same else
+                              "other blocks influence this one -- isolation FAILS"))
 
     # ------------------------------------------------------ 2. eviction is lossless
     print()
@@ -259,10 +275,10 @@ def main():
 
     print()
     print("3. RETRIEVAL — the needle is in block %s, we evict block %d" % (needle_chunk, victim))
-    ans_keep, _ = generate(h, slice_cache(assembled, 0, cache_len(assembled)), qids, qpos)
+    ans_keep = generate(h, slice_cache(assembled, 0, cache_len(assembled)), qids, qpos)
     ok_keep = "9AF4" in ans_keep.upper().replace(" ", "")
     print("     evict a NON-needle block : %s   %r" % ("PASS" if ok_keep else "fail", ans_keep[:56]))
-    ans_all, _ = generate(h, slice_cache(all_assembled, 0, cache_len(all_assembled)), qids, qpos)
+    ans_all = generate(h, slice_cache(all_assembled, 0, cache_len(all_assembled)), qids, qpos)
     ok_all = "9AF4" in ans_all.upper().replace(" ", "")
     print("     full table (ceiling)     : %s   %r" % ("PASS" if ok_all else "fail", ans_all[:56]))
 
@@ -274,7 +290,7 @@ def main():
     else:
         k2 = [i for i in range(len(blocks)) if i != needle_chunk and blocks[i] is not None]
         c2 = concat_caches([g_cache] + [blocks[i] for i in k2])
-        ans_no, _ = generate(h, slice_cache(c2, 0, cache_len(c2)), qids, qpos)
+        ans_no = generate(h, slice_cache(c2, 0, cache_len(c2)), qids, qpos)
         ok_no = "9AF4" in ans_no.upper().replace(" ", "")
         print("     evict needle block %d    : %s   %r" % (
             needle_chunk, "PASS" if ok_no else "fail", ans_no[:56]))
@@ -290,7 +306,7 @@ def main():
     # ask something whose evidence is split: the needle's block plus the line naming the file
     xq = "Which file failed to link, and what was the failure code?"
     xq_ids = h.tok(xq, add_special_tokens=False)["input_ids"] + h.tok("\nAnswer:", add_special_tokens=False)["input_ids"]
-    ans_cross, _ = generate(h, slice_cache(assembled, 0, cache_len(assembled)), xq_ids, qpos)
+    ans_cross = generate(h, slice_cache(assembled, 0, cache_len(assembled)), xq_ids, qpos)
     print("     cross-block question: %r" % ans_cross[:70])
     print("     (if this names both the file and the code, the blocks are NOT isolated)")
 

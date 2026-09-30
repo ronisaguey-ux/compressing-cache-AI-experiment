@@ -22,3 +22,88 @@ Traceback (most recent call last):
     c.layers[li].keys = cache.layers[li].keys[:, :, lo:hi, :].contiguous().clone()
     ~~~~~~~~^^^^
 IndexError: list index out of range
+=== tiered rerun 06:46:15 ===
+[heavy_lock] model-small acquired (9372 MB available, need 3500 MB)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights:  38%|███▊      | 111/290 [00:00<00:00, 1043.61it/s]Loading weights:  74%|███████▍  | 216/290 [00:00<00:00, 1033.63it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1007.98it/s]
+====================================================================================
+TIERED ATTENTION  |  model=Qwen/Qwen2.5-0.5B  depth=0.55
+====================================================================================
+  global anchor: 155 chars (system prompt)
+  6 blocks of ~21 lines; needle at line 69 -> block 3
+
+    block 0:  450 tok  positions [35, 485)
+    block 1:  449 tok  positions [485, 934)
+    block 2:  459 tok  positions [934, 1393)
+    block 3:  290 tok  positions [1393, 1683)
+    block 4:  245 tok  positions [1683, 1928)
+    block 5:   48 tok  positions [1928, 1976)
+  global 35 tok + 6 blocks = 1976 tok (query at position 1976)
+
+1. ISOLATION — recompute a block in a DIFFERENT table order and compare
+     block 3 (forward) vs same chunk built at a different table position: DIFFERS
+     => blocks DEPEND on table order -- isolation claim fails
+
+2. EVICTION — pop a block, check survivors are untouched
+     evicted block 1; survivors re-checked inside the assembled cache: BIT-IDENTICAL
+     => eviction is lossless: nothing is recomputed, renumbered, or repaired
+
+3. RETRIEVAL — the needle is in block 3, we evict block 1
+Traceback (most recent call last):
+  File "/tmp/opencode/ccai/src/tiered_cache.py", line 331, in <module>
+    main()
+  File "/tmp/opencode/ccai/src/tiered_cache.py", line 267, in main
+    ans_keep, _ = generate(h, slice_cache(assembled, 0, cache_len(assembled)), qids, qpos)
+    ^^^^^^^^^^^
+ValueError: too many values to unpack (expected 2)
+=== exit=1 06:47:12 ===
+=== tiered rerun 06:48:59 ===
+[heavy_lock] model-small acquired (8945 MB available, need 3500 MB)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights:  30%|███       | 87/290 [00:00<00:00, 828.80it/s]Loading weights:  63%|██████▎   | 184/290 [00:00<00:00, 891.41it/s]Loading weights:  97%|█████████▋| 281/290 [00:00<00:00, 919.00it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 931.37it/s]
+====================================================================================
+TIERED ATTENTION  |  model=Qwen/Qwen2.5-0.5B  depth=0.55
+====================================================================================
+  global anchor: 155 chars (system prompt)
+  6 blocks of ~21 lines; needle at line 69 -> block 3
+
+    block 0:  450 tok  positions [35, 485)
+    block 1:  449 tok  positions [485, 934)
+    block 2:  459 tok  positions [934, 1393)
+    block 3:  290 tok  positions [1393, 1683)
+    block 4:  245 tok  positions [1683, 1928)
+    block 5:   48 tok  positions [1928, 1976)
+  global 35 tok + 6 blocks = 1976 tok (query at position 1976)
+
+1. ISOLATION — does a block depend on WHICH OTHER blocks are in the table?
+     block 3 built with 5 other blocks present vs built alone: IDENTICAL
+     => a block's KV depends only on (global, itself) -- the table is genuinely modular
+
+2. EVICTION — pop a block, check survivors are untouched
+     evicted block 1; survivors re-checked inside the assembled cache: BIT-IDENTICAL
+     => eviction is lossless: nothing is recomputed, renumbered, or repaired
+
+3. RETRIEVAL — the needle is in block 3, we evict block 1
+     evict a NON-needle block : fail   "The error message was: bad value for 'src/vm/stack.o\nci:"
+     full table (ceiling)     : PASS   'The failure code in the build log is 0x9AF4_STACK_FAIL. '
+
+4. CONTROL — evict the needle's OWN block; must fail
+     evict needle block 3    : fail   'The error message indicates that there are no unused par'
+     => correct: without the evidence the answer is gone
+
+5. THE COST — a question that needs TWO blocks cannot be answered
+     (cross-block reasoning is impossible by construction; measured, not assumed)
+     cross-block question: ' 1: 1 failed\nmake: build failed\nmake: build/interpreter\nmake: *** [bui'
+     (if this names both the file and the code, the blocks are NOT isolated)
+
+====================================================================================
+  block order-independence : True
+  eviction lossless        : True
+  retrieval (evict non-needle): fail
+  retrieval (ceiling)      : PASS
+  control (evict needle)   : fail as expected
+  cache after eviction     : 1527 tok  (full table 1976, 77% retained)
+====================================================================================
+
+wrote data/tiered_cache.jsonl
+=== exit=0 06:49:48 ===
