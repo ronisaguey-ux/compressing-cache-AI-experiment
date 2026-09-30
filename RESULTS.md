@@ -726,3 +726,40 @@ generator, which is what it was asked to be.
 ```bash
 python src/test_2d_kv_cache.py --keep-fracs 0.10,0.25,0.50,0.75 --json data/run.json
 ```
+
+## Finding 17 — the needle's saliency signal is in the MID layers, and band selection trades one failure for another
+
+Both agents proposed restricting saliency scoring to the retrieval band. Tested with four
+bands at keep 0.60 (`src/layer_band.py`, 0.5B):
+
+| depth | all (0-24) | **mid (8-18)** | late (15-24) | early (0-8) |
+|---|---|---|---|---|
+| 0.15 | rank 356 fail | **rank 268 PASS** | rank 445 fail | rank 414 fail |
+| 0.35 | rank 493 PASS | rank 366 fail | rank 472 fail | rank 712 fail |
+| 0.55 | rank 361 fail | rank 296 fail | rank 413 fail | rank 322 fail |
+| 0.75 | rank 389 PASS | rank 235 fail | rank 373 fail | rank 733 fail |
+| **pass** | **2/4** | **1/4** | 0/4 | 0/4 |
+
+**Two real results and one that blocks the win.**
+
+**1. The needle's saliency signal lives in the middle of the network, and the ends are
+useless.** `early` never ranks the needle better than 322 and `late` never better than 373;
+`mid` reaches **235**. This independently confirms Finding 1's per-layer table (needle 303rd
+at layer 0, 46th at layer 16) on a different measurement, and it is the sharpest support in
+this document for the retrieval-head account both agents cited.
+
+**2. The mid band fixes depth 0.15 — the first selector in this project to do it.** Rank
+356 → 268 and a fail → **PASS**, with retention unchanged. Every other arm so far has failed
+0.15.
+
+**3. But it is not a win: it breaks 0.35 and 0.75, and the rank/verdict paradox survives.**
+At 0.35 the mid band ranks the needle *better* (366 vs 493) and still **fails** where `all`
+passes. A better rank producing a worse outcome is the same contradiction as Finding 14, and
+it now holds *within a single selection family*. No band improves the pass count; `all`
+remains the best at 2/4.
+
+**Hypothesis status after all of this.** The band result says the selector is not
+irrelevant — it changes which depths pass. It says nothing consistent about *why*. Combined
+with Finding 16 (the needle's KV is not the problem, cached or recomputed) and the four
+refuted scalars, the failure behaves like a fragile readout that different retention sets
+push below or above a threshold with no monotone relationship to any measured property.
