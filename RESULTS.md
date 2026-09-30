@@ -1417,3 +1417,38 @@ problem wearing a scorer's clothes.**
 
 Same shape as Finding 31's 0.5B result — at depth 0.15 the needle is preserved at a 45% budget
 and missed at 30% — so the effect is consistent across both model sizes rather than a 7B quirk.
+
+## Finding 33 — line pooling earns its place at the budget boundary (a partial un-retraction of Finding 20)
+
+Finding 20 concluded that line pooling's advantage was an artefact of the corrupted cache: on
+the 0.5B, through the corrected pipeline, baseline / line / mid-band were all 4/4. The
+conclusion was "the selector is not the lever".
+
+At the 7B's **marginal** budget the picture differs, and the same corrected pipeline is used
+throughout — no rotation, fresh forward over the survivors:
+
+| mode | keep_frac | keep | needle | KV saved | verdict |
+|---|---|---|---|---|---|
+| baseline | 0.60 | 539 | **LOST** | 38.4% | **fail** |
+| baseline | 0.63 | 566 | KEPT | 35.5% | PASS |
+| baseline | 0.66 | 593 | KEPT | 32.6% | PASS |
+| **line** | **0.60** | **539** | **KEPT** | **38.7%** | **PASS** |
+| line | 0.63 | 566 | KEPT | 35.8% | PASS |
+
+**Line pooling passes at 0.60 where per-token scoring fails, and it saves MORE KV doing it
+(38.7% vs 35.5% at the budget baseline needs).** So it is strictly better at this boundary:
+same or better compression, and the failure is gone.
+
+**Why, and it is not reconstruction.** Line pooling keeps whole lines as units, so the needle
+*line* survives intact even when its individual tokens rank just below the cut. Per-token
+scoring can slice a line in half — the needle tokens rank 556, so a 539 budget drops some of
+them. Grouping by line makes the unit atomic, which is exactly what a marginal budget needs.
+
+**⇒ Findings 20 and 33 are both true and they are about different regimes.** Where the budget
+is ample (0.5B, 55–75%) every selector works and the choice is irrelevant. Where the budget is
+**marginal** — the 7B at 15%, deciding by 17–27 tokens — coherence-aware grouping buys real
+robustness for free. The earlier retraction over-generalised from a regime where the budget was
+never tight enough for the selector to matter.
+
+**Practical rule:** use line pooling. It costs nothing where budgets are generous and it is
+strictly better where they are tight.
