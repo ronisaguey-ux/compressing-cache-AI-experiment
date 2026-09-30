@@ -284,10 +284,38 @@ def solve(model: str = "qwen2.5-7b", arm: str = "gold", limit: int = 10, max_tur
         i = t.find("{")
         if i < 0:
             return None, "no JSON object in the reply"
+        body = t[i:]
         try:
-            d, _end = json.JSONDecoder().raw_decode(t[i:])
+            d, _end = json.JSONDecoder().raw_decode(body)
         except Exception as e:
-            return None, "invalid JSON: %s" % e
+            # ★ REPAIR INVALID ESCAPES, because a raw backslash is a COMMON and unambiguous model
+            # error: a regex (`\d+`) or a LaTeX fragment (`\alpha`) written into a JSON string
+            # without doubling. json.loads rejects the whole call with "Invalid \escape", every
+            # turn fails identically, and the arm scores zero for a serialisation detail rather
+            # than for the layout. Doubling a backslash that is not a legal JSON escape can only
+            # turn INVALID json into VALID json -- a document that already parsed is never
+            # touched, which is what makes the repair safe. Same class as the harness's
+            # raw-newline fix.
+            LEGAL = set('"\\/bfnrtu')
+            out = []; k = 0; instr = False
+            while k < len(body):
+                ch = body[k]
+                if ch == '"':
+                    bs = 0; j = k - 1
+                    while j >= 0 and body[j] == "\\":
+                        bs += 1; j -= 1
+                    if bs % 2 == 0:
+                        instr = not instr
+                    out.append(ch); k += 1; continue
+                if instr and ch == "\\":
+                    nxt = body[k + 1] if k + 1 < len(body) else ""
+                    if nxt not in LEGAL:
+                        out.append("\\\\"); k += 1; continue
+                out.append(ch); k += 1
+            try:
+                d, _end = json.JSONDecoder().raw_decode("".join(out))
+            except Exception:
+                return None, "invalid JSON: %s" % e
         if not isinstance(d, dict) or d.get("tool") not in (
                 "read_file", "search", "write_file", "edit_file", "run_tests", "done"):
             return None, "bad or unknown tool"
@@ -335,6 +363,9 @@ def solve(model: str = "qwen2.5-7b", arm: str = "gold", limit: int = 10, max_tur
         # `keep_blocks`, which is what a long-horizon agent loop actually looks like.
         blocks = []
         done = False
+        # initialise OUTSIDE the loop: reading it with locals() inside is fragile and would reset
+        # silently if the assignment ever moved
+        _fail_streak = 0
         for turn in range(max_turns):
             prompt = "".join("<|im_start|>%s\n%s<|im_end|>\n" % (r, c) for r, c in transcript)
             prompt += "<|im_start|>assistant\n"
@@ -342,12 +373,23 @@ def solve(model: str = "qwen2.5-7b", arm: str = "gold", limit: int = 10, max_tur
             call, err = parse(out["text"])
             obs = ""
             if err:
+                _fail_streak += 1
+                fail_streak = _fail_streak
                 obs = ("could not parse your reply (%s). Reply with exactly ONE json object, "
                        "nothing else." % err)
+                # ★ A REPEATED IDENTICAL ERROR MEANS THE CORRECTION IS NOT LANDING. Three turns of
+                # the same parse failure is a loop, and feeding the same sentence a fourth time
+                # wastes the whole turn budget -- measured: the runtime arm sat at an identical
+                # 549-token prompt repeating one error. Show the exact required shape instead.
+                if fail_streak >= 3:
+                    obs += ('\n\nYour last three replies were unparseable. Reply with EXACTLY '
+                            'this shape and no other text:\n'
+                            '{"tool": "search", "query": "sinc", "glob": "*.py"}')
             elif call["tool"] == "done":
                 done = True
                 obs = "acknowledged"
             else:
+                _fail_streak = 0
                 obs = exec_tool(call, inst, venv, f2p)
             turns.append(dict(turn=turn, tool=(call or {}).get("tool"),
                               parse_error=err, ttft_ms=out["ttft_ms"],
