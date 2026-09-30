@@ -45,6 +45,41 @@ GLOBAL_SLOT = "_model_resident"
 # holder's file on its way out -- a premature release.
 _OWNED = {}
 
+# ★ `Harness` calls `heavy_slot(...).__enter__()` directly and NEVER calls `__exit__`, so
+# the lock files were only ever cleaned up by the pid-death reclaim on the NEXT run. That
+# works -- the reclaim is why nothing broke -- but it leaves stale locks lying around and
+# makes an occupied-looking slot for however long the box is idle. Registered once, at
+# import, so every acquisition is released at interpreter exit however the process ends.
+_ATEXIT_REGISTERED = False
+
+
+def _release_all():
+    for path in list(_OWNED):
+        _OWNED[path] = 1
+        _release_one(path)
+
+
+def _register_atexit():
+    global _ATEXIT_REGISTERED
+    if _ATEXIT_REGISTERED:
+        return
+    atexit.register(_release_all)
+    # SIGTERM/SIGINT too: a killed run should not leave the slot occupied either.
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        try:
+            prev = signal.getsignal(sig)
+
+            def _handler(signum, frame, _prev=prev):
+                _release_all()
+                if callable(_prev):
+                    return _prev(signum, frame)
+                raise SystemExit(128 + signum)
+
+            signal.signal(sig, _handler)
+        except Exception:
+            pass
+    _ATEXIT_REGISTERED = True
+
 
 def _mem_available_mb():
     try:
@@ -82,6 +117,7 @@ def _take_one(path, name, need_mb):
     if path in _OWNED:
         _OWNED[path] += 1
         return True
+    _register_atexit()
     os.makedirs(LOCK_DIR, exist_ok=True)
     try:
         fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
