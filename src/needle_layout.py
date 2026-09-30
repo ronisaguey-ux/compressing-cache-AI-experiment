@@ -68,6 +68,11 @@ def main():
     ap.add_argument("--keep-frac", type=float, default=0.60)
     ap.add_argument("--force-frac", type=float, default=0.15)
     ap.add_argument("--json", dest="json_out", default=None)
+    ap.add_argument("--only-policy", default=None,
+                    choices=[None, "middle", "tail"],
+                    help="run ONE policy instead of all three. On the 7B a full "
+                         "3-policy x 5-position sweep is ~2.5 h; the shipped config "
+                         "is middle scatter, so that is usually the only row needed.")
     args = ap.parse_args()
 
     T.require_memory(9000 if "7B" in args.model else 3500, "needle_layout %s" % args.model)
@@ -105,16 +110,19 @@ def main():
         sel1 = sorted(set(range(force)) | {force + int(x) for x in order[:budget].tolist()})
         mid = sorted(set(range(c0)) | {c0 + i for i in sel1})
 
-        r_full = run(h, cache, ids, full, qids, N)
-        r_tail = run(h, cache, ids, tail, qids, N)
-        r_mid = run(h, cache, ids, mid, qids, N)
+        only = args.only_policy
+        r_full = run(h, cache, ids, full, qids, N) if only is None else {"pass_": None, "prefix_len": 0, "reuse_pct": 0.0}
+        r_tail = run(h, cache, ids, tail, qids, N) if only in (None, "tail") else {"pass_": None, "prefix_len": 0, "reuse_pct": 0.0}
+        r_mid = run(h, cache, ids, mid, qids, N) if only in (None, "middle") else {"pass_": None, "prefix_len": 0, "reuse_pct": 0.0}
 
         in_tail = (rel is not None and rel + c0 < keep)
+        def verdict(r):
+            return "-" if r["pass_"] is None else ("PASS" if r["pass_"] else "fail")
         print("%-8s %-8d %-7s %-10s | %-6d %-6s %-8s | %-6d %-6s %-8s | %s" % (
             nf, c1, rel, "YES" if in_tail else "no",
-            r_tail["prefix_len"], "%.0f%%" % r_tail["reuse_pct"], "PASS" if r_tail["pass_"] else "fail",
-            r_mid["prefix_len"], "%.0f%%" % r_mid["reuse_pct"], "PASS" if r_mid["pass_"] else "fail",
-            "PASS" if r_full["pass_"] else "fail"), flush=True)
+            r_tail["prefix_len"], "%.0f%%" % r_tail["reuse_pct"], verdict(r_tail),
+            r_mid["prefix_len"], "%.0f%%" % r_mid["reuse_pct"], verdict(r_mid),
+            verdict(r_full)), flush=True)
 
         rows.append(dict(needle_frac=nf, c1=c1, needle_rel=rel, keep=keep, N=N,
                          needle_in_tail=bool(in_tail),
