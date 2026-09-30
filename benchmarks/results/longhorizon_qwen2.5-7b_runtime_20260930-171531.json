@@ -1,0 +1,1254 @@
+{
+  "model": "qwen2.5-7b",
+  "arm": "runtime",
+  "turns": 40,
+  "trials": 3,
+  "gpu": "A10G",
+  "results": [
+    {
+      "trial": 0,
+      "accuracy": 0.125,
+      "first_half": 0.2,
+      "second_half": 0.05,
+      "ttft_first": 946.5176950000007,
+      "ttft_last": 785.0085000000036,
+      "kv_first": 33202176,
+      "kv_last": 168706048,
+      "kv_peak": 168706048,
+      "prompt_first": 564,
+      "prompt_last": 2927,
+      "per_turn": [
+        {
+          "turn": 0,
+          "key": "DB_POOL",
+          "want": "v686-0",
+          "got": "You are an operations agent. Each turn y",
+          "ok": false,
+          "ttft_ms": 946.5176950000007,
+          "kv_bytes": 33202176,
+          "prompt_tokens": 564
+        },
+        {
+          "turn": 1,
+          "key": "DB_POOL",
+          "want": "v686-0",
+          "got": "\ufffd\u5efa\u52a9\nv686-0\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": true,
+          "ttft_ms": 299.1137660000014,
+          "kv_bytes": 59637760,
+          "prompt_tokens": 1025
+        },
+        {
+          "turn": 2,
+          "key": "MAX_RETRY",
+          "want": "v605-2",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 421.1936690000009,
+          "kv_bytes": 86016000,
+          "prompt_tokens": 1485
+        },
+        {
+          "turn": 3,
+          "key": "CACHE_TTL",
+          "want": "v927-1",
+          "got": "\ufffd\u5efa\u52a9\nv927-1",
+          "ok": true,
+          "ttft_ms": 532.9718030000024,
+          "kv_bytes": 112107520,
+          "prompt_tokens": 1946
+        },
+        {
+          "turn": 4,
+          "key": "DB_POOL",
+          "want": "v686-0",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u67e5\u770b\u5f53\u524d\u7684DB_POOL\u503c\uff1a\n\n```bash",
+          "ok": false,
+          "ttft_ms": 635.1923920000004,
+          "kv_bytes": 138772480,
+          "prompt_tokens": 2405
+        },
+        {
+          "turn": 5,
+          "key": "DB_POOL",
+          "want": "v686-0",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u83b7\u53d6\u5f53\u524d\u7684DB_POOL\u503c\uff1a\n\n```bash",
+          "ok": false,
+          "ttft_ms": 781.3920830000001,
+          "kv_bytes": 165150720,
+          "prompt_tokens": 2865
+        },
+        {
+          "turn": 6,
+          "key": "BATCH_SIZE",
+          "want": "v377-6",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 781.2250259999978,
+          "kv_bytes": 165150720,
+          "prompt_tokens": 2865
+        },
+        {
+          "turn": 7,
+          "key": "CACHE_TTL",
+          "want": "v927-1",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 781.2425109999986,
+          "kv_bytes": 165208064,
+          "prompt_tokens": 2866
+        },
+        {
+          "turn": 8,
+          "key": "QUEUE_DEPTH",
+          "want": "v371-3",
+          "got": "\ufffd\u5efa\u52a9\nv371-3",
+          "ok": true,
+          "ttft_ms": 780.8565260000009,
+          "kv_bytes": 164806656,
+          "prompt_tokens": 2865
+        },
+        {
+          "turn": 9,
+          "key": "QUEUE_DEPTH",
+          "want": "v371-3",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 781.4738510000012,
+          "kv_bytes": 165781504,
+          "prompt_tokens": 2876
+        },
+        {
+          "turn": 10,
+          "key": "QUEUE_DEPTH",
+          "want": "v371-3",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 783.499624000001,
+          "kv_bytes": 166412288,
+          "prompt_tokens": 2887
+        },
+        {
+          "turn": 11,
+          "key": "LOG_LEVEL",
+          "want": "v529-5",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 783.7614439999995,
+          "kv_bytes": 167043072,
+          "prompt_tokens": 2898
+        },
+        {
+          "turn": 12,
+          "key": "MAX_RETRY",
+          "want": "v955-10",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 784.0775219999969,
+          "kv_bytes": 167100416,
+          "prompt_tokens": 2899
+        },
+        {
+          "turn": 13,
+          "key": "BATCH_SIZE",
+          "want": "v377-6",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 784.3133949999981,
+          "kv_bytes": 167673856,
+          "prompt_tokens": 2909
+        },
+        {
+          "turn": 14,
+          "key": "CACHE_TTL",
+          "want": "v153-9",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 785.172259999996,
+          "kv_bytes": 168361984,
+          "prompt_tokens": 2921
+        },
+        {
+          "turn": 15,
+          "key": "LOG_LEVEL",
+          "want": "v885-13",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 784.4288000000006,
+          "kv_bytes": 167788544,
+          "prompt_tokens": 2911
+        },
+        {
+          "turn": 16,
+          "key": "DB_POOL",
+          "want": "v352-16",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u67e5\u770b\u5f53\u524d\u7684DB_POOL\u503c\uff1a\n\n```bash",
+          "ok": false,
+          "ttft_ms": 798.2825449999993,
+          "kv_bytes": 167215104,
+          "prompt_tokens": 2901
+        },
+        {
+          "turn": 17,
+          "key": "CACHE_TTL",
+          "want": "v104-17",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 784.7217329999978,
+          "kv_bytes": 167329792,
+          "prompt_tokens": 2903
+        },
+        {
+          "turn": 18,
+          "key": "LOG_LEVEL",
+          "want": "v885-13",
+          "got": "\ufffd\u5efa\u52a9\nv885-13",
+          "ok": true,
+          "ttft_ms": 783.9794600000048,
+          "kv_bytes": 167616512,
+          "prompt_tokens": 2913
+        },
+        {
+          "turn": 19,
+          "key": "MAX_RETRY",
+          "want": "v831-18",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u67e5\u770b\u5f53\u524d\u7684 MAX_RETRY \u503c\uff1a",
+          "ok": false,
+          "ttft_ms": 783.8751070000001,
+          "kv_bytes": 167960576,
+          "prompt_tokens": 2914
+        },
+        {
+          "turn": 20,
+          "key": "CACHE_TTL",
+          "want": "v104-17",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 783.8725149999988,
+          "kv_bytes": 167444480,
+          "prompt_tokens": 2905
+        },
+        {
+          "turn": 21,
+          "key": "LOG_LEVEL",
+          "want": "v886-21",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 783.7234920000001,
+          "kv_bytes": 167329792,
+          "prompt_tokens": 2903
+        },
+        {
+          "turn": 22,
+          "key": "LOG_LEVEL",
+          "want": "v886-21",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 783.7655360000042,
+          "kv_bytes": 167329792,
+          "prompt_tokens": 2903
+        },
+        {
+          "turn": 23,
+          "key": "SHARD_COUNT",
+          "want": "v625-23",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 783.1780560000041,
+          "kv_bytes": 166813696,
+          "prompt_tokens": 2894
+        },
+        {
+          "turn": 24,
+          "key": "LOG_LEVEL",
+          "want": "v886-21",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 783.3915680000061,
+          "kv_bytes": 166756352,
+          "prompt_tokens": 2893
+        },
+        {
+          "turn": 25,
+          "key": "CACHE_TTL",
+          "want": "v940-25",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u67e5\u770b\u5f53\u524d\u7684CACHE_TTL\u503c\uff1a\n\n```",
+          "ok": false,
+          "ttft_ms": 783.3019409999977,
+          "kv_bytes": 166871040,
+          "prompt_tokens": 2895
+        },
+        {
+          "turn": 26,
+          "key": "LOG_LEVEL",
+          "want": "v886-21",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u67e5\u770b\u5f53\u524d\u7684 LOG_LEVEL \u503c\uff1a",
+          "ok": false,
+          "ttft_ms": 783.8263080000019,
+          "kv_bytes": 167444480,
+          "prompt_tokens": 2905
+        },
+        {
+          "turn": 27,
+          "key": "BATCH_SIZE",
+          "want": "v185-22",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u83b7\u53d6\u5f53\u524d\u7684BATCH_SIZE\u503c\uff1a\n\n```",
+          "ok": false,
+          "ttft_ms": 784.3773419999991,
+          "kv_bytes": 168075264,
+          "prompt_tokens": 2916
+        },
+        {
+          "turn": 28,
+          "key": "SHARD_COUNT",
+          "want": "v625-23",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u83b7\u53d6\u5f53\u524d\u503c\uff1a\n\n```bash\nconfig_write",
+          "ok": false,
+          "ttft_ms": 784.3375480000034,
+          "kv_bytes": 168132608,
+          "prompt_tokens": 2917
+        },
+        {
+          "turn": 29,
+          "key": "BATCH_SIZE",
+          "want": "v185-22",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 788.9053950000005,
+          "kv_bytes": 168017920,
+          "prompt_tokens": 2915
+        },
+        {
+          "turn": 30,
+          "key": "LOG_LEVEL",
+          "want": "v249-29",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 792.2270969999943,
+          "kv_bytes": 167387136,
+          "prompt_tokens": 2904
+        },
+        {
+          "turn": 31,
+          "key": "SHARD_COUNT",
+          "want": "v546-31",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u83b7\u53d6\u5f53\u524d\u503c\uff1a\n\n```bash\nconfig_write",
+          "ok": false,
+          "ttft_ms": 783.5521500000056,
+          "kv_bytes": 167444480,
+          "prompt_tokens": 2905
+        },
+        {
+          "turn": 32,
+          "key": "LOG_LEVEL",
+          "want": "v249-29",
+          "got": "\ufffd\u5efa\u52a9\nv249-29",
+          "ok": true,
+          "ttft_ms": 783.2143649999921,
+          "kv_bytes": 166469632,
+          "prompt_tokens": 2893
+        },
+        {
+          "turn": 33,
+          "key": "BATCH_SIZE",
+          "want": "v970-30",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 783.0485289999984,
+          "kv_bytes": 166182912,
+          "prompt_tokens": 2883
+        },
+        {
+          "turn": 34,
+          "key": "QUEUE_DEPTH",
+          "want": "v904-27",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 783.1304529999983,
+          "kv_bytes": 166813696,
+          "prompt_tokens": 2894
+        },
+        {
+          "turn": 35,
+          "key": "CACHE_TTL",
+          "want": "v145-33",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u67e5\u770b\u5f53\u524d\u7684CACHE_TTL\u503c\uff1a\n\n``",
+          "ok": false,
+          "ttft_ms": 783.7385959999921,
+          "kv_bytes": 167501824,
+          "prompt_tokens": 2906
+        },
+        {
+          "turn": 36,
+          "key": "TIMEOUT_MS",
+          "want": "v730-36",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 783.631315000008,
+          "kv_bytes": 168075264,
+          "prompt_tokens": 2916
+        },
+        {
+          "turn": 37,
+          "key": "MAX_RETRY",
+          "want": "v296-34",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 784.1155420000092,
+          "kv_bytes": 168017920,
+          "prompt_tokens": 2915
+        },
+        {
+          "turn": 38,
+          "key": "QUEUE_DEPTH",
+          "want": "v556-35",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u83b7\u53d6\u5f53\u524d\u7684QUEUE_DEPTH\u503c\uff1a\n\n```bash",
+          "ok": false,
+          "ttft_ms": 784.4407480000086,
+          "kv_bytes": 168648704,
+          "prompt_tokens": 2926
+        },
+        {
+          "turn": 39,
+          "key": "CACHE_TTL",
+          "want": "v145-33",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u67e5\u770b\u5f53\u524d\u7684CACHE_TTL\u503c\uff1a\n\n```",
+          "ok": false,
+          "ttft_ms": 785.0085000000036,
+          "kv_bytes": 168706048,
+          "prompt_tokens": 2927
+        }
+      ]
+    },
+    {
+      "trial": 1,
+      "accuracy": 0.2,
+      "first_half": 0.25,
+      "second_half": 0.15,
+      "ttft_first": 168.78462299999342,
+      "ttft_last": 783.9981710000075,
+      "kv_first": 33202176,
+      "kv_last": 168017920,
+      "kv_peak": 169394176,
+      "prompt_first": 564,
+      "prompt_last": 2915,
+      "per_turn": [
+        {
+          "turn": 0,
+          "key": "DB_POOL",
+          "want": "v197-0",
+          "got": "You are an operations agent. Each turn y",
+          "ok": false,
+          "ttft_ms": 168.78462299999342,
+          "kv_bytes": 33202176,
+          "prompt_tokens": 564
+        },
+        {
+          "turn": 1,
+          "key": "CACHE_TTL",
+          "want": "v466-1",
+          "got": "\ufffd\u5efa\u52a9\nv466-1",
+          "ok": true,
+          "ttft_ms": 299.21027799998967,
+          "kv_bytes": 59351040,
+          "prompt_tokens": 1026
+        },
+        {
+          "turn": 2,
+          "key": "DB_POOL",
+          "want": "v197-0",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u67e5\u770b\u5f53\u524d\u7684DB_POOL\u503c\uff1a\n\n```bash",
+          "ok": false,
+          "ttft_ms": 421.07965099999944,
+          "kv_bytes": 86016000,
+          "prompt_tokens": 1485
+        },
+        {
+          "turn": 3,
+          "key": "QUEUE_DEPTH",
+          "want": "v800-3",
+          "got": "\ufffd\u5efa\u52a9\nv800-3",
+          "ok": true,
+          "ttft_ms": 532.837360000002,
+          "kv_bytes": 112050176,
+          "prompt_tokens": 1945
+        },
+        {
+          "turn": 4,
+          "key": "CACHE_TTL",
+          "want": "v466-1",
+          "got": "\ufffd\u5efa\u52a9\nv466-1",
+          "ok": true,
+          "ttft_ms": 635.1838060000006,
+          "kv_bytes": 138485760,
+          "prompt_tokens": 2406
+        },
+        {
+          "turn": 5,
+          "key": "QUEUE_DEPTH",
+          "want": "v800-3",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 781.1407740000078,
+          "kv_bytes": 165150720,
+          "prompt_tokens": 2865
+        },
+        {
+          "turn": 6,
+          "key": "TIMEOUT_MS",
+          "want": "v221-4",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 781.122449999998,
+          "kv_bytes": 165150720,
+          "prompt_tokens": 2865
+        },
+        {
+          "turn": 7,
+          "key": "TIMEOUT_MS",
+          "want": "v221-4",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 781.1262550000038,
+          "kv_bytes": 165150720,
+          "prompt_tokens": 2865
+        },
+        {
+          "turn": 8,
+          "key": "BATCH_SIZE",
+          "want": "v691-6",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 781.6482540000038,
+          "kv_bytes": 165724160,
+          "prompt_tokens": 2875
+        },
+        {
+          "turn": 9,
+          "key": "BATCH_SIZE",
+          "want": "v691-6",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u67e5\u770b\u5f53\u524d\u7684BATCH_SIZE\u503c\uff1a\n\n```",
+          "ok": false,
+          "ttft_ms": 782.8165270000085,
+          "kv_bytes": 166354944,
+          "prompt_tokens": 2886
+        },
+        {
+          "turn": 10,
+          "key": "LOG_LEVEL",
+          "want": "v159-5",
+          "got": "\ufffd\u5efa\u52a9\nv159-5",
+          "ok": true,
+          "ttft_ms": 783.329792999993,
+          "kv_bytes": 166641664,
+          "prompt_tokens": 2897
+        },
+        {
+          "turn": 11,
+          "key": "CACHE_TTL",
+          "want": "v385-9",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 783.5108799999944,
+          "kv_bytes": 167100416,
+          "prompt_tokens": 2899
+        },
+        {
+          "turn": 12,
+          "key": "BATCH_SIZE",
+          "want": "v691-6",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 783.5478390000077,
+          "kv_bytes": 167100416,
+          "prompt_tokens": 2899
+        },
+        {
+          "turn": 13,
+          "key": "CACHE_TTL",
+          "want": "v385-9",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 783.324279999988,
+          "kv_bytes": 167157760,
+          "prompt_tokens": 2900
+        },
+        {
+          "turn": 14,
+          "key": "QUEUE_DEPTH",
+          "want": "v197-11",
+          "got": "\ufffd\u5efa\u52a9\nv197-11",
+          "ok": true,
+          "ttft_ms": 783.2927750000067,
+          "kv_bytes": 166871040,
+          "prompt_tokens": 2900
+        },
+        {
+          "turn": 15,
+          "key": "BATCH_SIZE",
+          "want": "v682-14",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u83b7\u53d6\u5f53\u524d\u7684BATCH_SIZE\u503c\uff1a\n\n```",
+          "ok": false,
+          "ttft_ms": 784.0273009999947,
+          "kv_bytes": 167215104,
+          "prompt_tokens": 2901
+        },
+        {
+          "turn": 16,
+          "key": "CACHE_TTL",
+          "want": "v385-9",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 783.617052000011,
+          "kv_bytes": 167272448,
+          "prompt_tokens": 2902
+        },
+        {
+          "turn": 17,
+          "key": "CACHE_TTL",
+          "want": "v235-17",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u67e5\u770b\u5f53\u524d\u7684CACHE_TTL\u503c\uff1a\n\n```",
+          "ok": false,
+          "ttft_ms": 784.4929599999944,
+          "kv_bytes": 167329792,
+          "prompt_tokens": 2903
+        },
+        {
+          "turn": 18,
+          "key": "CACHE_TTL",
+          "want": "v235-17",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 783.7432049999933,
+          "kv_bytes": 167329792,
+          "prompt_tokens": 2903
+        },
+        {
+          "turn": 19,
+          "key": "DB_POOL",
+          "want": "v858-16",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u67e5\u770b\u5f53\u524d\u7684DB_POOL\u503c\uff1a\n\n```bash",
+          "ok": false,
+          "ttft_ms": 783.7689539999957,
+          "kv_bytes": 167272448,
+          "prompt_tokens": 2902
+        },
+        {
+          "turn": 20,
+          "key": "QUEUE_DEPTH",
+          "want": "v160-19",
+          "got": "\ufffd\u5efa\u52a9\nv160-19",
+          "ok": true,
+          "ttft_ms": 783.7803550000046,
+          "kv_bytes": 167043072,
+          "prompt_tokens": 2903
+        },
+        {
+          "turn": 21,
+          "key": "QUEUE_DEPTH",
+          "want": "v160-19",
+          "got": "\ufffd\u5efa\u52a9\nv160-19",
+          "ok": true,
+          "ttft_ms": 785.0005300000049,
+          "kv_bytes": 167043072,
+          "prompt_tokens": 2903
+        },
+        {
+          "turn": 22,
+          "key": "BATCH_SIZE",
+          "want": "v814-22",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 785.1402329999928,
+          "kv_bytes": 167387136,
+          "prompt_tokens": 2904
+        },
+        {
+          "turn": 23,
+          "key": "SHARD_COUNT",
+          "want": "v371-23",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u83b7\u53d6\u5f53\u524d\u503c\uff1a\n\n```bash\nconfig_write",
+          "ok": false,
+          "ttft_ms": 784.1669130000071,
+          "kv_bytes": 168075264,
+          "prompt_tokens": 2916
+        },
+        {
+          "turn": 24,
+          "key": "BATCH_SIZE",
+          "want": "v814-22",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u67e5\u770b\u5f53\u524d\u7684BATCH_SIZE\u503c\uff1a\n\n```",
+          "ok": false,
+          "ttft_ms": 784.7509030000026,
+          "kv_bytes": 168648704,
+          "prompt_tokens": 2926
+        },
+        {
+          "turn": 25,
+          "key": "TIMEOUT_MS",
+          "want": "v293-20",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 785.2824770000097,
+          "kv_bytes": 169336832,
+          "prompt_tokens": 2938
+        },
+        {
+          "turn": 26,
+          "key": "LOG_LEVEL",
+          "want": "v148-21",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 785.020345999996,
+          "kv_bytes": 169336832,
+          "prompt_tokens": 2938
+        },
+        {
+          "turn": 27,
+          "key": "SHARD_COUNT",
+          "want": "v371-23",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u67e5\u770b\u5f53\u524d\u7684SHARD_COUNT\u503c\uff1a\n\n```",
+          "ok": false,
+          "ttft_ms": 785.1691620000025,
+          "kv_bytes": 169394176,
+          "prompt_tokens": 2939
+        },
+        {
+          "turn": 28,
+          "key": "QUEUE_DEPTH",
+          "want": "v493-27",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 784.8322030000077,
+          "kv_bytes": 169336832,
+          "prompt_tokens": 2938
+        },
+        {
+          "turn": 29,
+          "key": "CACHE_TTL",
+          "want": "v281-25",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 785.0198800000072,
+          "kv_bytes": 169336832,
+          "prompt_tokens": 2938
+        },
+        {
+          "turn": 30,
+          "key": "MAX_RETRY",
+          "want": "v792-26",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 784.5703260000079,
+          "kv_bytes": 168648704,
+          "prompt_tokens": 2926
+        },
+        {
+          "turn": 31,
+          "key": "TIMEOUT_MS",
+          "want": "v290-28",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 784.5676900000029,
+          "kv_bytes": 168648704,
+          "prompt_tokens": 2926
+        },
+        {
+          "turn": 32,
+          "key": "DB_POOL",
+          "want": "v651-32",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 784.2974710000021,
+          "kv_bytes": 168017920,
+          "prompt_tokens": 2915
+        },
+        {
+          "turn": 33,
+          "key": "TIMEOUT_MS",
+          "want": "v290-28",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u83b7\u53d6\u5f53\u524d\u7684 `TIMEOUT_MS` \ufffd",
+          "ok": false,
+          "ttft_ms": 784.2896350000075,
+          "kv_bytes": 168075264,
+          "prompt_tokens": 2916
+        },
+        {
+          "turn": 34,
+          "key": "QUEUE_DEPTH",
+          "want": "v493-27",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 784.0107450000033,
+          "kv_bytes": 168075264,
+          "prompt_tokens": 2916
+        },
+        {
+          "turn": 35,
+          "key": "LOG_LEVEL",
+          "want": "v733-29",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u67e5\u770b\u5f53\u524d\u7684 LOG_LEVEL \u503c\uff1a",
+          "ok": false,
+          "ttft_ms": 783.7593630000015,
+          "kv_bytes": 167444480,
+          "prompt_tokens": 2905
+        },
+        {
+          "turn": 36,
+          "key": "MAX_RETRY",
+          "want": "v799-34",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 784.2694440000173,
+          "kv_bytes": 168075264,
+          "prompt_tokens": 2916
+        },
+        {
+          "turn": 37,
+          "key": "DB_POOL",
+          "want": "v651-32",
+          "got": "\ufffd\u5efa\u52a9\nv651-32",
+          "ok": true,
+          "ttft_ms": 784.2964959999961,
+          "kv_bytes": 167731200,
+          "prompt_tokens": 2915
+        },
+        {
+          "turn": 38,
+          "key": "MAX_RETRY",
+          "want": "v799-34",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 784.5953400000099,
+          "kv_bytes": 168648704,
+          "prompt_tokens": 2926
+        },
+        {
+          "turn": 39,
+          "key": "TIMEOUT_MS",
+          "want": "v141-36",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 783.9981710000075,
+          "kv_bytes": 168017920,
+          "prompt_tokens": 2915
+        }
+      ]
+    },
+    {
+      "trial": 2,
+      "accuracy": 0.15,
+      "first_half": 0.2,
+      "second_half": 0.1,
+      "ttft_first": 169.16188199999738,
+      "ttft_last": 785.5757320000123,
+      "kv_first": 33202176,
+      "kv_last": 167387136,
+      "kv_peak": 169336832,
+      "prompt_first": 564,
+      "prompt_last": 2904,
+      "per_turn": [
+        {
+          "turn": 0,
+          "key": "DB_POOL",
+          "want": "v656-0",
+          "got": "You are an operations agent. Each turn y",
+          "ok": false,
+          "ttft_ms": 169.16188199999738,
+          "kv_bytes": 33202176,
+          "prompt_tokens": 564
+        },
+        {
+          "turn": 1,
+          "key": "CACHE_TTL",
+          "want": "v940-1",
+          "got": "\ufffd\u5efa\u52a9\nv940-1",
+          "ok": true,
+          "ttft_ms": 298.41242099999477,
+          "kv_bytes": 59351040,
+          "prompt_tokens": 1026
+        },
+        {
+          "turn": 2,
+          "key": "CACHE_TTL",
+          "want": "v940-1",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 421.9232639999859,
+          "kv_bytes": 86073344,
+          "prompt_tokens": 1486
+        },
+        {
+          "turn": 3,
+          "key": "CACHE_TTL",
+          "want": "v940-1",
+          "got": "\ufffd\u5efa\u52a9\nv940-1",
+          "ok": true,
+          "ttft_ms": 532.7825589999975,
+          "kv_bytes": 112107520,
+          "prompt_tokens": 1946
+        },
+        {
+          "turn": 4,
+          "key": "CACHE_TTL",
+          "want": "v940-1",
+          "got": "\ufffd\u5efa\u52a9\nv940-1",
+          "ok": true,
+          "ttft_ms": 634.9228770000082,
+          "kv_bytes": 138485760,
+          "prompt_tokens": 2406
+        },
+        {
+          "turn": 5,
+          "key": "DB_POOL",
+          "want": "v656-0",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u83b7\u53d6\u5f53\u524d\u7684DB_POOL\u503c\uff1a\n\n```bash",
+          "ok": false,
+          "ttft_ms": 781.313425999997,
+          "kv_bytes": 165150720,
+          "prompt_tokens": 2865
+        },
+        {
+          "turn": 6,
+          "key": "TIMEOUT_MS",
+          "want": "v655-4",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 781.5973639999925,
+          "kv_bytes": 165150720,
+          "prompt_tokens": 2865
+        },
+        {
+          "turn": 7,
+          "key": "CACHE_TTL",
+          "want": "v940-1",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 780.6597110000268,
+          "kv_bytes": 165208064,
+          "prompt_tokens": 2866
+        },
+        {
+          "turn": 8,
+          "key": "TIMEOUT_MS",
+          "want": "v655-4",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 780.9116159999974,
+          "kv_bytes": 165150720,
+          "prompt_tokens": 2865
+        },
+        {
+          "turn": 9,
+          "key": "QUEUE_DEPTH",
+          "want": "v570-3",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 781.6959639999936,
+          "kv_bytes": 165781504,
+          "prompt_tokens": 2876
+        },
+        {
+          "turn": 10,
+          "key": "CACHE_TTL",
+          "want": "v875-9",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u67e5\u770b\u5f53\u524d\u7684CACHE_TTL\u503c\uff1a\n\n```",
+          "ok": false,
+          "ttft_ms": 784.8793320000027,
+          "kv_bytes": 166469632,
+          "prompt_tokens": 2888
+        },
+        {
+          "turn": 11,
+          "key": "BATCH_SIZE",
+          "want": "v723-6",
+          "got": "\ufffd\u5efa\u52a9\nv723-6",
+          "ok": true,
+          "ttft_ms": 783.6363440000014,
+          "kv_bytes": 166699008,
+          "prompt_tokens": 2898
+        },
+        {
+          "turn": 12,
+          "key": "TIMEOUT_MS",
+          "want": "v871-12",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u83b7\u53d6\u5f53\u524d\u7684TIMEOUT_MS\u503c\uff1a\n\n```",
+          "ok": false,
+          "ttft_ms": 783.9808619999928,
+          "kv_bytes": 167673856,
+          "prompt_tokens": 2909
+        },
+        {
+          "turn": 13,
+          "key": "QUEUE_DEPTH",
+          "want": "v500-11",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 784.315399999997,
+          "kv_bytes": 167673856,
+          "prompt_tokens": 2909
+        },
+        {
+          "turn": 14,
+          "key": "MAX_RETRY",
+          "want": "v121-10",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 786.0984819999999,
+          "kv_bytes": 168304640,
+          "prompt_tokens": 2920
+        },
+        {
+          "turn": 15,
+          "key": "QUEUE_DEPTH",
+          "want": "v500-11",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 784.0854910000132,
+          "kv_bytes": 167788544,
+          "prompt_tokens": 2911
+        },
+        {
+          "turn": 16,
+          "key": "LOG_LEVEL",
+          "want": "v257-13",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u67e5\u770b\u5f53\u524d\u7684LOG_LEVEL\u503c\uff1a\n\n```bash",
+          "ok": false,
+          "ttft_ms": 783.4377260000167,
+          "kv_bytes": 167215104,
+          "prompt_tokens": 2901
+        },
+        {
+          "turn": 17,
+          "key": "DB_POOL",
+          "want": "v210-16",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 783.7009630000011,
+          "kv_bytes": 166699008,
+          "prompt_tokens": 2892
+        },
+        {
+          "turn": 18,
+          "key": "CACHE_TTL",
+          "want": "v429-17",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u67e5\u770b\u5f53\u524d\u7684 CACHE_TTL \u503c",
+          "ok": false,
+          "ttft_ms": 783.5244510000052,
+          "kv_bytes": 166813696,
+          "prompt_tokens": 2894
+        },
+        {
+          "turn": 19,
+          "key": "QUEUE_DEPTH",
+          "want": "v671-19",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 783.1449499999792,
+          "kv_bytes": 166756352,
+          "prompt_tokens": 2893
+        },
+        {
+          "turn": 20,
+          "key": "QUEUE_DEPTH",
+          "want": "v671-19",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 783.7325419999956,
+          "kv_bytes": 166182912,
+          "prompt_tokens": 2883
+        },
+        {
+          "turn": 21,
+          "key": "MAX_RETRY",
+          "want": "v448-18",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u67e5\u770b\u5f53\u524d\u7684 MAX_RETRY \u503c\uff1a",
+          "ok": false,
+          "ttft_ms": 782.9106080000088,
+          "kv_bytes": 166125568,
+          "prompt_tokens": 2882
+        },
+        {
+          "turn": 22,
+          "key": "MAX_RETRY",
+          "want": "v448-18",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 791.05550700001,
+          "kv_bytes": 166756352,
+          "prompt_tokens": 2893
+        },
+        {
+          "turn": 23,
+          "key": "LOG_LEVEL",
+          "want": "v107-21",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u67e5\u770b\u5f53\u524d\u7684 LOG_LEVEL \u503c\uff1a",
+          "ok": false,
+          "ttft_ms": 785.1089499999944,
+          "kv_bytes": 167387136,
+          "prompt_tokens": 2904
+        },
+        {
+          "turn": 24,
+          "key": "MAX_RETRY",
+          "want": "v448-18",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 785.2518849999797,
+          "kv_bytes": 167387136,
+          "prompt_tokens": 2904
+        },
+        {
+          "turn": 25,
+          "key": "TIMEOUT_MS",
+          "want": "v606-20",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 784.2205839999963,
+          "kv_bytes": 168075264,
+          "prompt_tokens": 2916
+        },
+        {
+          "turn": 26,
+          "key": "TIMEOUT_MS",
+          "want": "v606-20",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 786.5358430000242,
+          "kv_bytes": 168706048,
+          "prompt_tokens": 2927
+        },
+        {
+          "turn": 27,
+          "key": "DB_POOL",
+          "want": "v188-24",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u67e5\u770b\u5f53\u524d\u7684DB_POOL\u503c\uff1a\n\n```bash",
+          "ok": false,
+          "ttft_ms": 785.1335750000032,
+          "kv_bytes": 169336832,
+          "prompt_tokens": 2938
+        },
+        {
+          "turn": 28,
+          "key": "DB_POOL",
+          "want": "v188-24",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u67e5\u770b\u5f53\u524d\u7684DB_POOL\u503c\uff1a\n\n```bash",
+          "ok": false,
+          "ttft_ms": 807.0459620000179,
+          "kv_bytes": 168706048,
+          "prompt_tokens": 2927
+        },
+        {
+          "turn": 29,
+          "key": "BATCH_SIZE",
+          "want": "v575-22",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 783.901185000019,
+          "kv_bytes": 168017920,
+          "prompt_tokens": 2915
+        },
+        {
+          "turn": 30,
+          "key": "BATCH_SIZE",
+          "want": "v793-30",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 783.9729899999952,
+          "kv_bytes": 168017920,
+          "prompt_tokens": 2915
+        },
+        {
+          "turn": 31,
+          "key": "TIMEOUT_MS",
+          "want": "v311-28",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 784.9075379999988,
+          "kv_bytes": 168017920,
+          "prompt_tokens": 2915
+        },
+        {
+          "turn": 32,
+          "key": "SHARD_COUNT",
+          "want": "v847-31",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u83b7\u53d6\u5f53\u524d\u503c\uff1a\n\n```\nkubectl get confi",
+          "ok": false,
+          "ttft_ms": 784.2228769999906,
+          "kv_bytes": 168075264,
+          "prompt_tokens": 2916
+        },
+        {
+          "turn": 33,
+          "key": "BATCH_SIZE",
+          "want": "v793-30",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u83b7\u53d6\u5f53\u524d\u7684BATCH_SIZE\u503c\uff1a\n\n```",
+          "ok": false,
+          "ttft_ms": 783.6460750000072,
+          "kv_bytes": 167444480,
+          "prompt_tokens": 2905
+        },
+        {
+          "turn": 34,
+          "key": "QUEUE_DEPTH",
+          "want": "v538-27",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 784.4011269999953,
+          "kv_bytes": 168075264,
+          "prompt_tokens": 2916
+        },
+        {
+          "turn": 35,
+          "key": "SHARD_COUNT",
+          "want": "v847-31",
+          "got": "\ufffd\u5efa\u8bae\u60a8\u4f7f\u7528\u4ee5\u4e0b\u547d\u4ee4\u6765\u67e5\u770b\u5f53\u524d\u7684SHARD_COUNT\u503c\uff1a\n\n```",
+          "ok": false,
+          "ttft_ms": 786.1239529999864,
+          "kv_bytes": 168763392,
+          "prompt_tokens": 2928
+        },
+        {
+          "turn": 36,
+          "key": "QUEUE_DEPTH",
+          "want": "v738-35",
+          "got": "\ufffd\u5efa\u52a9\nv738-35",
+          "ok": true,
+          "ttft_ms": 786.6304030000038,
+          "kv_bytes": 167788544,
+          "prompt_tokens": 2916
+        },
+        {
+          "turn": 37,
+          "key": "QUEUE_DEPTH",
+          "want": "v738-35",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 785.8478379999951,
+          "kv_bytes": 167387136,
+          "prompt_tokens": 2904
+        },
+        {
+          "turn": 38,
+          "key": "LOG_LEVEL",
+          "want": "v192-37",
+          "got": "\ufffd\u5efa\u52a9\nv192-37",
+          "ok": true,
+          "ttft_ms": 785.4130260000147,
+          "kv_bytes": 167100416,
+          "prompt_tokens": 2904
+        },
+        {
+          "turn": 39,
+          "key": "QUEUE_DEPTH",
+          "want": "v738-35",
+          "got": "\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa\u52a9\nok\n\ufffd\u5efa",
+          "ok": false,
+          "ttft_ms": 785.5757320000123,
+          "kv_bytes": 167387136,
+          "prompt_tokens": 2904
+        }
+      ]
+    }
+  ]
+}
