@@ -1,0 +1,31 @@
+=== nonlinear sift 08:05:13 ===
+[heavy_lock] model-small acquired (10458 MB available, need 3500 MB)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights:   0%|          | 1/290 [00:00<01:33,  3.09it/s]Loading weights:  59%|█████▉    | 171/290 [00:00<00:00, 511.47it/s]Loading weights:  91%|█████████▏| 265/290 [00:00<00:00, 525.64it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 452.82it/s]
+========================================================================================
+NON-LINEAR CONTEXT — which sifter picks the right BLOCKS?
+  model=Qwen/Qwen2.5-0.5B  depth=0.55  7 blocks, keeping 4
+========================================================================================
+  needle line 69 -> block 3
+
+  sifter           blocks kept      needle block verdict
+  attention-05b    [0, 1, 2, 3]     KEPT         PASS  'The failure code in the build log '
+  line             [0, 1, 2, 3]     KEPT         PASS  'The failure code in the build log '
+  first-k          [0, 1, 2, 3]     KEPT         PASS  'The failure code in the build log '
+  last-k           [3, 4, 5, 6]     KEPT         fail  'You are a build assistant.\nSYSTEM_'
+  random#0         [0, 1, 2, 3]     KEPT         PASS  'The failure code in the build log '
+  random#1         [1, 2, 3, 6]     KEPT         fail  'asive\ngcc -O2 -Wl\ngcc -Wl -Wl -Wl '
+  random#2         [2, 3, 4, 5]     KEPT         fail  'You are a build/interpreter\nmake: '
+
+========================================================================================
+  attention-05b    needle_block=True  retrieval=PASS
+  line             needle_block=True  retrieval=PASS
+  first-k          needle_block=True  retrieval=PASS
+  last-k           needle_block=True  retrieval=fail
+  random           needle_block=3/3   retrieval=1/3
+
+  block scores: 129360.00 132384.00 133056.00 119952.00 75936.00 74256.00 3360.00
+  needle block score: 119952.00  (rank 4 of 7 by attention)
+
+wrote data/nonlinear_sift.jsonl
+=== exit=0 08:06:41 ===

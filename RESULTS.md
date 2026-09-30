@@ -1452,3 +1452,44 @@ never tight enough for the selector to matter.
 
 **Practical rule:** use line pooling. It costs nothing where budgets are generous and it is
 strictly better where they are tight.
+
+## Finding 34 — in the non-linear arrangement the sifter choice inverts: context, not evidence, is the binding constraint
+
+The non-linear arrangement is the block table of Findings 28–30: context is a set of
+independent blocks rather than a sequence, so eviction is a set operation and a sifter's job
+becomes "which blocks are worth a row" rather than "which tokens survive". Six blocks of ~18
+lines, keeping four, depth 0.55, needle in block 3.
+
+| sifter | blocks kept | needle block | retrieval |
+|---|---|---|---|
+| attention-05b | [0,1,2,3] | KEPT | **PASS** |
+| line (line-pooled) | [0,1,2,3] | KEPT | **PASS** |
+| first-k | [0,1,2,3] | KEPT | **PASS** |
+| **last-k** | [3,4,5,6] | **KEPT** | **fail** |
+| random | 3/3 runs kept it | KEPT | **1/3 PASS** |
+
+**★ The needle block survives under EVERY sifter — and that is exactly why block-level
+selection is a different problem.** The needle's block ranks only **4th of 7** by attention
+(119,952 against a 133,056 maximum; the scores are 129k/132k/133k/**120k**/76k/74k/3k), yet it
+is kept, because a block is ~1/7 of the context and any 4-of-7 choice almost always includes
+it. **At this granularity the needle-preservation problem largely disappears.**
+
+**★ And the binding constraint moves to CONTEXT.** `last-k` keeps the needle block and still
+fails — it retains blocks [3,4,5,6] and drops 0–2, which hold the build output the needle's
+line needs to be interpretable. `random` keeps the needle block in 3 of 3 runs and passes only
+1 of 3, for the same reason. So in the non-linear arrangement:
+
+- **evidence preservation is nearly free** (coarse blocks make it likely);
+- **context preservation is the real cost**, and it is what separates a passing selection from
+  a failing one.
+
+This inverts the linear finding. There (Findings 31–33) the whole battle was keeping the needle
+inside a tight token budget, and context came along for free. Here the needle is hard to lose
+and context is easy to lose.
+
+**⇒ Why this matters for where the architecture is worth using.** It is the same conclusion
+Finding 30 reached from the cost side, now measured from the selection side: the block table
+suits independent self-contained payloads, where no block needs another. A build log is the
+opposite — its lines only mean something in sequence — so dropping any block damages it even
+when the evidence survives. **The cascade (Finding 27) remains the better shape for continuous
+artifacts: it produces one ordinary causal sequence, so evidence and context stay together.**
