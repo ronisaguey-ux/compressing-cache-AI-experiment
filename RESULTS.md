@@ -830,3 +830,63 @@ Against a native recompute, cos 0.86 is not close enough.
 needle requires recomputing the retained sequence; key-only rotation is insufficient, and
 the nine scalar explanations in Findings 8–17 were all measuring the symptom of that one
 fact.
+
+## Finding 19 — the 7B separates THREE distinct failure modes, and only one is the method
+
+`src/native_7b.py`, Qwen2.5-7B at 8-bit, the same three arms Finding 18 defined:
+
+| depth | c1 | keep | needle rank | **retained?** | full | compact_NATIVE | compact_CACHE |
+|---|---|---|---|---|---|---|---|
+| 0.15 | 899 | 539 | **555** | **NO** | PASS | fail | fail |
+| 0.35 | 1421 | 852 | 619 | yes | PASS | **PASS** | **PASS** |
+| 0.55 | 1953 | 1171 | 614 | yes | PASS | **PASS** | fail |
+
+Read against the 0.5B table from Finding 18, the failures separate cleanly for the first
+time in this project:
+
+**1. Selection failure — the needle was simply not kept.** At 7B/0.15 the needle ranks
+**555 against a keep budget of 539**: it misses retention by 16 positions. There is no
+compaction bug here and nothing to fix in the pipeline — the selector picked 539 tokens and
+the needle was 556th. Against the 0.5B, which retained it at the same depth (rank 356/539),
+this is a 7B-specific ranking difference, and it is the cleanest possible illustration that
+rank and retention are the selector's only job and that job sometimes just misses.
+
+**2. Rotation defect — retained, correct natively, broken by the cache path.** At 7B/0.55
+the needle is well inside the budget (614 of 1171), the native recompute returns
+`0x9AF4_STACK_FAIL` verbatim, and the shipped rotation path fails. **Finding 18 is confirmed
+on the larger model.** This is the same defect measured on the 0.5B at 0.15 and 0.55.
+
+**3. No failure.** At 7B/0.35 every arm passes.
+
+**The near-miss at 7B/0.15 is the most interesting single output in the report.** With the
+needle *evicted*, the native run still produced:
+
+```
+The failure code in the build log is x9AF_STACK_FAIL.
+```
+
+— a **partial reconstruction** of a fact whose token was not in the context: correct
+suffix, correct `_STACK_FAIL`, a plausible `x9AF` for `0x9AF4`. The surviving line context
+around the needle carries enough signal for the model to rebuild most of it. That is a
+direct argument for **line pooling**: keeping the line rather than the token is what makes
+this reconstruction possible at all, and it explains why line pooling was the one mode that
+survived every depth in Finding 12.
+
+### The three failure modes, and what fixes each
+
+| failure | signature | fix |
+|---|---|---|
+| **selection** | rank > keep; native also fails | better selector, or a slightly larger budget |
+| **rotation** | retained; native PASSES, cache fails | **recompute the compacted sequence** |
+| — | native PASSES, cache PASSES | none needed |
+
+**The corrected method is `select → re-prefill the compacted sequence`**, and the honest
+saving is 34.0 / 36.2 / 37.2% KV at the three measured depths, at the cost of recomputing the
+retained prefix. Key-only rotation does not substitute for that recompute — measured at cos
+0.75–0.87 from the correct tensors.
+
+**What this reframes for the project.** Findings 8 through 17 spent a dozen experiments
+attributing the failure to attention, geometry, conditioning, contiguity or density. It was
+never any of those. It was a **selector that occasionally misses** plus **cache surgery that
+silently corrupts the tensors it keeps**. Both are ordinary engineering defects, and both are
+now named, measured, and testable.
