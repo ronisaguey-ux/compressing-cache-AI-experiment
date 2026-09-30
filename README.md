@@ -388,3 +388,42 @@ whether the model produced the port:secret pair, and that is unaffected. Verifie
 all 47 result cells still parse and the runtime PASS count is unchanged at 9. The generators in
 `modal/trials_two_needle.py`, `modal/rope_offsets.py`, `modal/bench.py` and `benchmarks/tasks.py`
 now emit the `EXAMPLE_KEY_` prefix so future runs cannot reintroduce the problem.
+
+## Finding 40 (2026-09-30) — Bob's Sequential Scratchpad does NOT close the state-update case
+
+**Bob's Solution 1:** force an intermediate trace ("Trace each movement sequentially: 1. First, …")
+so the generated tokens re-link the isolated blocks during decode.
+
+**Tested and refuted.** Qwen2.5-7B, 10 randomised trials, three moves across two surviving blocks
+(each move a different place, sampled from ten), all arms on the same Finding 37 contiguity fix so
+only the decode strategy varies:
+
+| arm | what it does | success |
+|---|---|---|
+| **direct** | query → answer in one forward | **30%** |
+| **trace** | query → forced sequential trace → answer | **10%** |
+| **null-trace** | same token budget, no movement content | **0%** |
+
+**⇒ THE SCRATCHPAD IS NOT BETTER, AND THE NULL ARM SHOWS WHY THE FORMAT ISN'T THE ISSUE.** `trace`
+does not exceed `direct`; `null-trace` is worst, so extra decode steps alone do not help either.
+**⚠️ HONEST STATISTICS: 3/10 vs 1/10 is Fisher two-sided p = 0.582.** At n=10 the arms cannot be
+separated, so the defensible claim is **"the scratchpad does not help"**, NOT "it makes things
+worse". Reporting the direction without the p-value would be the overclaim.
+
+**★ A REAL HARM WAS OBSERVED, AND IT IS DIAGNOSTIC.** The trace arm produces degenerate loops on
+this model — `"drawer drawer drawer drawer"`, `"2222222222222…"`, prompt echo
+(`"user What is the blue key used for?"`). The scratchpad format causes repetition collapse, so
+even the mechanical case for it fails here.
+
+**★ AND THE DIRECT ARM IS ONLY 30%, which bounds the whole question.** This task (three moves,
+randomised from ten places, two different actors) is materially harder than the earlier babilong
+run, and the state-update failure is DEEPER than decode strategy — it is not that the model needs
+more steps, it is that the later fact is not being applied over the earlier one at all.
+
+**⇒ Verdict: the cross-block JOIN is solved (Finding 37, contiguity); the cross-block state UPDATE
+is not, and a decode-side scratchpad does not solve it.** The remaining candidate is the
+recompute path — re-prefill the survivors as one sequence — which is the same answer Findings 18
+and 21 reached from a different direction.
+
+Artifact: `modal/scratchpad.py`. Cost: this run was UNINSTRUMENTED (imported `track()` and never
+called it); the wrapper is now applied so future runs record.

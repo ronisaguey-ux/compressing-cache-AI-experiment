@@ -1,0 +1,145 @@
+[
+  {
+    "model": "qwen2.5-7b",
+    "trials": 10,
+    "spam_lines": 600,
+    "rates": {
+      "direct": 0.3,
+      "trace": 0.1,
+      "null": 0.0
+    },
+    "rows": [
+      {
+        "trial": 1,
+        "want": "basement",
+        "p1": "study",
+        "p2": "hallway closet",
+        "p3": "basement",
+        "direct": false,
+        "trace": false,
+        "null": false,
+        "direct_ans": "The blue key is now in the hallway close",
+        "trace_ans": "2. The key, now  in the hallway closet 3. The key, now  in the hallway",
+        "null_ans": "Where is the blue key now? Reply with only the location name"
+      },
+      {
+        "trial": 2,
+        "want": "kitchen drawer",
+        "p1": "pantry",
+        "p2": "hallway closet",
+        "p3": "kitchen drawer",
+        "direct": true,
+        "trace": false,
+        "null": false,
+        "direct_ans": "The blue key is now in the kitchen drawe",
+        "trace_ans": "drawer drawer drawer drawer drawer drawer drawer drawer drawer drawer ",
+        "null_ans": "drawer drawer drawer drawer drawer drawer drawer drawer draw"
+      },
+      {
+        "trial": 3,
+        "want": "hallway closet",
+        "p1": "garage",
+        "p2": "study",
+        "p3": "hallway closet",
+        "direct": true,
+        "trace": true,
+        "null": false,
+        "direct_ans": "The blue key is now in the hallway close",
+        "trace_ans": " closet assistant The blue key is now in the hallway closet.assistant ",
+        "null_ans": "assistant assistant assistant assistant assistant assistant "
+      },
+      {
+        "trial": 4,
+        "want": "attic",
+        "p1": "study",
+        "p2": "garden shed",
+        "p3": "attic",
+        "direct": false,
+        "trace": false,
+        "null": false,
+        "direct_ans": "The blue key is now in the garden shed.",
+        "trace_ans": "assistant What is the current location of the blue key?assistant The b",
+        "null_ans": "The blue key is currently in the garden shed.assistant assis"
+      },
+      {
+        "trial": 5,
+        "want": "hallway closet",
+        "p1": "cellar",
+        "p2": "garden shed",
+        "p3": "hallway closet",
+        "direct": false,
+        "trace": false,
+        "null": false,
+        "direct_ans": "The blue key is now in the garden shed.",
+        "trace_ans": "user What is the blue key used for?assistant The blue key is used to u",
+        "null_ans": "The blue key is used to unlock the blue door.assistant user "
+      },
+      {
+        "trial": 6,
+        "want": "kitchen drawer",
+        "p1": "garden shed",
+        "p2": "hallway closet",
+        "p3": "kitchen drawer",
+        "direct": true,
+        "trace": false,
+        "null": false,
+        "direct_ans": "The blue key is now in the kitchen drawe",
+        "trace_ans": "drawer drawer drawer drawer drawer drawer drawer drawer drawer drawer ",
+        "null_ans": "drawer drawer drawer drawer drawer drawer drawer drawer draw"
+      },
+      {
+        "trial": 7,
+        "want": "study",
+        "p1": "pantry",
+        "p2": "garage",
+        "p3": "study",
+        "direct": false,
+        "trace": false,
+        "null": false,
+        "direct_ans": "The blue key is now in the garage.",
+        "trace_ans": "Human: You are a deterministic state tracker. Answer only from verifie",
+        "null_ans": "TheTheTheTheTheTheTheTheTheTheTheTheTheTheTheTheTheTheTheThe"
+      },
+      {
+        "trial": 8,
+        "want": "attic",
+        "p1": "garden shed",
+        "p2": "basement",
+        "p3": "attic",
+        "direct": false,
+        "trace": false,
+        "null": false,
+        "direct_ans": "The blue key is now in the basement.",
+        "trace_ans": "assistant The blue key is now in the basement.assistant assistant assi",
+        "null_ans": "assistant assistant assistant assistant assistant assistant "
+      },
+      {
+        "trial": 9,
+        "want": "garage",
+        "p1": "pantry",
+        "p2": "hallway closet",
+        "p3": "garage",
+        "direct": false,
+        "trace": false,
+        "null": false,
+        "direct_ans": "The blue key is now in the hallway close",
+        "trace_ans": "2222222222222222222222222222222222222222222222222222222222222222222222",
+        "null_ans": "The blue key was placed in the pantry. Richard took the blue"
+      },
+      {
+        "trial": 10,
+        "want": "hallway closet",
+        "p1": "attic",
+        "p2": "kitchen drawer",
+        "p3": "hallway closet",
+        "direct": false,
+        "trace": false,
+        "null": false,
+        "direct_ans": "The blue key is now in the kitchen drawe",
+        "trace_ans": "drawer drawer drawer drawer drawer drawer drawer drawer drawer drawer ",
+        "null_ans": "drawer drawer drawer drawer drawer drawer drawer drawer draw"
+      }
+    ],
+    "cost": []
+  }
+]
