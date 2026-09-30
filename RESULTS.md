@@ -1031,3 +1031,29 @@ that failure is silent — the answer reads as a confident wrong code.
 **On chunk 0 being retained.** At any `keep >= c0/(1-f)` the 39-token system prefix would be
 pristine regardless. Forcing `f` of chunk 1 makes chunk 0 + `f` contiguous, and the reuse
 grows roughly linearly in `f` as the table shows.
+
+### Finding 22a — the failing rows are predicted by geometry, and the confound is refuted
+
+The obvious way Finding 22 could be wrong: if the needle sat inside the forced prefix, `f=0.15`
+would pass because the *force* retained the needle, not because attention found it — a pass for
+the wrong reason. Measured (tokenizer only, no model), the needle's position within chunk 1:
+
+| depth | c1 | needle at | forced @0.15 | forced @0.30 | forced @0.45 | in forced region? |
+|---|---|---|---|---|---|---|
+| 0.15 | 899 | 414 (**46%**) | 134 | 269 | 404 | **no** at every f |
+| 0.35 | 1421 | 936 (**66%**) | 213 | 426 | 639 | **no** |
+| 0.55 | 1953 | 1468 (**75%**) | 292 | 585 | 878 | **no** |
+| 0.75 | 2182 | 1697 (**78%**) | 327 | 654 | 981 | **no** |
+
+**The needle is never inside the forced region, at any depth or force level.** `f=0.15` passing
+4/4 is therefore genuine: attention selected the needle every time, from 46-78% into the chunk,
+with the force confined to the front. The recommendation is not an artefact.
+
+**And the geometry predicts the failures.** At depth 0.15, `keep` = 539 and `f=0.45` forces 404,
+leaving **135 slots** for the 495 non-forced tokens — and the needle sits at 414, just **10
+tokens past** the forced boundary. It is competing for one of 135 places and loses. The failure
+is not a mysterious degradation; it is a budget that no longer reaches the evidence.
+
+That converts `f=0.30`+ being unsafe from an inference into a measured, computable margin: the
+forced prefix eats slots that the mid-context evidence needs, and the evidence sits far from
+the front.
