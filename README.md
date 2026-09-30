@@ -471,3 +471,100 @@ zero-recompute eviction is exactly what forfeits the update.
 **Verified non-vacuous:** the `full` arm is 100% on both models, so the task IS answerable and the
 block arm's failure is attributable to the assembly rather than to the model. The task is
 randomised per trial so no answer is memorisable. Artifact: `modal/recompute_state.py`.
+
+## Finding 42 (2026-09-30, Modal) — RAW HARDWARE METRICS: all three disagree, and they correct the previous headline
+
+Bob: *"calculate raw hardware FLOPs, memory bandwidth demands, and actual Watt-hours. This approach
+provides an objective, reproducible metric for the paper."* and *"Also do llama, so we dont get the
+critic that its model dependent"*.
+
+Measured 20 randomised trials per model. **Watt-hours are MEASURED** (`nvidia-smi power.draw`
+sampled on a background thread and integrated), not TDP × time. FLOPs and bytes are MODELLED with
+the formula printed. Both arms were warmed up first: the first timed arm read **401 ms** against a
+warm **318 ms**, i.e. CUDA kernel compilation and cuDNN autotune landed entirely on whichever arm
+ran first and made BLOCK look slower than RECOMPUTE. One-time costs must be paid before timing, and
+the arm order now alternates per trial.
+
+### Cross-architecture, the correctness result REPRODUCES
+
+| model | block | recompute |
+|---|---|---|
+| Qwen2.5-7B | 5/20 | **20/20** |
+| **Llama-3.1-8B** | **7/20** | **20/20** |
+
+The block runtime fails the sequential state update on real Llama exactly as it does on Qwen, and
+recompute closes it on both. The critic's "model dependent" objection is answered.
+
+⚠️ `meta-llama/Llama-3.1-8B` is **gated** — `403` on file access from this box *and* from Modal,
+while the API metadata endpoint returns **200**. `NousResearch/Meta-Llama-3.1-8B` is an ungated
+mirror of the same checkpoint (verified `model_type=llama`, `hidden_size=4096`, 32 heads, 14336
+intermediate, `gated:False`). Use the mirror; do not read a 200 metadata response as access.
+
+### ★★ THE THREE METRICS DO NOT AGREE — which is the finding
+
+| claim | Qwen | Llama | verdict |
+|---|---|---|---|
+| **1. compute** (FLOPs/query) | block **0.48×** recompute | block **0.54×** | real win for block |
+| **2. bandwidth** (bytes/query) | KV is **0.01%** of bytes | **0.01%** | **NEITHER can win at batch 1** |
+| **3. wall clock** | block **1.19×** recompute | block **0.99×** | depends on what is counted |
+| **4. energy** (MEASURED Wh) | block 0.0175, recompute 0.0144 | 0.0433 vs 0.0456 | ≈ equal, both directions |
+| **5. KV residency** | 5.94 MB vs 5.83 MB | 18.76 MB vs 18.76 MB | capacity, not speed |
+
+### ★★★ THE CORRECTION: MY PREVIOUS HEADLINE WAS A COMPUTE CLAIM, AND COMPUTE IS NOT THE BINDING CONSTRAINT
+
+I told Bob the honest headline was *"16-17% of vanilla in attention pairs, not 39% in tokens"*.
+**Attention pairs are FLOPs, and on this hardware FLOPs are nearly free.** Arithmetic intensity:
+
+    ridge point (A10G) = 125 TFLOP/s ÷ 600 GB/s = 208 FLOP/byte
+    both arms measure ≈ 1.00 FLOP/byte
+
+**Both arms sit ~208× BELOW the roofline ridge point, so the workload is memory-bandwidth-bound and
+its FLOP count is almost irrelevant.** Reducing attention pairs by 84% therefore buys far less than
+the number suggests — and a reviewer who knows the roofline would have said so. **That claim was
+overstated and is retracted.**
+
+### What actually drives the win, and what KV compaction is honestly for
+
+**Mechanism.** At batch 1 every decode/prefill token reads the ENTIRE weight matrix (7-8B × 2 B ≈
+14-16 GB) while the KV it touches is megabytes. The measured bandwidth split is decisive:
+
+    block      weights 525.70G | kv_read 44.6M | kv_write 18.4M | TOTAL 525.76G | KV share 0.01%
+    recompute  weights   1.28T | kv_read 63.0M | kv_write 44.6M | TOTAL   1.28T | KV share 0.01%
+
+So the runtime's advantage comes from **making fewer passes over the weights** — 35 vs 85 prefill
+tokens on Llama, 22 vs 72 on Qwen, each token paying a full weight read — **not** from reading less
+KV. The honest placement:
+
+| property | value | where it counts |
+|---|---|---|
+| fewer weight passes | real, 0.48-0.54× FLOPs | **wall-clock at batch 1** |
+| less KV read/written | **0.01% of bytes** | nothing at batch 1 |
+| **less KV resident** | 5.9-18.8 MB/query | **context length that fits; batch>1 where weights amortise** |
+
+**KV compaction earns its place on RESIDENCY and on throughput at batch > 1.** At batch 1 on one
+GPU it cannot move the bandwidth number, because the weight term dwarfs it. Stated here so the paper
+does not claim a bandwidth win it does not have.
+
+### ★ And the contiguity fix costs something, which corrects Finding 41's wall figure
+
+Finding 41 reported *"recompute 1.2× wall"* counting the **query only**. Counting the work actually
+required to close the positional gap — the moved block must be **re-prefilled** so it is contiguous
+with its predecessor — the block arm's wall advantage disappears: **1.19× on A10G, 0.99× on A100.**
+
+| what is timed | block vs recompute |
+|---|---|
+| query only (Finding 41) | block cheaper (recompute 1.2×) |
+| **end-to-end incl. contiguity re-prefill** | **≈ equal** |
+
+Both figures are real and answer different questions; the end-to-end one is the honest one for a
+deployment, because a moved block always has to be re-prefilled.
+
+⚠️ **Cross-GPU wall-clock is not comparable.** The same workload measured 380 ms on A10G and 1146 ms
+on A100-40GB — a small-batch fp16 workload does not scale with the A100's peak. Only arm-vs-arm
+comparisons within one run are valid; the A100 run exists because an 8B fp16 model plus the 29k-token
+control's activation exceeds the A10G's 22 GB (`24.00 MiB requested, 64.00 MiB free`).
+
+### Artifacts
+`modal/hardware_metrics.py` (measured power + modelled FLOPs/bytes) ·
+`modal/arithmetic_intensity.py` (the roofline comparison above) ·
+`benchmarks/results/hardware_*.json`.

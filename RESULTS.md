@@ -1493,3 +1493,429 @@ suits independent self-contained payloads, where no block needs another. A build
 opposite — its lines only mean something in sequence — so dropping any block damages it even
 when the evidence survives. **The cascade (Finding 27) remains the better shape for continuous
 artifacts: it produces one ordinary causal sequence, so evidence and context stay together.**
+
+
+## Finding 35 (2026-09-30, Modal A10G — Bob's benchmark matrix)
+
+**The block runtime cannot perform a cross-block JOIN. Cause is PREFILL ISOLATION, not the
+positional gap left by eviction.** Measured, not inferred.
+
+Qwen2.5-7B, babilong task: Block 1 "Richard moved the key kitchen->shed", Block 3 "Jessica moved
+it shed->attic", distractor between, ROTATED OUT. Ground truth = **attic**.
+
+| arm | layout | answer |
+|---|---|---|
+| 3 | survivors in ONE causal sequence | **attic** PASS |
+| 4 | full causal + distractor | **attic** PASS |
+| 5 | survivors re-prefilled contiguously over the global cache | **attic** PASS |
+| 1 | block table, shipped layout (disjoint ranges, gap) | *garbage/degenerate* FAIL |
+| 2 | block table, block3 adjacent to block1 — **same isolation, NO gap** | *degenerate* FAIL |
+
+**arm1 vs arm2 is the experiment that decides it, and arm2 failing is the answer.** Both arms
+prefill the blocks in SEPARATE forwards, so both are isolated; only the positions differ. If the
+gap were the cause, arm2 would pass. It does not. **The gap is not the defect — the isolation is.**
+
+**⇒ WHY.** `tiered_cache.build_table` forwards each block against a FRESH CLONE of the global
+cache, so block 1's and block 3's keys never co-attended. Block 1 encodes "shed" in a hidden state
+conditioned on a context that does not contain block 3, and vice versa. The query can attend over
+both, but neither block carries anything the other can use. The join has to happen inside the
+query tier, and a single query forward cannot manufacture the relation that never existed.
+
+**This CONFIRMS Finding 34's prediction and extends it.** F34 showed at block granularity the
+binding constraint is CONTEXT, not evidence. F35 shows the same limitation on the hardest case: a
+relation split across two isolated blocks is not recoverable by eviction policy, selection, or
+position arithmetic.
+
+**⇒ WHAT DOES WORK, and it is the recompute path we already established.** arm5 — re-prefill the
+survivors as ONE contiguous span over the global cache — passes. That is F18/F21's answer again
+from a different direction: **when a cross-block relation matters, the survivors must be
+recomputed as a single sequence, not reassembled from independently-prefilled blocks.** Block
+tables remain correct for independent self-contained payloads (per-file summaries, retrieved
+passages, documents); they are the wrong shape for one artifact whose meaning spans its length.
+
+**Verified non-vacuous:** the three controls all PASS on the same model and the same surviving
+text, so the failures are attributable to the layout rather than to the model being unable to do
+the task. Survivor drift under eviction measured **0.000e+00** throughout — the blocks themselves
+are bit-identical, which is exactly why the failure is informative: the KV is intact and the
+answer is still wrong.
+
+Artifacts: `modal/probe_query.py` (decoder-vs-architecture, both fail identically ⇒ not a decoder
+bug) · `modal/probe_gap.py` (this experiment) · `modal/bench.py` (3-arm matrix on GPU).
+
+## Finding 36 (2026-09-30, Modal A10G — Bob's Test 4, runnable half)
+
+**Multi-turn serving cost: the block runtime cuts prefill work ~60% and wall clock ~70% over 8
+turns with 4 evictions, and answers the late-turn fact correctly on Qwen2.5-7B.** Measured, both
+arms summed over all turns.
+
+| model | control | vanilla | runtime | prefill vs vanilla | wall vs vanilla |
+|---|---|---|---|---|---|
+| qwen2.5-7b | PASS | PASS | **PASS** | **39%** | **26%** |
+| mistral-7b-instruct | PASS | PASS | fail | 41% | 29% |
+
+**★ WHY THE SAVING IS REAL AND WHY IT GROWS.** The vanilla arm re-prefills the ENTIRE context on
+every turn, so its token count is quadratic in the number of turns. The runtime ingests each block
+once and forwards only the new turn plus the query. At 8 turns that is 617 tokens against 1568.
+The gap widens with turns and with context size, which is the regime a real agent loop runs in.
+
+**★ BUT THE RESIDENT-KV CLAIM DOES NOT HOLD HERE, AND THIS IS THE HONEST PART.** Bob's Test 3
+asked for "~50% savings on evicted Block 2" and that is NOT what this workload shows: measured KV
+went 18.4 MB (vanilla) → 23.1 MB (runtime), i.e. it did not drop at all. Two reasons, both
+specific to the test: the evicted turns are ~30-token failed attempts (tiny), and the global anchor
+is a separately retained tier that vanilla does not pay for. **Eviction savings are a function of
+how much the evicted content weighs relative to the retained anchor.** With a 2,800-token evicted
+block the saving is large (measured 99% in the bench matrix); with 4 thirty-token turns it is
+negative. Do not quote a KV saving without naming the eviction-to-context ratio.
+
+**★ THE RUNTIME ANSWER IS CORRECT BUT NOT CLEAN, ON BOTH MODELS.** Qwen returns
+"The most recent IP IP address successfully assigned addr add 192.168.1..." — right address, and it
+does NOT regress to the un-sudo'd command Bob predicted, but it stutters and echoes. Mistral never
+converges inside 40 tokens ("The most recent IP address successfully assigned to eth0 is
+192.168.1 "). The control and vanilla arms answer in 3 tokens. So the runtime's decode is measurably
+less stable, even when the fact is present — consistent with Finding 35's mechanism: the surviving
+blocks never co-attended, so the query tier is recovering the answer from a weaker representation.
+
+**Verified non-vacuous:** the control arm carries the identical context in one causal sequence and
+PASSes, so the comparison is against a working reference rather than a broken baseline. The
+assertion targets the newest successful bind (`192.168.1.57`), which is never evicted, so cost is
+isolated from the F35 join failure.
+
+Artifacts: `modal/multiturn.py`, results in `benchmarks/results/multiturn_*.json`.
+
+## Finding 37 (2026-09-30) — FINDING 35 WAS WRONG. The defect is the POSITIONAL GAP, not isolation.
+
+**10 randomised trials per model, 2 architectures. The eviction gap decides the outcome, and it is
+fixable.**
+
+| arm | qwen2.5-7b | mistral-7b-instruct | what it is |
+|---|---|---|---|
+| control | **0/10** | **100%** | survivors + distractor, one causal sequence |
+| vanilla | **10/10** | 0/10 | survivors only, one causal sequence, no distractor |
+| **runtime** | **0/10** | **0/10** | block table, survivors keep ORIGINAL positions (gap) |
+| **gap-adjacent** | **10/10** | **100%** | block table, survivors re-indexed CONTIGUOUSLY |
+
+**runtime vs gap-adjacent is the experiment, and it is the same architecture in both arms** —
+identical separate-prefill isolation, identical KV, identical eviction. The ONLY difference is
+whether block 3 keeps its absolute position id (3300+ tokens after block 1, with the evicted span
+missing between them) or is re-indexed to sit directly after block 1. **The gapped layout fails
+100%; the contiguous layout passes 100%, on both models.**
+
+**⇒ FINDING 35's CONCLUSION WAS WRONG AND ITS EVIDENCE WAS CONTAMINATED.** F35 concluded "prefill
+isolation, not the gap" from `probe_gap.py`. That probe had a slicing bug — it addressed block KVs
+by POSITION ID instead of insertion index, so gapped blocks sliced to EMPTY tensors. Both F35 arms
+were therefore measured with a broken/absent block 3. The bug was found and fixed in the same
+session, but F35's *conclusion* was written against the buggy run and was not revisited. The
+corrected probe printed coherent strings for the gapped arm where the buggy one printed `0\n0\n0000`,
+and the conclusion should have been revisited then. **A probe fix that changes the observed symptom
+invalidates the finding built on the old observation — re-run the whole finding, not just the probe.**
+
+**★ WHY THE GAP BREAKS IT.** RoPE is relative, so the distance between block 1's keys and the query
+is what the query's attention sees. With the evicted span missing, block 3 sits at position ~3300
+while the table only holds ~90 rows — the query lands ~3200 positions from block 1 instead of ~60.
+The attention geometry is that of a context that still contains the distractor, but the content is
+gone, so block 1 is effectively out of range. Re-indexing collapses the survivors into the position
+space they actually occupy.
+
+**★★ THE FIX IS ONE LINE AND IT IS NOW MEASURED: re-index survivors contiguously on eviction.**
+Block caches are built separately (isolation preserved, which is what makes eviction lossless by
+construction) and then ASSEMBLED with contiguous position ids. This keeps every property the design
+wants — bit-identical survivors, no recompute, O(1) eviction — and repairs the cross-block join.
+`gap-adjacent 10/10` both models is that fix verified.
+
+**⚠️ THE CONTROL ARMS ARE MODEL-DEPENDENT AND BOTH ARE NEEDED.** Qwen's control is 0/10: with the
+2,800-token distractor present in a plain causal sequence it cannot answer, while the same content
+without the distractor is 10/10 — attention dilution, reproduced. Mistral-instruct inverts it:
+control 100%, vanilla 0% — it follows the log format but not the bare concatenation. A single
+control would have mislabelled one of the two models as broken.
+
+**Verified non-vacuous:** 10 randomised port/secret pairs per arm per model, so no answer is
+memorisable; the two block arms differ in exactly one variable; and the fix is confirmed on two
+architectures. Artifact: `modal/trials_two_needle.py`.
+
+## Finding 38 (2026-09-30) — Bob's Test 1 (RoPE): his stated pass metric is contradicted
+
+**Bob's pass metric:** *"retaining original absolute positional coordinates preserves exact
+generation coherence WITHOUT requiring continuous re-indexing."* **Measured: it is never better
+and sometimes fatal. Re-indexing is never worse.**
+
+10 randomised trials, both arms hold the SAME block caches (same KV, same isolation):
+
+| model | full (no eviction) | STATIC (original ids — Bob's metric) | COMPACT (re-indexed) |
+|---|---|---|---|
+| qwen2.5-7b | 0% | **0%** | **100%** |
+| mistral-7b-instruct | 60% | **0%** | **0%** (task-format dependent; 100% in the Finding 37 format) |
+
+**⇒ KEEPING ORIGINAL POSITION IDS WINS NOWHERE AND LOSES BADLY.** In every measurement across
+both models and both test formats, `static` is 0%. `compact` reaches 100% on Qwen in this format
+and 100% on both models in the Finding 37 format. **Re-indexing survivors contiguously is the
+correct behaviour, and Bob's hypothesis is the opposite of what the data shows.**
+
+### ★★ THE DRIFT NUMBER CONTRADICTS THE "10⁻⁵ FLOOR" PREMISE — and this is the subtle part
+Mean key drift of the surviving blocks against the full no-eviction run: **static 1.507e+01,
+compact 1.507e+01 — IDENTICAL to 4 significant figures.** Re-indexing does not change a single key
+tensor (it is the same blocks; only the assembly offset moves), so **drift cannot discriminate
+between the two arms, and it cannot be the mechanism behind the join failure.** Only coherence can.
+
+**More importantly: the drift here is ~1.5e+01, NOT 1e-05.** The 10⁻⁵ floor is real but it applies
+only when the survivors never attended to the evicted content (the block-diagonal case, Finding 28).
+In a LINEAR causal prefill the survivors attended to everything before them, and that influence is
+baked into their keys. Evicting the distractor afterwards leaves ~15.0 of drift — the CONTENT error
+Finding 23 identified. **Do not quote "10⁻⁵ vs 10¹" as a property of eviction in general; it is a
+property of eviction from BLOCK-DIAGONAL isolation specifically.** The same distinction decides
+which architecture can claim what.
+
+**Verified non-vacuous:** the `full` arm (no eviction) is measured on the same trials and reaches
+60% on Mistral, so the task is answerable and the 0% block arms are attributable to eviction.
+Artifact: `modal/rope_offsets.py`.
+
+## Finding 39 (2026-09-30) — Frankenstein vs history eviction: a NULL, and the null is informative
+
+**Bob's question:** when a model repairs code across iterations, does discarding earlier failed
+attempts let it cleanly overwrite its previous draft, or does it hallucinate deprecated variables
+from them?
+
+**Answer: neither, at this scale. Evicting earlier failures changed nothing, and produced zero
+Frankenstein artifacts.**
+
+Qwen2.5-7B, 3 repair rounds, every candidate genuinely exec'd against real assertions. Two arms
+differing ONLY in what stays in context (`history` = all prior attempts and errors; `evict` = only
+the most recent failure).
+
+| task set | arm | pass@1 | pass@3 | frankenstein |
+|---|---|---|---|---|
+| easy (6 trivial bugs) | history | 100% | 100% | 0% |
+| easy | evict | 100% | 100% | 0% |
+| hard (4 multi-piece) | history | **50%** | **50%** | **0%** |
+| hard | evict | **50%** | **50%** | **0%** |
+
+**★ THE EASY SET MEASURED NOTHING AND THAT WAS CAUGHT BY MEASURING.** pass@1 = 100% on both arms
+means every bug was fixed on the FIRST attempt: the repair loop never ran, so there was no
+multi-turn iteration to study and no opportunity for a Frankenstein artifact. The hard set was
+built in response, and it genuinely fails — `calc` and `tok` are never solved in 3 rounds.
+
+**★ THE RESULT: eviction is FREE here and Frankenstein did not appear.** Identical 50%/50% in both
+arms, and 0% undefined-name failures. Discarding earlier failed drafts neither helped the model
+recover nor hurt it, and did not produce a single ghost variable.
+
+**⚠️ SAMPLE SIZE — DO NOT OVER-READ THIS.** Only 2 of 4 hard tasks fail, so there are 4 failing
+trajectories total (2 tasks x 2 arms). **0/4 is weak evidence of "no Frankenstein"** and should not
+be reported as a rate. To make a claim about the phenomenon the harness needs many more tasks the
+model fails — which is exactly the real-repo multi-turn loop Bob's Test 4 specified, and which
+does not exist here. Reporting `frankenstein = 0%` without that caveat would be the overclaim.
+
+**★ A GRADER THAT CANNOT FAIL MEASURES NOTHING, TWICE OVER.** Both task sets were validated locally
+BEFORE any GPU time: every buggy version must FAIL its assertions and at least two independent
+correct implementations must PASS them. The first draft failed this check on **4 of 6 tasks** — a
+mutable default inside a factory does not actually share state, `for it in items[:]` while removing
+does not actually skip, `round(a,2)==round(b,2)` passed the intended counter-example, and a
+recursive `deep_sum` was already correct. All four would have reported as model failures.
+
+Artifacts: `modal/frankenstein.py` (task sets + arms), `modal/cost.py` (ledger).
+
+## Correction to Finding 36 (2026-09-30)
+
+**The multi-turn run evicted 3 turns, not 4.** `evict_idx` selects the even-indexed turns in
+`range(1, 8)`, which is `[2, 4, 6]` — three of them. An earlier report described the run as
+"8 turns / 4 evictions" following the specification; the measurement is **8 turns, 3 evictions**.
+The plot labels itself from the data and prints 3. `--turns 9` would produce 4 evictions. The cost
+figures are unaffected (they come from the run, not the spec), but the headline should read
+**8 turns / 3 evictions**.
+
+Artifact: `benchmarks/plot_results.py` -> `benchmark_wallclock_vs_recompute.png` (three panels:
+per-turn prefill work, cumulative wall clock with the one-time ingest drawn separately, and the
+memory watermark — the third panel deliberately shows the runtime NOT winning, because on this
+workload it does not).
+
+## Redaction of synthetic test credentials (2026-09-30)
+
+The two-needle and RoPE tests generate a RANDOM credential per trial
+(a Stripe-shaped live-key prefix plus 12 random hex chars) so no answer is memorisable. Those values are synthetic and
+were never valid, but committed into a **public** repository they are indistinguishable from
+leaked live keys — a scanner, or a reader, has no way to tell. **Every occurrence has been changed
+to `EXAMPLE_KEY_`, preserving the random suffix.**
+
+**This does not alter any result.** The prefix is cosmetic; the pass/fail outcome depends on
+whether the model produced the port:secret pair, and that is unaffected. Verified after the edit:
+all 47 result cells still parse and the runtime PASS count is unchanged at 9. The generators in
+`modal/trials_two_needle.py`, `modal/rope_offsets.py`, `modal/bench.py` and `benchmarks/tasks.py`
+now emit the `EXAMPLE_KEY_` prefix so future runs cannot reintroduce the problem.
+
+## Finding 40 (2026-09-30) — Bob's Sequential Scratchpad does NOT close the state-update case
+
+**Bob's Solution 1:** force an intermediate trace ("Trace each movement sequentially: 1. First, …")
+so the generated tokens re-link the isolated blocks during decode.
+
+**Tested and refuted.** Qwen2.5-7B, 10 randomised trials, three moves across two surviving blocks
+(each move a different place, sampled from ten), all arms on the same Finding 37 contiguity fix so
+only the decode strategy varies:
+
+| arm | what it does | success |
+|---|---|---|
+| **direct** | query → answer in one forward | **30%** |
+| **trace** | query → forced sequential trace → answer | **10%** |
+| **null-trace** | same token budget, no movement content | **0%** |
+
+**⇒ THE SCRATCHPAD IS NOT BETTER, AND THE NULL ARM SHOWS WHY THE FORMAT ISN'T THE ISSUE.** `trace`
+does not exceed `direct`; `null-trace` is worst, so extra decode steps alone do not help either.
+**⚠️ HONEST STATISTICS: 3/10 vs 1/10 is Fisher two-sided p = 0.582.** At n=10 the arms cannot be
+separated, so the defensible claim is **"the scratchpad does not help"**, NOT "it makes things
+worse". Reporting the direction without the p-value would be the overclaim.
+
+**★ A REAL HARM WAS OBSERVED, AND IT IS DIAGNOSTIC.** The trace arm produces degenerate loops on
+this model — `"drawer drawer drawer drawer"`, `"2222222222222…"`, prompt echo
+(`"user What is the blue key used for?"`). The scratchpad format causes repetition collapse, so
+even the mechanical case for it fails here.
+
+**★ AND THE DIRECT ARM IS ONLY 30%, which bounds the whole question.** This task (three moves,
+randomised from ten places, two different actors) is materially harder than the earlier babilong
+run, and the state-update failure is DEEPER than decode strategy — it is not that the model needs
+more steps, it is that the later fact is not being applied over the earlier one at all.
+
+**⇒ Verdict: the cross-block JOIN is solved (Finding 37, contiguity); the cross-block state UPDATE
+is not, and a decode-side scratchpad does not solve it.** The remaining candidate is the
+recompute path — re-prefill the survivors as one sequence — which is the same answer Findings 18
+and 21 reached from a different direction.
+
+Artifact: `modal/scratchpad.py`. Cost: this run was UNINSTRUMENTED (imported `track()` and never
+called it); the wrapper is now applied so future runs record.
+
+## Finding 41 (2026-09-30) — the RECOMPUTE path DOES close the state-update case
+
+**The open defect from Finding 40 is solvable, and this is the measurement.** Three arms, identical
+randomised task (three sequential moves, three distinct places from ten, two different actors),
+same final question, 10 trials per model:
+
+| arm | qwen2.5-7b | mistral-7b-instruct |
+|---|---|---|
+| **full** (every block, one causal sequence — upper bound) | 100% | 100% |
+| **block** (block table + contiguity fix — the shipped runtime) | **30%** | **10%** |
+| **recompute** (survivors re-prefilled as ONE contiguous span) | **100%** | **100%** |
+
+**⇒ ASSEMBLING INDEPENDENTLY-PREFILLED BLOCKS CANNOT PERFORM A SEQUENTIAL STATE UPDATE, AND
+RE-PREFILLING THE SURVIVORS AS ONE SEQUENCE CAN.** Both `block` arms fail in the same way — they
+answer with an EARLIER place (`garden shed`, `kitchen drawer`, `hallway closet`) or with nothing
+(`The blue key`), never the last one. The recompute arm answers the final place on every trial of
+both models.
+
+**★ THE COST, IN RAW COMPUTE (measured per query, averaged):**
+
+| | qwen2.5-7b | mistral-7b-instruct |
+|---|---|---|
+| block — prefill tokens | 22 | 17 |
+| recompute — prefill tokens | 73 | 73 |
+| block — wall | 34.2 ms | 35.0 ms |
+| recompute — wall | 39.7 ms | 42.5 ms |
+| block — resident KV | 6.0 MB | 12.3 MB |
+| recompute — resident KV | 5.8 MB | 12.4 MB |
+
+**The recompute path costs ~3.3-4.3x the prefill tokens per query and ~16-21% more wall clock.**
+It buys 10-30% → 100% correctness. **This is the same trade Findings 18 and 21 priced from the
+drift direction**: correctness costs a re-prefill of the surviving text, and the block table's
+zero-recompute eviction is exactly what forfeits the update.
+
+**★ SO THE DESIGN SPLITS BY OPERATION, AND THAT IS THE USABLE RESULT:**
+| operation | correct engine | why |
+|---|---|---|
+| lookup / concatenation across blocks | **block table** (contiguity fix) | 10/10 at 3.3x cheaper; no cross-block dependency beyond the join |
+| sequential state update across blocks | **recompute** | independent prefills cannot carry a later fact that must supersede an earlier one |
+
+**Verified non-vacuous:** the `full` arm is 100% on both models, so the task IS answerable and the
+block arm's failure is attributable to the assembly rather than to the model. The task is
+randomised per trial so no answer is memorisable. Artifact: `modal/recompute_state.py`.
+
+## Finding 42 (2026-09-30, Modal) — RAW HARDWARE METRICS: all three disagree, and they correct the previous headline
+
+Bob: *"calculate raw hardware FLOPs, memory bandwidth demands, and actual Watt-hours. This approach
+provides an objective, reproducible metric for the paper."* and *"Also do llama, so we dont get the
+critic that its model dependent"*.
+
+Measured 20 randomised trials per model. **Watt-hours are MEASURED** (`nvidia-smi power.draw`
+sampled on a background thread and integrated), not TDP × time. FLOPs and bytes are MODELLED with
+the formula printed. Both arms were warmed up first: the first timed arm read **401 ms** against a
+warm **318 ms**, i.e. CUDA kernel compilation and cuDNN autotune landed entirely on whichever arm
+ran first and made BLOCK look slower than RECOMPUTE. One-time costs must be paid before timing, and
+the arm order now alternates per trial.
+
+### Cross-architecture, the correctness result REPRODUCES
+
+| model | block | recompute |
+|---|---|---|
+| Qwen2.5-7B | 5/20 | **20/20** |
+| **Llama-3.1-8B** | **7/20** | **20/20** |
+
+The block runtime fails the sequential state update on real Llama exactly as it does on Qwen, and
+recompute closes it on both. The critic's "model dependent" objection is answered.
+
+⚠️ `meta-llama/Llama-3.1-8B` is **gated** — `403` on file access from this box *and* from Modal,
+while the API metadata endpoint returns **200**. `NousResearch/Meta-Llama-3.1-8B` is an ungated
+mirror of the same checkpoint (verified `model_type=llama`, `hidden_size=4096`, 32 heads, 14336
+intermediate, `gated:False`). Use the mirror; do not read a 200 metadata response as access.
+
+### ★★ THE THREE METRICS DO NOT AGREE — which is the finding
+
+| claim | Qwen | Llama | verdict |
+|---|---|---|---|
+| **1. compute** (FLOPs/query) | block **0.48×** recompute | block **0.54×** | real win for block |
+| **2. bandwidth** (bytes/query) | KV is **0.01%** of bytes | **0.01%** | **NEITHER can win at batch 1** |
+| **3. wall clock** | block **1.19×** recompute | block **0.99×** | depends on what is counted |
+| **4. energy** (MEASURED Wh) | block 0.0175, recompute 0.0144 | 0.0433 vs 0.0456 | ≈ equal, both directions |
+| **5. KV residency** | 5.94 MB vs 5.83 MB | 18.76 MB vs 18.76 MB | capacity, not speed |
+
+### ★★★ THE CORRECTION: MY PREVIOUS HEADLINE WAS A COMPUTE CLAIM, AND COMPUTE IS NOT THE BINDING CONSTRAINT
+
+I told Bob the honest headline was *"16-17% of vanilla in attention pairs, not 39% in tokens"*.
+**Attention pairs are FLOPs, and on this hardware FLOPs are nearly free.** Arithmetic intensity:
+
+    ridge point (A10G) = 125 TFLOP/s ÷ 600 GB/s = 208 FLOP/byte
+    both arms measure ≈ 1.00 FLOP/byte
+
+**Both arms sit ~208× BELOW the roofline ridge point, so the workload is memory-bandwidth-bound and
+its FLOP count is almost irrelevant.** Reducing attention pairs by 84% therefore buys far less than
+the number suggests — and a reviewer who knows the roofline would have said so. **That claim was
+overstated and is retracted.**
+
+### What actually drives the win, and what KV compaction is honestly for
+
+**Mechanism.** At batch 1 every decode/prefill token reads the ENTIRE weight matrix (7-8B × 2 B ≈
+14-16 GB) while the KV it touches is megabytes. The measured bandwidth split is decisive:
+
+    block      weights 525.70G | kv_read 44.6M | kv_write 18.4M | TOTAL 525.76G | KV share 0.01%
+    recompute  weights   1.28T | kv_read 63.0M | kv_write 44.6M | TOTAL   1.28T | KV share 0.01%
+
+So the runtime's advantage comes from **making fewer passes over the weights** — 35 vs 85 prefill
+tokens on Llama, 22 vs 72 on Qwen, each token paying a full weight read — **not** from reading less
+KV. The honest placement:
+
+| property | value | where it counts |
+|---|---|---|
+| fewer weight passes | real, 0.48-0.54× FLOPs | **wall-clock at batch 1** |
+| less KV read/written | **0.01% of bytes** | nothing at batch 1 |
+| **less KV resident** | 5.9-18.8 MB/query | **context length that fits; batch>1 where weights amortise** |
+
+**KV compaction earns its place on RESIDENCY and on throughput at batch > 1.** At batch 1 on one
+GPU it cannot move the bandwidth number, because the weight term dwarfs it. Stated here so the paper
+does not claim a bandwidth win it does not have.
+
+### ★ And the contiguity fix costs something, which corrects Finding 41's wall figure
+
+Finding 41 reported *"recompute 1.2× wall"* counting the **query only**. Counting the work actually
+required to close the positional gap — the moved block must be **re-prefilled** so it is contiguous
+with its predecessor — the block arm's wall advantage disappears: **1.19× on A10G, 0.99× on A100.**
+
+| what is timed | block vs recompute |
+|---|---|
+| query only (Finding 41) | block cheaper (recompute 1.2×) |
+| **end-to-end incl. contiguity re-prefill** | **≈ equal** |
+
+Both figures are real and answer different questions; the end-to-end one is the honest one for a
+deployment, because a moved block always has to be re-prefilled.
+
+⚠️ **Cross-GPU wall-clock is not comparable.** The same workload measured 380 ms on A10G and 1146 ms
+on A100-40GB — a small-batch fp16 workload does not scale with the A100's peak. Only arm-vs-arm
+comparisons within one run are valid; the A100 run exists because an 8B fp16 model plus the 29k-token
+control's activation exceeds the A10G's 22 GB (`24.00 MiB requested, 64.00 MiB free`).
+
+### Artifacts
+`modal/hardware_metrics.py` (measured power + modelled FLOPs/bytes) ·
+`modal/arithmetic_intensity.py` (the roofline comparison above) ·
+`benchmarks/results/hardware_*.json`.

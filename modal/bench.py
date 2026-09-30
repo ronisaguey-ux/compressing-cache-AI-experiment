@@ -72,9 +72,15 @@ image = (
 
 hf_cache = modal.Volume.from_name("ccai-hf-cache", create_if_missing=True)
 
+    # ★ meta-llama/Llama-3.1-8B is GATED (403 on file access, on this box AND on Modal,
+    # even though the API metadata endpoint returns 200). NousResearch hosts an UNGATED
+    # mirror of the same checkpoint -- verified model_type=llama, hidden_size=4096,
+    # 32 heads, intermediate 14336, 128k ctx, gated:False. Using the mirror means the
+    # cross-architecture claim can be tested on real Llama instead of only reporting the
+    # blocker, and it is the same architecture either way.
 MODELS = {
     "qwen2.5-7b": "Qwen/Qwen2.5-7B",
-    "llama-3.1-8b": "meta-llama/Llama-3.1-8B",
+    "llama-3.1-8b": "NousResearch/Meta-Llama-3.1-8B",
     "mistral-7b": "mistralai/Mistral-7B-v0.3",
     "mistral-7b-instruct": "mistralai/Mistral-7B-Instruct-v0.3",
     "qwen2.5-0.5b": "Qwen/Qwen2.5-0.5B",

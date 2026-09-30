@@ -1,0 +1,101 @@
+[
+  {
+    "model": "llama-3.1-8b",
+    "hf_id": "NousResearch/Meta-Llama-3.1-8B",
+    "trials": 20,
+    "results": {
+      "block": {
+        "correct": 7,
+        "trials": 20,
+        "wall_ms": 1145.7856093999958,
+        "kv_bytes": 18756403.2,
+        "ctx_tokens": 85.1,
+        "fwd_tokens": 35.0,
+        "watt_hours": 0.04329255687100292,
+        "peak_w": 158.358,
+        "joules_per_query": 155.85320473561052
+      },
+      "recompute": {
+        "correct": 20,
+        "trials": 20,
+        "wall_ms": 1156.6343776499994,
+        "kv_bytes": 18756403.2,
+        "ctx_tokens": 120.1,
+        "fwd_tokens": 85.1,
+        "watt_hours": 0.04558023000428349,
+        "peak_w": 188.8865,
+        "joules_per_query": 164.08882801542057
+      }
+    },
+    "energy": {
+      "block": {
+        "mean_wh": 0.04329255687100292,
+        "mean_peak_w": 158.358
+      },
+      "recompute": {
+        "mean_wh": 0.04558023000428349,
+        "mean_peak_w": 188.8865
+      }
+    },
+    "bandwidth": {
+      "block": {
+        "prefill": {
+          "weights": 525700000000.0,
+          "kv_read": 44616908.8,
+          "kv_write": 18350080.0,
+          "total": 525762966988.8,
+          "kv_share": 0.00011976307338767233
+        },
+        "with_decode": {
+          "weights": 886180000000.0,
+          "kv_read": 57199820.8,
+          "kv_write": 30932992.0,
+          "total": 886268132812.8,
+          "kv_share": 9.944260606582776e-05
+        }
+      },
+      "recompute": {
+        "prefill": {
+          "weights": 1278202000000.0,
+          "kv_read": 62966988.8,
+          "kv_write": 44616908.8,
+          "total": 1278309583897.6,
+          "kv_share": 8.41610662668849e-05
+        },
+        "with_decode": {
+          "weights": 1638682000000.0,
+          "kv_read": 75549900.8,
+          "kv_write": 57199820.8,
+          "total": 1638814749721.6,
+          "kv_share": 8.100349452099534e-05
+        }
+      }
+    },
+    "flops": {
+      "block": {
+        "prefill": {
+          "linear": 525700000000.0,
+          "attention": 1561591808.0,
+          "total": 527261591808.0
+        },
+        "with_decode": {
+          "linear": 886180000000.0,
+          "attention": 3374789427.2,
+          "total": 889554789427.2
+        }
+      },
+      "recompute": {
+        "prefill": {
+          "linear": 1278202000000.0,
+          "attention": 5358490746.879999,
+          "total": 1283560490746.88
+        },
+        "with_decode": {
+          "linear": 1638682000000.0,
+          "attention": 8242494177.279999,
+          "total": 1646924494177.28
+        }
+      }
+    }
+  }
+]

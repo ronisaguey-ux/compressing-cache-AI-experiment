@@ -44,6 +44,9 @@ image = (
 hf_cache = modal.Volume.from_name("ccai-hf-cache", create_if_missing=True)
 
 MODELS = {
+    # ungated mirror of meta-llama/Llama-3.1-8B (the original is 403 on file
+    # access both locally and on Modal); verified same architecture.
+    "llama-3.1-8b": "NousResearch/Meta-Llama-3.1-8B",
     "qwen2.5-7b": "Qwen/Qwen2.5-7B",
     "mistral-7b-instruct": "mistralai/Mistral-7B-Instruct-v0.3",
 }

@@ -1,0 +1,106 @@
+[
+  {
+    "model": "qwen2.5-7b",
+    "hf_id": "Qwen/Qwen2.5-7B",
+    "trials": 20,
+    "results": {
+      "block": {
+        "correct": 5,
+        "trials": 20,
+        "wall_ms": 379.703249400001,
+        "kv_bytes": 5943705.6,
+        "ctx_tokens": 72.1,
+        "fwd_tokens": 22.0,
+        "watt_hours": 0.01746787656140178,
+        "peak_w": 203.69400000000002,
+        "joules_per_query": 62.8843556210464
+      },
+      "recompute": {
+        "correct": 20,
+        "trials": 20,
+        "wall_ms": 318.39341605000374,
+        "kv_bytes": 5831884.8,
+        "ctx_tokens": 94.1,
+        "fwd_tokens": 72.1,
+        "watt_hours": 0.014433031744508435,
+        "peak_w": 205.3535,
+        "joules_per_query": 51.95891428023037
+      }
+    },
+    "energy": {
+      "block": {
+        "mean_wh": 0.01746787656140178,
+        "mean_peak_w": 203.69400000000002
+      },
+      "recompute": {
+        "mean_wh": 0.014433031744508435,
+        "mean_peak_w": 205.3535
+      }
+    },
+    "bandwidth": {
+      "block": {
+        "prefill": {
+          "weights": 287320000000.0,
+          "kv_read": 28941516.799999997,
+          "kv_write": 8830976.0,
+          "total": 287357772492.8,
+          "kv_share": 0.0001314476113603171
+        },
+        "with_decode": {
+          "weights": 600760000000.0,
+          "kv_read": 38575308.8,
+          "kv_write": 18464768.0,
+          "total": 600817040076.8,
+          "kv_share": 9.49375150756523e-05
+        }
+      },
+      "recompute": {
+        "prefill": {
+          "weights": 941625999999.9999,
+          "kv_read": 37772492.8,
+          "kv_write": 28941516.799999997,
+          "total": 941692714009.6,
+          "kv_share": 7.084477622847986e-05
+        },
+        "with_decode": {
+          "weights": 1255066000000.0,
+          "kv_read": 47406284.8,
+          "kv_write": 38575308.8,
+          "total": 1255151981593.6,
+          "kv_share": 6.850293419513525e-05
+        }
+      }
+    },
+    "flops": {
+      "block": {
+        "prefill": {
+          "linear": 287320000000.0,
+          "attention": 636713369.5999999,
+          "total": 287956713369.6
+        },
+        "with_decode": {
+          "linear": 600760000000.0,
+          "attention": 1774464204.8,
+          "total": 602534464204.8
+        }
+      },
+      "recompute": {
+        "prefill": {
+          "linear": 941625999999.9999,
+          "attention": 2723396730.8799996,
+          "total": 944349396730.8799
+        },
+        "with_decode": {
+          "linear": 1255066000000.0,
+          "attention": 4555743969.28,
+          "total": 1259621743969.28
+        }
+      }
+    }
+  },
+  {
+    "model": "llama-3.1-8b",
+    "status": "failed",
+    "error": "CUDA out of memory. Tried to allocate 14.22 GiB. GPU 0 has a total capacity of 22.06 GiB of which 7.55 GiB is free. Process 1 has 14.50 GiB memory in use. Of the allocated memory 14.19 GiB is allocated by PyTorch, and 8.24 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memor"
+  }
+]

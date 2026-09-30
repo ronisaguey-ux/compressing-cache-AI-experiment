@@ -1,0 +1,7 @@
+[
+  {
+    "model": "llama-3.1-8b",
+    "status": "failed",
+    "error": "CUDA out of memory. Tried to allocate 24.00 MiB. GPU 0 has a total capacity of 22.06 GiB of which 64.00 MiB is free. Process 1 has 21.99 GiB memory in use. Of the allocated memory 21.46 GiB is allocated by PyTorch, and 253.71 MiB is reserved by PyTorch but unallocated. If reserved but unallocated me"
+  }
+]
