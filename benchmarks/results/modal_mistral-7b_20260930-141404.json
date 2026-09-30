@@ -1,0 +1,82 @@
+{
+  "models": [
+    "mistral-7b"
+  ],
+  "tests": [
+    "babilong",
+    "two_needle"
+  ],
+  "scale": "base",
+  "rows": [
+    {
+      "model": "mistral-7b",
+      "hf_id": "mistralai/Mistral-7B-v0.3",
+      "test": "babilong",
+      "scale": "base",
+      "spam_lines": 600,
+      "expect": "attic",
+      "note": "kitchen -> shed (Richard) -> attic (Jessica)",
+      "load_s": 12.7,
+      "control": {
+        "answer": "\n<build_log>\nThis morning, Jessica went to the garden shed, picked up the blue key, and brought it to the attic.\n</build_log>\nThe blue key is in the attic.\n",
+        "ok": true,
+        "ttft_s": 1.1685431889999975,
+        "kv_bytes": 1580728320,
+        "prompt_tokens": 12013
+      },
+      "vanilla": {
+        "answer": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+        "ok": false,
+        "ttft_s": 0.03382765299999946,
+        "kv_bytes": 22544384,
+        "prompt_tokens": 125
+      },
+      "runtime": {
+        "answer": "\n</build_log>\nSYSTEM_FLAG_B = BETA_VERIFIED\nAlways answer with the exact value requested, quoting it verbatim.\n<build_log>\n Yesterday, the",
+        "ok": false,
+        "ttft_s": 0.026582527000002187,
+        "kv_bytes": 22544384,
+        "prompt_tokens": 25,
+        "ingest_s": 5.652794118999999,
+        "evicted_blocks": 1,
+        "kv_evicted_bytes": 1558052864,
+        "drift_evict": 0.0
+      }
+    },
+    {
+      "model": "mistral-7b",
+      "hf_id": "mistralai/Mistral-7B-v0.3",
+      "test": "two_needle",
+      "scale": "base",
+      "spam_lines": 600,
+      "expect": "api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc",
+      "note": "host+port in block 1, secret in block 3",
+      "load_s": 3.2,
+      "control": {
+        "answer": "\n<build_log>\napi.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc\n</build_log>\n</build_log>\n</build_",
+        "ok": true,
+        "ttft_s": 0.6670264939999981,
+        "kv_bytes": 1590558720,
+        "prompt_tokens": 12088
+      },
+      "vanilla": {
+        "answer": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+        "ok": false,
+        "ttft_s": 0.022233577999998033,
+        "kv_bytes": 32374784,
+        "prompt_tokens": 200
+      },
+      "runtime": {
+        "answer": "\n</build_log>\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+        "ok": false,
+        "ttft_s": 0.027687772000000166,
+        "kv_bytes": 32374784,
+        "prompt_tokens": 46,
+        "ingest_s": 5.652234555999996,
+        "evicted_blocks": 1,
+        "kv_evicted_bytes": 1558052864,
+        "drift_evict": 0.0
+      }
+    }
+  ]
+}

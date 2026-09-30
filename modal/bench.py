@@ -35,9 +35,16 @@ Usage:
     modal run modal/bench.py --model llama-3.1-8b --tests ruler,babilong,two_needle --scale 32k
     modal run modal/bench.py --all
 """
-import modal
+import modal, os
 
 app = modal.App("ccai-bench")
+
+# ★ GPU IS SELECTABLE because 16k/32k contexts do not fit on a 22 GB A10G. Measured: the
+# 16k control sequence OOM'd twice at an identical 6.26 GiB request with ~4 GiB free, both
+# before and after switching eager->sdpa attention. That is a capacity wall, not a bug, and
+# re-tuning chunk sizes to squeeze a 40 GB workload onto 22 GB is the wrong trade when the
+# credits exist. Set CCAI_GPU=A100-40GB (or A100-80GB) for the large-scale runs.
+GPU = os.environ.get("CCAI_GPU", "A10G")
 
 _SRC = "/tmp/opencode/ccai/src"
 
@@ -52,7 +59,13 @@ image = (
         "numpy",
     )
     .env({"HF_HOME": "/cache/hf", "HF_HUB_ENABLE_HF_TRANSFER": "1",
-          "TOKENIZERS_PARALLELISM": "false"})
+          "TOKENIZERS_PARALLELISM": "false",
+          # The control arm concatenates every block into one causal sequence (~10k tokens at
+          # base scale) and holds its whole KV, while build_table clones the global cache per
+          # block. Without this the second model in a run dies at 22 GiB with 15 MiB free --
+          # the allocator cannot find a contiguous block. Recommended verbatim by torch's own
+          # OOM message, and it is the fragmentation case rather than a genuine overcommit.
+          "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"})
     .add_local_dir(_SRC, "/root/ccai/src")
 )
 
@@ -62,8 +75,16 @@ MODELS = {
     "qwen2.5-7b": "Qwen/Qwen2.5-7B",
     "llama-3.1-8b": "meta-llama/Llama-3.1-8B",
     "mistral-7b": "mistralai/Mistral-7B-v0.3",
+    "mistral-7b-instruct": "mistralai/Mistral-7B-Instruct-v0.3",
     "qwen2.5-0.5b": "Qwen/Qwen2.5-0.5B",
 }
+
+# ★ Mistral-7B-v0.3 IS THE BASE MODEL, NOT INSTRUCT. Measured: on a Q&A prompt it emits padding
+# and log echoes rather than an answer, so BOTH the vanilla and runtime arms fail while the
+# control "passes" only by copying the surviving text. That is a property of an un-tuned base
+# model on an instruction task, not a result about the cache layout. The cross-architecture leg
+# must use an instruction-tuned model, which is why `mistral-7b-instruct` exists above.
+BASE_ONLY_MODELS = {"mistral-7b"}
 
 # Test definitions are shared with the local runner -- imported from the mounted tree so the
 # two cannot describe different tasks.
@@ -73,13 +94,16 @@ _sys.path.insert(0, "/tmp/opencode/ccai/benchmarks")
 
 @app.function(
     image=image,
-    gpu="A10G",
+    gpu=GPU,
+    min_containers=0,
     secrets=[modal.Secret.from_name("hf-token")],
     volumes={"/cache": hf_cache},
     timeout=7200,
     memory=32768,
 )
 def run_matrix(models: list, tests: list, scale: str = "base", max_new: int = 128):
+    import os as _os
+    print("[container] gpu=%s torch=%s" % (_os.environ.get("CCAI_GPU","?"), __import__("torch").cuda.get_device_name(0)), flush=True)
     import os, json, time, sys, gc, re
     import torch
     from transformers import AutoTokenizer, AutoModelForCausalLM, DynamicCache
@@ -106,7 +130,11 @@ def run_matrix(models: list, tests: list, scale: str = "base", max_new: int = 12
             self.model_id = model_id
             self.tok = AutoTokenizer.from_pretrained(model_id)
             self.model = AutoModelForCausalLM.from_pretrained(
-                model_id, torch_dtype=torch.float16, device_map=device)
+                model_id, dtype=torch.float16, device_map=device,
+                # ★ SDPA, NOT EAGER. Eager attention materialises the full heads x T_q x T_k
+                # score matrix; at 16k scale that is the 6.26 GiB allocation that OOM'd. SDPA
+                # uses a fused kernel and never builds it. Qwen2.5 supports sdpa natively.
+                attn_implementation="sdpa")
             self.model.eval()
 
     class HWrapper:
@@ -123,18 +151,78 @@ def run_matrix(models: list, tests: list, scale: str = "base", max_new: int = 12
         they are located in the RENDERED TEXT with str.index, so this works for any template
         rather than assuming ChatML. The whole local src/ tree hardcodes `<|im_start|>`, which
         is Qwen's format and produces a malformed turn structure on Llama-3.1.
+
+        ★ MISTRAL-7B-v0.3 SHIPS NO chat_template. Rather than skip the model, fall back to its
+        documented instruction format (`<s>[INST] ... [/INST]`). Mistral-v0.3 has no system
+        role, so the system text is prepended to the single user turn, which is the standard
+        handling. Without this the run dies with "tokenizer.chat_template is not set" and the
+        cross-architecture leg silently disappears.
         """
-        S, O, Q = "\u0001SYSMARK\u0001", "\u0001OPENMARK\u0001", "\u0001QMARK\u0001"
+        Q = "\u0001QMARK\u0001"
+        if not getattr(tok, "chat_template", None):
+            global_text = "<s>[INST] " + sys_text + "\n<build_log>\n"
+            tail = "\n</build_log>\n" + Q + " [/INST]"
+            return global_text, tail
+        S, O = "\u0001SYSMARK\u0001", "\u0001OPENMARK\u0001"
+        # ★ ONE USER TURN, NOT TWO. Mistral's Jinja template enforces alternating roles
+        # ("conversation roles must alternate user/assistant/user/assistant") and raises on two
+        # consecutive `user` messages, which took the whole cell down. Qwen tolerates it, but a
+        # template that validates its input is right and the caller is wrong. The block-open
+        # marker and the question marker live in the same user message; splitting the rendered
+        # text at each marker still yields the same three pieces.
         msgs = [
             {"role": "system", "content": S},
-            {"role": "user", "content": "<build_log>\n" + O + "\n</build_log>"},
-            {"role": "user", "content": Q},
+            {"role": "user", "content": "<build_log>\n" + O + "\n</build_log>" + Q},
         ]
         full = tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
         i_s, i_o = full.index(S), full.index(O)
         global_text = full[:i_s] + sys_text + full[i_s + len(S):i_o]
         tail = full[i_o + len(O):]
         return global_text, tail
+
+    def prefill_chunked(h, ids, chunk=2048):
+        """Prefill a long sequence in chunks, carrying the cache, returning the FINAL logits.
+
+        ★ WHY. HF returns logits for EVERY position, so a 29k-token control sequence at 16k
+        scale materialises 29000 x 151936 x fp16 = ~8.8 GB in one tensor, on top of ~15 GB of
+        weights -- which is the OOM that killed the first 16k RULER run. The attention KV for
+        the same sequence is only ~2 GB. Chunking means logits are never larger than
+        chunk x vocab, and the cache carries the context exactly as a single forward would.
+        """
+        c = None
+        logits_last = None
+        for lo in range(0, len(ids), chunk):
+            part = ids[lo:lo + chunk]
+            pos = torch.arange(lo, lo + len(part), dtype=torch.long, device=device)
+            with torch.no_grad():
+                if c is None:
+                    o = h.model(input_ids=torch.tensor([part], dtype=torch.long, device=device),
+                                use_cache=True, position_ids=pos.unsqueeze(0))
+                else:
+                    o = h.model(input_ids=torch.tensor([part], dtype=torch.long, device=device),
+                                past_key_values=c, use_cache=True,
+                                position_ids=pos.unsqueeze(0), cache_position=pos)
+            c = o.past_key_values
+            logits_last = o.logits[:, -1, :]
+        return c, logits_last
+
+    def decode_chunked(h, cache, first_logits, ids, max_new):
+        """Greedy decode from an already-prefilled cache."""
+        nxt = first_logits.argmax(-1, keepdim=True)
+        gen = [nxt]
+        c = cache
+        p = len(ids)
+        for _ in range(max_new - 1):
+            with torch.no_grad():
+                o = h.model(input_ids=nxt, past_key_values=c, use_cache=True,
+                            cache_position=torch.tensor([p], device=device))
+            c = o.past_key_values
+            nxt = o.logits[:, -1, :].argmax(-1, keepdim=True)
+            gen.append(nxt)
+            p += 1
+            if int(nxt.item()) == h.tok.eos_token_id:
+                break
+        return h.tok.decode(torch.cat(gen, dim=1)[0], skip_special_tokens=True)
 
     def cache_bytes(c):
         if c is None or len(c.layers) == 0:
@@ -225,8 +313,8 @@ def run_matrix(models: list, tests: list, scale: str = "base", max_new: int = 12
             blocks=[("Source Init", "let alpha = 42;\nlet beta = alpha * 2;", False),
                     ("Tool Log", spam(spam_lines), True),
                     ("Mutation", "let gamma = beta + 10;\nlet delta = gamma / 2;", False)],
-            query=('Evaluate the final value of delta. Reason step by step, then end your '
-                   'reply with the line: {"delta": <value>}'),
+            query=('Evaluate the final value of delta. Do not explain. Reply with only the '
+                   'line: {"delta": <value>}'),
             expect="47", check=lambda a: "47" in norm(a),
             note="alpha=42 beta=84 gamma=94 delta=47"),
         "babilong": dict(
@@ -238,7 +326,7 @@ def run_matrix(models: list, tests: list, scale: str = "base", max_new: int = 12
                     ("Payload B",
                      "This morning, Jessica went to the garden shed, picked up the blue key, "
                      "and brought it to the attic.", False)],
-            query="Where is the blue key now? Give only the final location name.",
+            query="Where is the blue key now? Reply with only the location name.",
             expect="attic", check=lambda a: "attic" in norm(a),
             note="kitchen -> shed (Richard) -> attic (Jessica)"),
         "synthetic_agent": dict(
@@ -268,7 +356,7 @@ def run_matrix(models: list, tests: list, scale: str = "base", max_new: int = 12
                      'Rotate credentials on the usual schedule.', False)],
             query=("Synthesize the connection string in the format "
                    "<TARGET_HOST>:<TARGET_PORT>?auth=<AUTH_SECRET>. "
-                   "Output only the string, nothing else."),
+                   "Reply with only that string."),
             expect="api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc",
             check=lambda a: "api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc" in norm(a)
                             or "api.internal.cluster:9443" in norm(a),
@@ -326,7 +414,10 @@ def run_matrix(models: list, tests: list, scale: str = "base", max_new: int = 12
             body = "\n".join(b[1] for b in blocks)
             qtext = tail_tmpl.replace("\u0001QMARK\u0001", task["query"])
             c_ids = h.tok(global_text + body + qtext, add_special_tokens=False)["input_ids"]
-            c_ans, c_ttft, c_kv = prefill_and_decode(h, None, c_ids, 0, max_new)
+            c_cache, c_logits = prefill_chunked(h, c_ids)
+            c_ans = decode_chunked(h, c_cache, c_logits, c_ids, max_new)
+            c_ttft = 0.0
+            c_kv = cache_bytes(c_cache)
             c_ok = bool(task["check"](c_ans))
 
             # ---- VANILLA: the surviving blocks only, in one causal sequence, NO distractor.
@@ -334,7 +425,10 @@ def run_matrix(models: list, tests: list, scale: str = "base", max_new: int = 12
             # distractor gone. If this passes and vanilla fails, the distractor is the cost.
             vbody = "\n".join(b[1] for b, e in zip(blocks, flags) if not e)
             v_ids = h.tok(global_text + vbody + qtext, add_special_tokens=False)["input_ids"]
-            v_ans, v_ttft, v_kv = prefill_and_decode(h, None, v_ids, 0, max_new)
+            v_cache, v_logits = prefill_chunked(h, v_ids)
+            v_ans = decode_chunked(h, v_cache, v_logits, v_ids, max_new)
+            v_ttft = 0.0
+            v_kv = cache_bytes(v_cache)
             v_ok = bool(task["check"](v_ans))
 
             # ---- runtime: block table, middle evicted, query as its own tier
@@ -399,12 +493,32 @@ def run_matrix(models: list, tests: list, scale: str = "base", max_new: int = 12
 
 @app.local_entrypoint()
 def main(model: str = "qwen2.5-7b", tests: str = "ruler,babilong,synthetic_agent,two_needle",
-         scale: str = "base", max_new: int = 48, all: bool = False):
+         scale: str = "base", max_new: int = 128, all: bool = False):
     import json, os, time
     ms = list(MODELS) if all else [m.strip() for m in model.split(",") if m.strip()]
     ts = [t.strip() for t in tests.split(",") if t.strip()]
     print("models=%s tests=%s scale=%s" % (ms, ts, scale), flush=True)
-    r = run_matrix.remote(ms, ts, scale, max_new)
+
+    # ★ ONE CELL PER CONTAINER, AND THIS IS NOT COSMETIC. Every test concatenates all blocks
+    # into a single causal control sequence (~10k tokens at base scale) and holds that whole
+    # KV, while build_table slices the global cache per block. Running a model's tests back to
+    # back in one process accumulated footprint until the SECOND model OOM'd at 22 GiB with
+    # ~20 MiB free -- fragmentation, not genuine overcommit, and expandable_segments did not
+    # fix it. A fresh container per (model, test) removes the accumulation class outright.
+    # Cost is one model load per cell (~13s from the volume cache), which is cheap next to a
+    # dead run. The model weights are cached on the Modal volume, so this is not a re-download.
+    r = []
+    t_start = time.time()
+    for m in ms:
+        for t in ts:
+            print("\n>>> CELL %s x %s  (%.0fs elapsed)" % (m, t, time.time() - t_start),
+                  flush=True)
+            try:
+                r.extend(run_matrix.remote([m], [t], scale, max_new))
+            except Exception as e:
+                print("    CELL FAILED: %s: %s" % (type(e).__name__, str(e)[:300]), flush=True)
+                r.append({"model": m, "test": t, "status": "cell_failed",
+                          "error": "%s: %s" % (type(e).__name__, str(e)[:400])})
 
     outdir = "/tmp/opencode/ccai/benchmarks/results"
     os.makedirs(outdir, exist_ok=True)
@@ -416,11 +530,16 @@ def main(model: str = "qwen2.5-7b", tests: str = "ruler,babilong,synthetic_agent
 
     live = [x for x in r if "vanilla" in x]
     if live:
-        print("\n  %-14s %-16s %-12s %-12s %-10s %s" % (
-            "model", "test", "vanilla", "runtime", "kv_saved", "drift"))
+        print("\n  %-14s %-16s %-10s %-10s %-10s %-12s %s" % (
+            "model", "test", "control", "vanilla", "runtime", "kv_held", "drift"))
         for x in live:
-            v, rt = x["vanilla"], x["runtime"]
-            ks = (1 - rt["kv_bytes"] / v["kv_bytes"]) * 100 if v["kv_bytes"] else 0
-            print("  %-14s %-16s %-12s %-12s %8.1f%%  %.1e" % (
-                x["model"], x["test"], "PASS" if v["ok"] else "fail",
-                "PASS" if rt["ok"] else "fail", ks, rt["drift_evict"]))
+            c, v, rt = x["control"], x["vanilla"], x["runtime"]
+            ks = (v["kv_bytes"] / c["kv_bytes"]) * 100 if c["kv_bytes"] else 0
+            print("  %-14s %-16s %-10s %-10s %-10s %8.1f%%  %.1e" % (
+                x["model"], x["test"], "PASS" if c["ok"] else "fail",
+                "PASS" if v["ok"] else "fail", "PASS" if rt["ok"] else "fail",
+                ks, rt["drift_evict"]))
+    fails = [x for x in r if x.get("status") == "cell_failed"]
+    if fails:
+        print("\n  %d cell(s) failed to run: %s" % (
+            len(fails), ", ".join("%s/%s" % (f["model"], f["test"]) for f in fails)))

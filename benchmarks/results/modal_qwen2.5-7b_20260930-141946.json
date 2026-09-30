@@ -1,0 +1,17 @@
+{
+  "models": [
+    "qwen2.5-7b"
+  ],
+  "tests": [
+    "ruler"
+  ],
+  "scale": "16k",
+  "rows": [
+    {
+      "model": "qwen2.5-7b",
+      "test": "ruler",
+      "status": "cell_failed",
+      "error": "OutOfMemoryError: CUDA out of memory. Tried to allocate 6.29 GiB. GPU 0 has a total capacity of 22.06 GiB of which 6.15 GiB is free. Process 1 has 15.90 GiB memory in use. Of the allocated memory 15.53 GiB is allocated by PyTorch, and 101.52 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  Se"
+    }
+  ]
+}

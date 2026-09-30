@@ -1,0 +1,542 @@
+[
+  {
+    "model": "mistral-7b",
+    "hf_id": "mistralai/Mistral-7B-v0.3",
+    "test": "babilong",
+    "scale": "base",
+    "spam_lines": 600,
+    "expect": "attic",
+    "note": "kitchen -> shed (Richard) -> attic (Jessica)",
+    "load_s": 12.7,
+    "control": {
+      "answer": "\n<build_log>\nThis morning, Jessica went to the garden shed, picked up the blue key, and brought it to the attic.\n</build_log>\nThe blue key is in the attic.\n",
+      "ok": true,
+      "ttft_s": 1.1685431889999975,
+      "kv_bytes": 1580728320,
+      "prompt_tokens": 12013
+    },
+    "vanilla": {
+      "answer": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+      "ok": false,
+      "ttft_s": 0.03382765299999946,
+      "kv_bytes": 22544384,
+      "prompt_tokens": 125
+    },
+    "runtime": {
+      "answer": "\n</build_log>\nSYSTEM_FLAG_B = BETA_VERIFIED\nAlways answer with the exact value requested, quoting it verbatim.\n<build_log>\n Yesterday, the",
+      "ok": false,
+      "ttft_s": 0.026582527000002187,
+      "kv_bytes": 22544384,
+      "prompt_tokens": 25,
+      "ingest_s": 5.652794118999999,
+      "evicted_blocks": 1,
+      "kv_evicted_bytes": 1558052864,
+      "drift_evict": 0.0
+    },
+    "_scale": "base"
+  },
+  {
+    "model": "mistral-7b",
+    "hf_id": "mistralai/Mistral-7B-v0.3",
+    "test": "two_needle",
+    "scale": "base",
+    "spam_lines": 600,
+    "expect": "api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc",
+    "note": "host+port in block 1, secret in block 3",
+    "load_s": 3.2,
+    "control": {
+      "answer": "\n<build_log>\napi.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc\n</build_log>\n</build_log>\n</build_",
+      "ok": true,
+      "ttft_s": 0.6670264939999981,
+      "kv_bytes": 1590558720,
+      "prompt_tokens": 12088
+    },
+    "vanilla": {
+      "answer": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+      "ok": false,
+      "ttft_s": 0.022233577999998033,
+      "kv_bytes": 32374784,
+      "prompt_tokens": 200
+    },
+    "runtime": {
+      "answer": "\n</build_log>\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+      "ok": false,
+      "ttft_s": 0.027687772000000166,
+      "kv_bytes": 32374784,
+      "prompt_tokens": 46,
+      "ingest_s": 5.652234555999996,
+      "evicted_blocks": 1,
+      "kv_evicted_bytes": 1558052864,
+      "drift_evict": 0.0
+    },
+    "_scale": "base"
+  },
+  {
+    "model": "mistral-7b-instruct",
+    "hf_id": "mistralai/Mistral-7B-Instruct-v0.3",
+    "test": "babilong",
+    "scale": "base",
+    "spam_lines": 600,
+    "expect": "attic",
+    "note": "kitchen -> shed (Richard) -> attic (Jessica)",
+    "load_s": 11.3,
+    "control": {
+      "answer": "Attic",
+      "ok": true,
+      "ttft_s": 1.1756942539999997,
+      "kv_bytes": 1574699008,
+      "prompt_tokens": 12012
+    },
+    "vanilla": {
+      "answer": "Attic",
+      "ok": true,
+      "ttft_s": 0.03664124799999868,
+      "kv_bytes": 16515072,
+      "prompt_tokens": 124
+    },
+    "runtime": {
+      "answer": "Attic or Garden Shed, as per the information provided in the build log.",
+      "ok": true,
+      "ttft_s": 0.0278686179999994,
+      "kv_bytes": 18481152,
+      "prompt_tokens": 23,
+      "ingest_s": 5.687978584000003,
+      "evicted_blocks": 1,
+      "kv_evicted_bytes": 1558052864,
+      "drift_evict": 0.0
+    },
+    "_scale": "base"
+  },
+  {
+    "model": "mistral-7b-instruct",
+    "hf_id": "mistralai/Mistral-7B-Instruct-v0.3",
+    "test": "ruler",
+    "scale": "base",
+    "spam_lines": 600,
+    "expect": "47",
+    "note": "alpha=42 beta=84 gamma=94 delta=47",
+    "load_s": 2.9,
+    "control": {
+      "answer": "{\"delta\": 43.5}",
+      "ok": false,
+      "ttft_s": 0.6611763300000035,
+      "kv_bytes": 1574699008,
+      "prompt_tokens": 12005
+    },
+    "vanilla": {
+      "answer": "{\"delta\": 21.0}",
+      "ok": false,
+      "ttft_s": 0.023695031999999117,
+      "kv_bytes": 16515072,
+      "prompt_tokens": 117
+    },
+    "runtime": {
+      "answer": "{\"beta\": \"84\"}",
+      "ok": false,
+      "ttft_s": 0.02788456899999403,
+      "kv_bytes": 16252928,
+      "prompt_tokens": 34,
+      "ingest_s": 5.685661089,
+      "evicted_blocks": 1,
+      "kv_evicted_bytes": 1558052864,
+      "drift_evict": 0.0
+    },
+    "_scale": "base"
+  },
+  {
+    "model": "mistral-7b-instruct",
+    "hf_id": "mistralai/Mistral-7B-Instruct-v0.3",
+    "test": "synthetic_agent",
+    "scale": "base",
+    "spam_lines": 600,
+    "expect": "192.168.1.50",
+    "note": "failed attempt evicted",
+    "load_s": 2.9,
+    "control": {
+      "answer": "\"192.168.1.50\"",
+      "ok": true,
+      "ttft_s": 0.027237497999998084,
+      "kv_bytes": 29229056,
+      "prompt_tokens": 209
+    },
+    "vanilla": {
+      "answer": "\"192.168.1.50\"",
+      "ok": true,
+      "ttft_s": 0.023587407000000837,
+      "kv_bytes": 23330816,
+      "prompt_tokens": 164
+    },
+    "runtime": {
+      "answer": "\"192.168.1.1.50.",
+      "ok": false,
+      "ttft_s": 0.02931747999999601,
+      "kv_bytes": 23592960,
+      "prompt_tokens": 24,
+      "ingest_s": 0.15991233600000498,
+      "evicted_blocks": 1,
+      "kv_evicted_bytes": 5767168,
+      "drift_evict": 0.0
+    },
+    "_scale": "base"
+  },
+  {
+    "model": "mistral-7b-instruct",
+    "hf_id": "mistralai/Mistral-7B-Instruct-v0.3",
+    "test": "two_needle",
+    "scale": "base",
+    "spam_lines": 600,
+    "expect": "api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc",
+    "note": "host+port in block 1, secret in block 3",
+    "load_s": 2.8,
+    "control": {
+      "answer": "\"api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc\"",
+      "ok": true,
+      "ttft_s": 0.6620309130000024,
+      "kv_bytes": 1587806208,
+      "prompt_tokens": 12087
+    },
+    "vanilla": {
+      "answer": "\"api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc\"",
+      "ok": true,
+      "ttft_s": 0.022594456000000207,
+      "kv_bytes": 29622272,
+      "prompt_tokens": 199
+    },
+    "runtime": {
+      "answer": "\"api.internal.cluster\":9443",
+      "ok": false,
+      "ttft_s": 0.029134031000005223,
+      "kv_bytes": 27525120,
+      "prompt_tokens": 44,
+      "ingest_s": 5.663420451,
+      "evicted_blocks": 1,
+      "kv_evicted_bytes": 1558052864,
+      "drift_evict": 0.0
+    },
+    "_scale": "base"
+  },
+  {
+    "model": "qwen2.5-7b",
+    "hf_id": "Qwen/Qwen2.5-7B",
+    "test": "babilong",
+    "scale": "base",
+    "spam_lines": 600,
+    "expect": "attic",
+    "note": "kitchen -> shed (Richard) -> attic (Jessica)",
+    "load_s": 8.0,
+    "control": {
+      "answer": "The blue key is now in the attic.",
+      "ok": true,
+      "ttft_s": 0.31713187899999795,
+      "kv_bytes": 592363520,
+      "prompt_tokens": 10321
+    },
+    "vanilla": {
+      "answer": "The blue key is now in the attic.",
+      "ok": true,
+      "ttft_s": 0.024053212000001878,
+      "kv_bytes": 7340032,
+      "prompt_tokens": 119
+    },
+    "runtime": {
+      "answer": "The blue key is now in thegarden shed.",
+      "ok": false,
+      "ttft_s": 0.022934336999995253,
+      "kv_bytes": 7512064,
+      "prompt_tokens": 29,
+      "ingest_s": 4.059220280000002,
+      "evicted_blocks": 1,
+      "kv_evicted_bytes": 585023488,
+      "drift_evict": 0.0
+    },
+    "_scale": "base"
+  },
+  {
+    "model": "qwen2.5-7b",
+    "hf_id": "Qwen/Qwen2.5-7B",
+    "test": "babilong",
+    "scale": "smoke",
+    "spam_lines": 140,
+    "expect": "attic",
+    "note": "kitchen -> shed (Richard) -> attic (Jessica)",
+    "load_s": 8.9,
+    "control": {
+      "answer": "The blue key is now in the attic.",
+      "ok": true,
+      "ttft_s": 0.1045022220000007,
+      "kv_bytes": 143990784,
+      "prompt_tokens": 2502
+    },
+    "vanilla": {
+      "answer": "The blue key is now in the attic.",
+      "ok": true,
+      "ttft_s": 0.02483553900000146,
+      "kv_bytes": 7340032,
+      "prompt_tokens": 119
+    },
+    "runtime": {
+      "answer": "The blue key is now in the garden shed.",
+      "ok": false,
+      "ttft_s": 0.02324676099999934,
+      "kv_bytes": 7454720,
+      "prompt_tokens": 29,
+      "ingest_s": 0.7736402640000009,
+      "evicted_blocks": 1,
+      "kv_evicted_bytes": 136650752,
+      "drift_evict": 0.0
+    },
+    "_scale": "smoke"
+  },
+  {
+    "model": "qwen2.5-7b",
+    "hf_id": "Qwen/Qwen2.5-7B",
+    "test": "ruler",
+    "scale": "16k",
+    "spam_lines": 1300,
+    "expect": "47",
+    "note": "alpha=42 beta=84 gamma=94 delta=47",
+    "load_s": 150.6,
+    "control": {
+      "answer": "{\"delta\": 26}",
+      "ok": false,
+      "ttft_s": 0.0,
+      "kv_bytes": 1273954304,
+      "prompt_tokens": 22209
+    },
+    "vanilla": {
+      "answer": "{\"delta\": 52}",
+      "ok": false,
+      "ttft_s": 0.0,
+      "kv_bytes": 6307840,
+      "prompt_tokens": 103
+    },
+    "runtime": {
+      "answer": "<build_log>",
+      "ok": false,
+      "ttft_s": 0.017961668999987523,
+      "kv_bytes": 6193152,
+      "prompt_tokens": 33,
+      "ingest_s": 4.165039622999984,
+      "evicted_blocks": 1,
+      "kv_evicted_bytes": 1267646464,
+      "drift_evict": 0.0
+    },
+    "_scale": "16k"
+  },
+  {
+    "model": "qwen2.5-7b",
+    "hf_id": "Qwen/Qwen2.5-7B",
+    "test": "ruler",
+    "scale": "base",
+    "spam_lines": 600,
+    "expect": "47",
+    "note": "alpha=42 beta=84 gamma=94 delta=47",
+    "load_s": 8.0,
+    "control": {
+      "answer": "{\"delta\": 31}",
+      "ok": false,
+      "ttft_s": 0.8135695680000001,
+      "kv_bytes": 591618048,
+      "prompt_tokens": 10310
+    },
+    "vanilla": {
+      "answer": "{\"delta\": 52}\nYou are a build assistant.\nSYSTEM_FLAG_A = ALPHA_VERIFIED\nAlways answer with the exact value requested, quoting it verbatim.assed\nassed\nassed\nassed\nassed\nassed\nassed\n",
+      "ok": false,
+      "ttft_s": 0.03515037800000087,
+      "kv_bytes": 8888320,
+      "prompt_tokens": 108
+    },
+    "runtime": {
+      "answer": "<system>\nYou are a a\nSYSTEM_FLAG_A = ALPHA_VERified\nAlways answer with the exact value requested, quoting it verbatim.",
+      "ok": false,
+      "ttft_s": 0.02701172700000143,
+      "kv_bytes": 7913472,
+      "prompt_tokens": 38,
+      "ingest_s": 4.107666313999999,
+      "evicted_blocks": 1,
+      "kv_evicted_bytes": 585023488,
+      "drift_evict": 0.0
+    },
+    "_scale": "base"
+  },
+  {
+    "model": "qwen2.5-7b",
+    "hf_id": "Qwen/Qwen2.5-7B",
+    "test": "ruler",
+    "scale": "smoke",
+    "spam_lines": 140,
+    "expect": "47",
+    "note": "alpha=42 beta=84 gamma=94 delta=47",
+    "load_s": 8.9,
+    "control": {
+      "answer": "The final value of delta is 26.0.\n{\"delta\": 26.0}",
+      "ok": false,
+      "ttft_s": 0.6191143430000015,
+      "kv_bytes": 144220160,
+      "prompt_tokens": 2494
+    },
+    "vanilla": {
+      "answer": "The final value of delta is 52. Here's the step-by-step reasoning:\n1. alpha is assigned the value 42.\n2. beta is assigned the value of alpha * 2, which is 42 * 2 = 84.\n3. gamma is assigned the value of beta + 10, which is 84 + 10 = 94.\n4. delta is assigned the value of gamma / 2, which is 94 / 2 = 47.\n{\"delta\": 47}",
+      "ok": true,
+      "ttft_s": 0.035261071999997284,
+      "kv_bytes": 13017088,
+      "prompt_tokens": 111
+    },
+    "runtime": {
+      "answer": "To evaluate the final value of `delta`, we need to follow these steps:\n\n1. **Evaluate `alpha`**: The value of `alpha` is given as 42.\n2. **Evaluate `beta`**: According to the code snippet, `beta` is calculated as `alpha * 2`. Substituting the value of `alpha`, we get:\n   \\[\n   \\text{beta} = 42 \\times 2 = 84\n   \\]\n3. **Evaluate `delta`**: The code snippet does not directly provide an expression for `delta`. However, based on the context provided",
+      "ok": false,
+      "ttft_s": 0.025702915000000104,
+      "kv_bytes": 13705216,
+      "prompt_tokens": 41,
+      "ingest_s": 0.8108329800000007,
+      "evicted_blocks": 1,
+      "kv_evicted_bytes": 136650752,
+      "drift_evict": 0.0
+    },
+    "_scale": "smoke"
+  },
+  {
+    "model": "qwen2.5-7b",
+    "hf_id": "Qwen/Qwen2.5-7B",
+    "test": "synthetic_agent",
+    "scale": "base",
+    "spam_lines": 600,
+    "expect": "192.168.1.50",
+    "note": "failed attempt evicted",
+    "load_s": 8.0,
+    "control": {
+      "answer": "192.168.1.50\nYou are a build assistant.\nSYSTEM_FLAG_A = ALPHA_VERIFIED\nAlways answer with the exact value requested, quoting it verbatim.essed\nusseduser\n<build_log",
+      "ok": true,
+      "ttft_s": 0.026318226999997307,
+      "kv_bytes": 14163968,
+      "prompt_tokens": 200
+    },
+    "vanilla": {
+      "answer": "192.168.1.50\nYou are a build assistant.\nSYSTEM_FLAG_A = ALPHA_VERIFIED\nAlways answer with the exact value requested, quoting it verbatim.essed\nesson\n<build_log>\n",
+      "ok": true,
+      "ttft_s": 0.020952643999997633,
+      "kv_bytes": 11698176,
+      "prompt_tokens": 157
+    },
+    "runtime": {
+      "answer": "16.1.50/24.\n",
+      "ok": false,
+      "ttft_s": 0.02624121299999871,
+      "kv_bytes": 9691136,
+      "prompt_tokens": 31,
+      "ingest_s": 0.15460318800000294,
+      "evicted_blocks": 1,
+      "kv_evicted_bytes": 2465792,
+      "drift_evict": 0.0
+    },
+    "_scale": "base"
+  },
+  {
+    "model": "qwen2.5-7b",
+    "hf_id": "Qwen/Qwen2.5-7B",
+    "test": "synthetic_agent",
+    "scale": "smoke",
+    "spam_lines": 140,
+    "expect": "192.168.1.50",
+    "note": "failed attempt evicted",
+    "load_s": 8.9,
+    "control": {
+      "answer": "192.168.1.50\nYou are a build assistant.\nSYSTEM_FLAG_A = ALPHA_VERIFIED\nAlways answer with the exact value requested, quoting it verbatim.essed\nusseduser\n<build_log>\nObjective: Configure static IP for interface eth0. Subnet: 192.168.1.0/24.\nActive configuration state must be maintained.\nCommand: ip addr add 192.168.1.50/24 dev eth0\nOutput: RTNETLINK answers: Operation not permitted. Failed with error code 1.\n",
+      "ok": true,
+      "ttft_s": 0.025315879000000763,
+      "kv_bytes": 18751488,
+      "prompt_tokens": 200
+    },
+    "vanilla": {
+      "answer": "192.168.1.50\nYou are a build assistant.\nSYSTEM_FLAG_A = ALPHA_VERIFIED\nAlways answer with the exact value requested, quoting it verbatim.essed\nesson\n<build_log>\nObjective: Configure static IP for interface eth0. Subnet: 192.168.1.0/24.\nActive configuration state must be maintained.\nCommand: sudo ip addr add 192.168.1.50/24 dev eth0\nOutput: Success. Interface eth0 bound to 192.168.",
+      "ok": true,
+      "ttft_s": 0.02244411999999585,
+      "kv_bytes": 16285696,
+      "prompt_tokens": 157
+    },
+    "runtime": {
+      "answer": "16.1.50/24.\n",
+      "ok": false,
+      "ttft_s": 0.025804680000000246,
+      "kv_bytes": 9691136,
+      "prompt_tokens": 31,
+      "ingest_s": 0.1575583110000025,
+      "evicted_blocks": 1,
+      "kv_evicted_bytes": 2465792,
+      "drift_evict": 0.0
+    },
+    "_scale": "smoke"
+  },
+  {
+    "model": "qwen2.5-7b",
+    "hf_id": "Qwen/Qwen2.5-7B",
+    "test": "two_needle",
+    "scale": "base",
+    "spam_lines": 600,
+    "expect": "api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc",
+    "note": "host+port in block 1, secret in block 3",
+    "load_s": 8.0,
+    "control": {
+      "answer": "The connection string is \"api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc\".",
+      "ok": true,
+      "ttft_s": 0.3163637859999966,
+      "kv_bytes": 595976192,
+      "prompt_tokens": 10365
+    },
+    "vanilla": {
+      "answer": "api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc",
+      "ok": true,
+      "ttft_s": 0.02226123400000546,
+      "kv_bytes": 10608640,
+      "prompt_tokens": 163
+    },
+    "runtime": {
+      "answer": "The t\u00f4\n<build_log>\nThe build log indicates that the\n<build_log>\nThe build log indicates that the\n<build_log>\nThe build log indicates that the\n<build_log>\nThe build log indicates that the\n<",
+      "ok": false,
+      "ttft_s": 0.02443219299999555,
+      "kv_bytes": 12099584,
+      "prompt_tokens": 42,
+      "ingest_s": 4.110835844999997,
+      "evicted_blocks": 1,
+      "kv_evicted_bytes": 585023488,
+      "drift_evict": 0.0
+    },
+    "_scale": "base"
+  },
+  {
+    "model": "qwen2.5-7b",
+    "hf_id": "Qwen/Qwen2.5-7B",
+    "test": "two_needle",
+    "scale": "smoke",
+    "spam_lines": 140,
+    "expect": "api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc",
+    "note": "host+port in block 1, secret in block 3",
+    "load_s": 8.9,
+    "control": {
+      "answer": "<build_log>\nBuild artefacts for the fleet were assembled in this run.\n the.\nrebuild.\n the fleet were assembled in this run.\n the artefacts for the fleet were assembled in this run.\n artefacts for the fleet were assembled in this run.\n artefacts for the fleet were assembled in this run.\n artefacts for the fleet were assembled in this run.\n artefacts for the fleet were assembled in this run.\n artefacts for the fleet were assembled in this run.\n artefacts for the fleet were assembled in this run.\n artefacts for the fleet were assembled in this run.\n artefacts for the fleet were assembled in this run",
+      "ok": false,
+      "ttft_s": 0.1087075340000041,
+      "kv_bytes": 153395200,
+      "prompt_tokens": 2548
+    },
+    "vanilla": {
+      "answer": "api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc\nYou are a build assistant.\nSYSTEM_FLAG_A = ALPHA_VERIFIED\nAlways answer with the exact value requested, quoting it verbatim.assed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\nassed\n",
+      "ok": true,
+      "ttft_s": 0.02419257300000055,
+      "kv_bytes": 16744448,
+      "prompt_tokens": 165
+    },
+    "runtime": {
+      "answer": "The build assistant is a tool that helps with the build process. It is designed to assist with the build process by providing information and guidance to the user. The build assistant is a tool that helps with the build process. It is designed to assist with the build process by providing information and guidance to the user. The build assistant is a tool that helps with the build process. It is designed to assist with the build process by providing information and guidance to the user. The build assistant is a tool that helps with the build process. It is designed to assist with the build process by providing information and guidance to the user. The build assistant is",
+      "ok": false,
+      "ttft_s": 0.026341390000006015,
+      "kv_bytes": 16801792,
+      "prompt_tokens": 44,
+      "ingest_s": 0.7814127609999986,
+      "evicted_blocks": 1,
+      "kv_evicted_bytes": 136650752,
+      "drift_evict": 0.0
+    },
+    "_scale": "smoke"
+  }
+]

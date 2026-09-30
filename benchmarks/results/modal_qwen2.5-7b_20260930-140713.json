@@ -1,0 +1,154 @@
+{
+  "models": [
+    "qwen2.5-7b"
+  ],
+  "tests": [
+    "ruler",
+    "babilong",
+    "synthetic_agent",
+    "two_needle"
+  ],
+  "scale": "base",
+  "rows": [
+    {
+      "model": "qwen2.5-7b",
+      "hf_id": "Qwen/Qwen2.5-7B",
+      "test": "ruler",
+      "scale": "base",
+      "spam_lines": 600,
+      "expect": "47",
+      "note": "alpha=42 beta=84 gamma=94 delta=47",
+      "load_s": 8.0,
+      "control": {
+        "answer": "{\"delta\": 31}",
+        "ok": false,
+        "ttft_s": 0.8135695680000001,
+        "kv_bytes": 591618048,
+        "prompt_tokens": 10310
+      },
+      "vanilla": {
+        "answer": "{\"delta\": 52}\nYou are a build assistant.\nSYSTEM_FLAG_A = ALPHA_VERIFIED\nAlways answer with the exact value requested, quoting it verbatim.assed\nassed\nassed\nassed\nassed\nassed\nassed\n",
+        "ok": false,
+        "ttft_s": 0.03515037800000087,
+        "kv_bytes": 8888320,
+        "prompt_tokens": 108
+      },
+      "runtime": {
+        "answer": "<system>\nYou are a a\nSYSTEM_FLAG_A = ALPHA_VERified\nAlways answer with the exact value requested, quoting it verbatim.",
+        "ok": false,
+        "ttft_s": 0.02701172700000143,
+        "kv_bytes": 7913472,
+        "prompt_tokens": 38,
+        "ingest_s": 4.107666313999999,
+        "evicted_blocks": 1,
+        "kv_evicted_bytes": 585023488,
+        "drift_evict": 0.0
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "hf_id": "Qwen/Qwen2.5-7B",
+      "test": "babilong",
+      "scale": "base",
+      "spam_lines": 600,
+      "expect": "attic",
+      "note": "kitchen -> shed (Richard) -> attic (Jessica)",
+      "load_s": 8.0,
+      "control": {
+        "answer": "The blue key is now in the attic.",
+        "ok": true,
+        "ttft_s": 0.31713187899999795,
+        "kv_bytes": 592363520,
+        "prompt_tokens": 10321
+      },
+      "vanilla": {
+        "answer": "The blue key is now in the attic.",
+        "ok": true,
+        "ttft_s": 0.024053212000001878,
+        "kv_bytes": 7340032,
+        "prompt_tokens": 119
+      },
+      "runtime": {
+        "answer": "The blue key is now in thegarden shed.",
+        "ok": false,
+        "ttft_s": 0.022934336999995253,
+        "kv_bytes": 7512064,
+        "prompt_tokens": 29,
+        "ingest_s": 4.059220280000002,
+        "evicted_blocks": 1,
+        "kv_evicted_bytes": 585023488,
+        "drift_evict": 0.0
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "hf_id": "Qwen/Qwen2.5-7B",
+      "test": "synthetic_agent",
+      "scale": "base",
+      "spam_lines": 600,
+      "expect": "192.168.1.50",
+      "note": "failed attempt evicted",
+      "load_s": 8.0,
+      "control": {
+        "answer": "192.168.1.50\nYou are a build assistant.\nSYSTEM_FLAG_A = ALPHA_VERIFIED\nAlways answer with the exact value requested, quoting it verbatim.essed\nusseduser\n<build_log",
+        "ok": true,
+        "ttft_s": 0.026318226999997307,
+        "kv_bytes": 14163968,
+        "prompt_tokens": 200
+      },
+      "vanilla": {
+        "answer": "192.168.1.50\nYou are a build assistant.\nSYSTEM_FLAG_A = ALPHA_VERIFIED\nAlways answer with the exact value requested, quoting it verbatim.essed\nesson\n<build_log>\n",
+        "ok": true,
+        "ttft_s": 0.020952643999997633,
+        "kv_bytes": 11698176,
+        "prompt_tokens": 157
+      },
+      "runtime": {
+        "answer": "16.1.50/24.\n",
+        "ok": false,
+        "ttft_s": 0.02624121299999871,
+        "kv_bytes": 9691136,
+        "prompt_tokens": 31,
+        "ingest_s": 0.15460318800000294,
+        "evicted_blocks": 1,
+        "kv_evicted_bytes": 2465792,
+        "drift_evict": 0.0
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "hf_id": "Qwen/Qwen2.5-7B",
+      "test": "two_needle",
+      "scale": "base",
+      "spam_lines": 600,
+      "expect": "api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc",
+      "note": "host+port in block 1, secret in block 3",
+      "load_s": 8.0,
+      "control": {
+        "answer": "The connection string is \"api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc\".",
+        "ok": true,
+        "ttft_s": 0.3163637859999966,
+        "kv_bytes": 595976192,
+        "prompt_tokens": 10365
+      },
+      "vanilla": {
+        "answer": "api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc",
+        "ok": true,
+        "ttft_s": 0.02226123400000546,
+        "kv_bytes": 10608640,
+        "prompt_tokens": 163
+      },
+      "runtime": {
+        "answer": "The t\u00f4\n<build_log>\nThe build log indicates that the\n<build_log>\nThe build log indicates that the\n<build_log>\nThe build log indicates that the\n<build_log>\nThe build log indicates that the\n<",
+        "ok": false,
+        "ttft_s": 0.02443219299999555,
+        "kv_bytes": 12099584,
+        "prompt_tokens": 42,
+        "ingest_s": 4.110835844999997,
+        "evicted_blocks": 1,
+        "kv_evicted_bytes": 585023488,
+        "drift_evict": 0.0
+      }
+    }
+  ]
+}

@@ -1,0 +1,154 @@
+{
+  "models": [
+    "mistral-7b-instruct"
+  ],
+  "tests": [
+    "babilong",
+    "two_needle",
+    "synthetic_agent",
+    "ruler"
+  ],
+  "scale": "base",
+  "rows": [
+    {
+      "model": "mistral-7b-instruct",
+      "hf_id": "mistralai/Mistral-7B-Instruct-v0.3",
+      "test": "babilong",
+      "scale": "base",
+      "spam_lines": 600,
+      "expect": "attic",
+      "note": "kitchen -> shed (Richard) -> attic (Jessica)",
+      "load_s": 11.3,
+      "control": {
+        "answer": "Attic",
+        "ok": true,
+        "ttft_s": 1.1756942539999997,
+        "kv_bytes": 1574699008,
+        "prompt_tokens": 12012
+      },
+      "vanilla": {
+        "answer": "Attic",
+        "ok": true,
+        "ttft_s": 0.03664124799999868,
+        "kv_bytes": 16515072,
+        "prompt_tokens": 124
+      },
+      "runtime": {
+        "answer": "Attic or Garden Shed, as per the information provided in the build log.",
+        "ok": true,
+        "ttft_s": 0.0278686179999994,
+        "kv_bytes": 18481152,
+        "prompt_tokens": 23,
+        "ingest_s": 5.687978584000003,
+        "evicted_blocks": 1,
+        "kv_evicted_bytes": 1558052864,
+        "drift_evict": 0.0
+      }
+    },
+    {
+      "model": "mistral-7b-instruct",
+      "hf_id": "mistralai/Mistral-7B-Instruct-v0.3",
+      "test": "two_needle",
+      "scale": "base",
+      "spam_lines": 600,
+      "expect": "api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc",
+      "note": "host+port in block 1, secret in block 3",
+      "load_s": 2.8,
+      "control": {
+        "answer": "\"api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc\"",
+        "ok": true,
+        "ttft_s": 0.6620309130000024,
+        "kv_bytes": 1587806208,
+        "prompt_tokens": 12087
+      },
+      "vanilla": {
+        "answer": "\"api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc\"",
+        "ok": true,
+        "ttft_s": 0.022594456000000207,
+        "kv_bytes": 29622272,
+        "prompt_tokens": 199
+      },
+      "runtime": {
+        "answer": "\"api.internal.cluster\":9443",
+        "ok": false,
+        "ttft_s": 0.029134031000005223,
+        "kv_bytes": 27525120,
+        "prompt_tokens": 44,
+        "ingest_s": 5.663420451,
+        "evicted_blocks": 1,
+        "kv_evicted_bytes": 1558052864,
+        "drift_evict": 0.0
+      }
+    },
+    {
+      "model": "mistral-7b-instruct",
+      "hf_id": "mistralai/Mistral-7B-Instruct-v0.3",
+      "test": "synthetic_agent",
+      "scale": "base",
+      "spam_lines": 600,
+      "expect": "192.168.1.50",
+      "note": "failed attempt evicted",
+      "load_s": 2.9,
+      "control": {
+        "answer": "\"192.168.1.50\"",
+        "ok": true,
+        "ttft_s": 0.027237497999998084,
+        "kv_bytes": 29229056,
+        "prompt_tokens": 209
+      },
+      "vanilla": {
+        "answer": "\"192.168.1.50\"",
+        "ok": true,
+        "ttft_s": 0.023587407000000837,
+        "kv_bytes": 23330816,
+        "prompt_tokens": 164
+      },
+      "runtime": {
+        "answer": "\"192.168.1.1.50.",
+        "ok": false,
+        "ttft_s": 0.02931747999999601,
+        "kv_bytes": 23592960,
+        "prompt_tokens": 24,
+        "ingest_s": 0.15991233600000498,
+        "evicted_blocks": 1,
+        "kv_evicted_bytes": 5767168,
+        "drift_evict": 0.0
+      }
+    },
+    {
+      "model": "mistral-7b-instruct",
+      "hf_id": "mistralai/Mistral-7B-Instruct-v0.3",
+      "test": "ruler",
+      "scale": "base",
+      "spam_lines": 600,
+      "expect": "47",
+      "note": "alpha=42 beta=84 gamma=94 delta=47",
+      "load_s": 2.9,
+      "control": {
+        "answer": "{\"delta\": 43.5}",
+        "ok": false,
+        "ttft_s": 0.6611763300000035,
+        "kv_bytes": 1574699008,
+        "prompt_tokens": 12005
+      },
+      "vanilla": {
+        "answer": "{\"delta\": 21.0}",
+        "ok": false,
+        "ttft_s": 0.023695031999999117,
+        "kv_bytes": 16515072,
+        "prompt_tokens": 117
+      },
+      "runtime": {
+        "answer": "{\"beta\": \"84\"}",
+        "ok": false,
+        "ttft_s": 0.02788456899999403,
+        "kv_bytes": 16252928,
+        "prompt_tokens": 34,
+        "ingest_s": 5.685661089,
+        "evicted_blocks": 1,
+        "kv_evicted_bytes": 1558052864,
+        "drift_evict": 0.0
+      }
+    }
+  ]
+}

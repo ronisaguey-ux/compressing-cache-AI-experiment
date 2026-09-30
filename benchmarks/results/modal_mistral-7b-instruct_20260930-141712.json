@@ -1,0 +1,38 @@
+{
+  "models": [
+    "mistral-7b-instruct"
+  ],
+  "tests": [
+    "babilong",
+    "two_needle",
+    "synthetic_agent",
+    "ruler"
+  ],
+  "scale": "base",
+  "rows": [
+    {
+      "model": "mistral-7b-instruct",
+      "test": "babilong",
+      "status": "cell_failed",
+      "error": "TemplateError: After the optional system message, conversation roles must alternate user/assistant/user/assistant/..."
+    },
+    {
+      "model": "mistral-7b-instruct",
+      "test": "two_needle",
+      "status": "cell_failed",
+      "error": "TemplateError: After the optional system message, conversation roles must alternate user/assistant/user/assistant/..."
+    },
+    {
+      "model": "mistral-7b-instruct",
+      "test": "synthetic_agent",
+      "status": "cell_failed",
+      "error": "TemplateError: After the optional system message, conversation roles must alternate user/assistant/user/assistant/..."
+    },
+    {
+      "model": "mistral-7b-instruct",
+      "test": "ruler",
+      "status": "cell_failed",
+      "error": "TemplateError: After the optional system message, conversation roles must alternate user/assistant/user/assistant/..."
+    }
+  ]
+}

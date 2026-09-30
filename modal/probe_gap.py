@@ -123,12 +123,21 @@ def probe():
     g_cache = g_out.past_key_values
 
     def block_cache(ids, positions):
-        """Prefill one block against a FRESH clone of the global cache (isolated)."""
+        """Prefill one block against a FRESH clone of the global cache (isolated).
+
+        ★ SLICE BY INSERTION INDEX, NOT BY POSITION ID. The forwarded cache holds the global's
+        G rows followed by this block's rows -- the block's rows sit at [G, G+len(ids)) no matter
+        what absolute position_ids were passed. Slicing at [positions[0], ...] returns an EMPTY
+        tensor whenever the block carries a gapped position id, which silently produced an arm
+        with no block 3 at all and made the first version of this probe report a false FAIL.
+        """
         clone = TC.slice_cache(g_cache, 0, G)
         with torch.no_grad():
             c = fwd(ids, clone, positions)
-        lo = positions[0]
-        return TC.slice_cache(c, lo, lo + len(ids))
+        blk = TC.slice_cache(c, G, G + len(ids))
+        assert TC.cache_len(blk) == len(ids), (
+            "block slice wrong: got %d rows for %d tokens" % (TC.cache_len(blk), len(ids)))
+        return blk
 
     # ---- arm1: the SHIPPED layout -- disjoint ranges including the evicted span
     p1 = list(range(G, G + n1))
