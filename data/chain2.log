@@ -1,1 +1,9 @@
 === chain2 start 05:22:24 ===
+[chain2] cascade finished 05:58:11
+[chain2] laya up, sifting 05:58:23
+[chain2] laya exit=1 06:00:35
+[chain2] block-causal 0.5B 06:00:35
+[chain2] block-causal exit=1 06:03:09
+[chain2] tiered 0.5B 06:03:09
+[chain2] tiered exit=1 06:03:38
+=== chain2 DONE 06:03:38 ===

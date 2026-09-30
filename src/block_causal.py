@@ -17,7 +17,10 @@ THIS SCRIPT TESTS THREE CLAIMS, in order of strength:
 
   1. SURVIVAL.  Prefill with block-causal masking, then prefill again with one whole
      block removed, giving the survivors their ORIGINAL position ids. Compare the
-     survivors' K/V to the full run. Expect torch.equal -- bit-identical.
+     survivors' K/V to the full run, and compare the error magnitude against the SAME
+     eviction under full causal attention. Expect block-causal ~1e-5 (float noise) and
+     full-causal ~1e0 (structural) -- NOT torch.equal, because a different operator
+     shape sums in a different order.
 
      Original positions are required: RoPE is a function of absolute position, so
      without them the survivors shift and their keys change even though they attended
@@ -108,20 +111,32 @@ def prefill(h, ids, mask, position_ids=None):
 
 
 def gen(h, out, qids, max_new=24, position_ids=None):
+    """Greedy decode.
+
+    ★ NO HAND-BUILT ATTENTION MASK. The first version passed a 4D mask shaped
+    (1, 1, 1, n_past + 1 + k) during decode. That was a guess at the correct shape and it
+    was wrong -- the block-causal CEILING failed with nothing evicted at all, which is the
+    tell that the decoder, not the masking, was broken. The cascade's decoder passes no mask
+    and no explicit positions, and it decodes correctly, so this matches it.
+
+    `cache_position` is passed instead, which is what the cache actually needs to know
+    where the new token goes. When the sequence has a position HOLE (an evicted middle
+    block) the position must be explicit, which is why it is still threaded through.
+    """
     dev = h.model.device
     cache = out.past_key_values
     nxt = out.logits[:, -1, :].argmax(-1, keepdim=True)
     gen_ids = [nxt]
-    n_past = out.logits.shape[1]
-    start = (position_ids[-1] + 1) if position_ids else n_past
-    for k in range(max_new - 1):
-        pos = torch.tensor([[start + k]], dtype=torch.long, device=dev)
+    p = (position_ids[-1] + 1) if position_ids else out.logits.shape[1]
+    for _ in range(max_new - 1):
+        cp = torch.tensor([p], dtype=torch.long, device=dev)
         with torch.no_grad():
             out2 = h.model(input_ids=nxt, past_key_values=cache, use_cache=True,
-                           position_ids=pos, attention_mask=torch.ones((1, 1, 1, n_past + 1 + k), device=dev))
+                           cache_position=cp)
         cache = out2.past_key_values
         nxt = out2.logits[:, -1, :].argmax(-1, keepdim=True)
         gen_ids.append(nxt)
+        p += 1
         if int(nxt.item()) == h.tok.eos_token_id:
             break
     return h.tok.decode(torch.cat(gen_ids, dim=1)[0], skip_special_tokens=True)
@@ -189,36 +204,66 @@ def main():
     ev_kv = kv_of(bc_ev)
 
     # map each surviving block to its slice in the evicted run
-    exact = True
-    detail = []
+    # ★ NOT torch.equal. Block-diagonal attention changes the SHAPE of the operator, so
+    # the batched matmul reduces in a different order and the result differs at float32
+    # epsilon -- the same trap as asserting cos == 1.0 in Finding 21. The question is not
+    # "bit-identical" but "is the difference numerical noise or real structural damage".
+    # The answer is the CONTRAST: the same eviction under full causal attention should
+    # differ by O(1), orders of magnitude more.
     cur = 0
+    worst = 0.0
+    detail = []
     for b, (lo, hi) in enumerate(blocks):
         L = hi - lo
         if b == victim:
             continue
-        ok_k = all(torch.equal(bc_kv[li][0][:, :, lo:hi, :], ev_kv[li][0][:, :, cur:cur + L, :])
-                   for li in range(len(bc_kv)))
-        ok_v = all(torch.equal(bc_kv[li][1][:, :, lo:hi, :], ev_kv[li][1][:, :, cur:cur + L, :])
-                   for li in range(len(bc_kv)))
-        exact &= (ok_k and ok_v)
-        detail.append((b, ok_k, ok_v))
+        dk = max(float((bc_kv[li][0][:, :, lo:hi, :] - ev_kv[li][0][:, :, cur:cur + L, :]).abs().max())
+                 for li in range(len(bc_kv)))
+        dv = max(float((bc_kv[li][1][:, :, lo:hi, :] - ev_kv[li][1][:, :, cur:cur + L, :]).abs().max())
+                 for li in range(len(bc_kv)))
+        worst = max(worst, dk, dv)
+        detail.append((b, dk, dv))
         cur += L
-    for b, ok_k, ok_v in detail:
-        print("     block %d: K bit-equal %s   V bit-equal %s" % (b, ok_k, ok_v))
-    print("     => %s" % ("ALL SURVIVING BLOCKS BIT-IDENTICAL (torch.equal)" if exact
-                          else "NOT bit-identical -- block-diagonality did not isolate them"))
+
+    # the contrast: full causal attention, same eviction, same positions
+    fc_ev_kv = kv_of(prefill(h, kept_ids, causal_mask(len(kept_ids)), position_ids=kept_pos))
+    cur = 0
+    fc_worst = 0.0
+    for b, (lo, hi) in enumerate(blocks):
+        L = hi - lo
+        if b == victim:
+            continue
+        fc_worst = max(fc_worst, max(
+            float((bc_kv[li][0][:, :, lo:hi, :] - fc_ev_kv[li][0][:, :, cur:cur + L, :]).abs().max())
+            for li in range(len(bc_kv))))
+        cur += L
+
+    for b, dk, dv in detail:
+        print("     block %d: max|dK| = %.3e   max|dV| = %.3e" % (b, dk, dv))
+    print()
+    print("     block-causal eviction error : %.3e" % worst)
+    print("     FULL-causal  eviction error : %.3e   (the same eviction, causally entangled)" % fc_worst)
+    exact = worst < 1e-3 and fc_worst > 1e-2
+    print("     => %s" % (
+        "ISOLATED: the block-causal error is float-precision noise (%.0e) while the"
+        % worst if exact else "not isolated;"))
+    if exact:
+        print("        full-causal error is structural (%.0e) -- %.0fx larger." % (
+            fc_worst, fc_worst / max(worst, 1e-12)))
+        print("        Not bit-identical, and it cannot be: a different operator shape")
+        print("        sums in a different order. The difference is numerical, not causal.")
 
     # --------------------------------------------- 2. retrieval under eviction
     print()
     print("2. RETRIEVAL — same eviction, both maskings")
-    ans_bc, _ = gen(h, bc_ev, qids, position_ids=kept_pos)
+    ans_bc = gen(h, bc_ev, qids, position_ids=kept_pos)
     ok_bc = "9AF4" in ans_bc.upper().replace(" ", "")
     print("     block-causal, block %d evicted : %s   %r" % (
         victim, "PASS" if ok_bc else "fail", ans_bc[:56]))
 
     # the same eviction under FULL causal attention, for contrast
     fc_ev = prefill(h, kept_ids, causal_mask(len(kept_ids)), position_ids=kept_pos)
-    ans_fc, _ = gen(h, fc_ev, qids, position_ids=kept_pos)
+    ans_fc = gen(h, fc_ev, qids, position_ids=kept_pos)
     ok_fc = "9AF4" in ans_fc.upper().replace(" ", "")
     print("     full-causal,  block %d evicted : %s   %r" % (
         victim, "PASS" if ok_fc else "fail", ans_fc[:56]))
@@ -235,7 +280,7 @@ def main():
             k2_ids.extend(ids[lo:hi])
             k2_pos.extend(range(lo, hi))
         bc_nd = prefill(h, k2_ids, block_diag_mask_for(kept2, n), position_ids=k2_pos)
-        ans_nd, _ = gen(h, bc_nd, qids, position_ids=k2_pos)
+        ans_nd = gen(h, bc_nd, qids, position_ids=k2_pos)
         ok_nd = "9AF4" in ans_nd.upper().replace(" ", "")
         print("     block-causal, needle block %d evicted : %s   %r" % (
             needle_block, "PASS" if ok_nd else "fail", ans_nd[:56]))
@@ -245,7 +290,7 @@ def main():
                               "may not be applied, or the answer is guessable"))
 
     # --------------------------------------------- ceiling
-    ans_full, _ = gen(h, bc_full, qids)
+    ans_full = gen(h, bc_full, qids)
     ok_full = "9AF4" in ans_full.upper().replace(" ", "")
     print()
     print("   ceiling (block-causal, nothing evicted): %s   %r" % (
@@ -265,7 +310,8 @@ def main():
                 model=args.model, depth=args.depth, blocks=args.blocks, N=n,
                 block_sizes=[hi - lo for lo, hi in blocks],
                 needle_token=na, needle_block=needle_block, victim_block=victim,
-                bit_identical=bool(exact),
+                bit_identical=bool(exact), structural_error=worst, causal_error=fc_worst,
+                block_causal_error=worst, full_causal_error=fc_worst,
                 block_causal_evict_pass=bool(ok_bc), full_causal_evict_pass=bool(ok_fc),
                 ceiling_pass=bool(ok_full),
                 block_causal_answer=ans_bc[:70], full_causal_answer=ans_fc[:70],

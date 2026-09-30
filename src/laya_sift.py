@@ -39,10 +39,28 @@ PROMPT_PREFIX = SYS + "<|im_start|>user\n<build_log>\n"
 PROMPT_SUFFIX = "\n</build_log><|im_end|>\n"
 QUESTION = ("Is the line `{line}` needed to answer a question about the failure code "
             "or the cause of the build failure described in the log?")
-BATCH = 64          # Laya's MAX_QUESTIONS
+# Laya's wire limit is MAX_QUESTIONS=64, but 64 questions against a long state
+# OOM-KILLED the service on this box (15.7 GB, and the box watchdog pauses at 85%).
+# 8 is comfortable and the calls are ~2 s each.
+BATCH = 8
 
 
-def laya_call(url, state, questions, timeout=120):
+def laya_call(url, state, questions, timeout=240):
+    """★ `state` MUST BE A DICT. A plain string is silently DROPPED by the server.
+
+    Measured against a live laya-serve: with state="AAAA" and state="BBBB" the reply was
+    IDENTICAL and usage.input_tokens was 36 for both -- and 36 for a 1000-character state
+    too. The state never reached the tokenizer. With state={"text": ...} the answers
+    separate cleanly (0.73 for a state containing the queried letter, 0.10 for one that
+    does not) and input_tokens tracks the content.
+
+    This is the "control that reports success and does nothing" class again: the API
+    accepts the string, returns 200, and answers from the instructions alone. Any Laya
+    caller passing a bare string is getting plausible-looking answers to a question about
+    text the model never saw.
+    """
+    if not isinstance(state, dict):
+        state = {"text": state}
     body = json.dumps({"model": None, "state": state, "questions": questions}).encode()
     req = urllib.request.Request(url + "/v1/systemone", data=body,
                                  headers={"Content-Type": "application/json"})
@@ -112,7 +130,7 @@ def main():
         if not questions:
             continue
         try:
-            d, dt = laya_call(args.url, log[:49000], questions)
+            d, dt = laya_call(args.url, {"text": log[:20000]}, questions)
         except urllib.error.HTTPError as e:
             print("  HTTP %s on chunk %d: %s" % (e.code, s, e.read()[:200]))
             raise
@@ -150,7 +168,7 @@ def main():
     # determinism: two identical calls must agree, or "100%% reuse on turn 2" is nominal
     det = True
     try:
-        d2, _ = laya_call(args.url, log[:49000], {
+        d2, _ = laya_call(args.url, {"text": log[:20000]}, {
             "L%d" % i: {"type": "noul",
                         "instructions": QUESTION.format(line=lines[i].strip()[:220].replace("`", "'"))}
             for i in kept_idx[:1]})

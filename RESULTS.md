@@ -1142,3 +1142,111 @@ Two things this settles:
 **Actionable, and it is a layout rule rather than a selection rule:** put critical content
 early, then the tail is disposable and a tail-pruning policy gets a perfect reusable prefix at
 no retrieval cost. No selection algorithm recovers from critical content placed last.
+
+## Finding 25 — Laya's HTTP API silently drops a plain-string state
+
+Found while wiring Laya as a line-granularity sifter, and it is worth recording on its own
+because it is a live trap for any caller.
+
+`POST /v1/systemone` accepts a `state` field. With a **plain string** the state never
+reaches the model:
+
+| state passed | `usage.input_tokens` | answer to "does state contain the letter A?" |
+|---|---|---|
+| `"AAAA"` | 36 | 0.4490 |
+| `"BBBB"` | 36 | 0.4490 |
+| a 1000-character string | **36** | 0.4490 |
+
+Identical answers, and the token count is constant at 36 regardless of length — the state
+is dropped before tokenization. The server returns **200** and answers from the
+instructions alone.
+
+With a **dict**, it works:
+
+| state passed | `usage.input_tokens` | answer |
+|---|---|---|
+| `{"text": "AAAA"}` | 41 | **0.7308** |
+| `{"text": "BBBB"}` | 42 | **0.1010** |
+
+So the fix is `state={"text": ...}`. **A bare string produces confident-looking answers to
+a question about text the model never saw** — the same "control that reports success and
+does nothing" class as the harness's phantom pass and the layer-0 key comparison in this
+same session. `src/laya_sift.py` now normalises the state on the way out and says why.
+
+## Finding 26 — base Laya, zero-shot, is not a usable sifter
+
+With the state bug fixed (3072 input tokens on a real log), Laya was asked about every line
+of the depth-0.55 build log: *"does this line report an error, a failure code, or the cause
+of a build failure?"*
+
+**The needle (`FATAL: link aborted, failure code 0x9AF4_STACK_FAIL`) ranks 6th of 109.**
+The five lines above it are compiler warnings and ordinary `gcc` invocations:
+
+```
+  4   0.9416  src/core/pool.h:88:12: warning: unused parameter 'fl'
+ 29   0.9416  src/core/pool.h:88:12: warning: unused parameter 'fl'
+ 54   0.9416  src/core/pool.h:88:12: warning: unused parameter 'fl'
+ 17   0.9277  gcc -O2 -Wall -Wextra -c src/vm/emit.c -o build/emit.o
+ 42   0.9277  gcc -O2 -Wall -Wextra -c src/vm/emit.c -o build/emit.o
+ 69   0.9179  FATAL: link aborted, failure code 0x9AF4_STACK_FAIL   <- the needle
+```
+
+Score spread 0.5449–0.9416, **median 0.8687** — it answers "yes, failure-related" to almost
+everything, so there is no separation to threshold. It ranks an unused-parameter warning
+above a fatal link error.
+
+**Phrasing mattered enormously, which is itself informative.** Three question forms on a
+6-line sample: "is this line *needed*" put the needle 4th of 6; "does this line *report an
+error*" and "is this line *critical evidence*" both put it 1st — by margins of **0.003** and
+0.004. Ranking first with a margin of 0.003 is not a signal; on 109 lines the same phrasing
+put it 6th.
+
+This matches the documented base-checkpoint figure: **0.362** accuracy on typed decisions
+versus **0.77** fine-tuned. Zero-shot, the base model is a strong prior, not an oracle.
+
+**And it is slow.** 109 lines took **524 s** across 14 calls (~37 s per call with a 20k-char
+state), against **89 s** for the 0.5B attention sifter on the same log. Laya is both less
+accurate and ~6× slower here.
+
+**⇒ Of Bob's five-arm roster, arm 4 (base Laya zero-shot) fails.** Arm 5 (tuned) is the only
+Laya version worth trying, and `src/laya_labels.py` builds its labels — with the caveat
+recorded there: distilling from the consumer's attention teaches the teacher's blind spot
+(the 7B misses the needle at 15%), so the ablation mode is the one that can actually beat
+the attention sifter.
+
+## Finding 27 — the cascade works: cross-model sifting holds, and the "golden path" is a myth
+
+Bob's two-speed cascade, run as two sequential phases so only one model is ever resident
+(0.5B + 7B together peak at 86% of RAM and the watchdog pauses at 85%, and a pause does not
+free RSS — co-residency deadlocks rather than fails).
+
+7B consumer, depth 0.55, needle retrieval:
+
+| arm | prompt | verdict | seconds |
+|---|---|---|---|
+| A full prompt (ceiling) | 1992 tok | **PASS** | 871.5 |
+| B **0.5B-sifted** (cross-model) | 1210 tok | **PASS** | 596.8 |
+| C 7B self-sifted | 1210 tok | **PASS** | 609.2 |
+
+**Cross-model salience transfer HOLDS.** A 0.5B model picks what a 7B needs. Cost: sifter
+89 s + consumer sifted prefill 597 s = **686 s**, against **871 s** for the consumer on the
+full prompt — 21% faster end to end, on a 39% shorter prompt. The sift is **deterministic
+across two runs**, which is what makes the "100% reuse on turn 2" claim real rather than
+nominal: a gap-free sifted prompt is its own full prefix, so later turns reuse all of it
+with no cache surgery.
+
+### ★★ THE OVERLAP IS THE FINDING
+
+Both sifters kept 1210 tokens. **Their intersection is 230 — 19%.** Two almost entirely
+different 60% subsets of the same log, and **both answer correctly.**
+
+So there is no single critical token set. There are many sufficient ones: the answer
+survives almost any selection that retains the needle and its local context. That reframes
+the problem — the failure at 7B/15% is not "the selector chose badly" in general, it is
+specifically that **the needle gets evicted**. It also explains why forcing `f=0.15`
+(Finding 22) helped: it was not a better policy, it simply made the needle's survival more
+likely.
+
+**Practical consequence: sifting quality is a much weaker requirement than assumed.** You
+do not need a good sifter; you need a sifter that does not drop the evidence. That is far
+easier to guarantee, and it makes the cheap 0.5B front end genuinely sufficient.
