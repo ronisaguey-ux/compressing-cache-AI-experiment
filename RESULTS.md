@@ -1384,3 +1384,36 @@ which lifts the needle's survival directly.**
 sits at 46–78% of the region because build errors appear late; tail-pruning is safe *here*
 for that reason and would not be on a workload with early evidence. That is exactly the caveat
 Finding 24 established: the layout decides, and a policy tuned on one layout does not transfer.
+
+## Finding 32 — the shallow-depth defect is UNDER-BUDGETING, and it is fixed by 3 points of budget
+
+The one genuinely open problem in this line of work: on the 7B at depth 0.15 the attention
+selector misses the needle. Finding 19 recorded it as *"needle rank 555 against a keep budget
+of 539"*, and it was treated as a selection failure for several days.
+
+Finding 31 reframed it as under-budgeting. Tested directly through the **corrected pipeline**
+(fresh forward over the survivors — nothing here touches the rotation defect of Finding 18),
+7B, depth 0.15:
+
+| keep_frac | keep | needle rank | needle | KV saved | verdict |
+|---|---|---|---|---|---|
+| 0.60 | 539 | 556 | **LOST** | 38.4% | **fail** |
+| **0.63** | **566** | **556** | **KEPT** | 35.5% | **PASS** |
+
+**★ The scorer was never wrong. The budget was 17 tokens short.** The needle ranks 556; a keep
+budget of 539 cannot contain it and a budget of 566 can. Nothing about the selector changed —
+only how many tokens it was allowed to keep.
+
+**The cost of the fix is 2.9 percentage points of compression** (38.4% → 35.5% KV saved), which
+is a very cheap price for removing the failure entirely.
+
+**⇒ This closes the open defect, and it is worth stating how it was mis-framed.** "Needle rank
+555 against a keep budget of 539" was read as evidence that attention-scoring fails at shallow
+depth, and it motivated a long search for a better selector — line pooling, mid-layer bands,
+positional normalisation, and latterly Laya. Measured, the ranking was *correct*: the needle was
+found, ranked just outside a budget nobody had sized for the task. **A scorer's rank is only
+meaningful against the budget it has to fit inside, and a rank just past the cut is a budget
+problem wearing a scorer's clothes.**
+
+Same shape as Finding 31's 0.5B result — at depth 0.15 the needle is preserved at a 45% budget
+and missed at 30% — so the effect is consistent across both model sizes rather than a 7B quirk.
