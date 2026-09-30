@@ -763,3 +763,70 @@ irrelevant — it changes which depths pass. It says nothing consistent about *w
 with Finding 16 (the needle's KV is not the problem, cached or recomputed) and the four
 refuted scalars, the failure behaves like a fragile readout that different retention sets
 push below or above a threshold with no monotone relationship to any measured property.
+
+## Finding 18 — ★ THE DEFECT IS THE CACHE SURGERY ITSELF: recompute, do not rotate
+
+This is the answer to the question Findings 8–17 spent a dozen experiments failing to
+reach, and it was found by adding the one control that had never been run: **give the model
+the same retained tokens as an honest sequence, computed natively.**
+
+`src/native_vs_cache.py` — same prompt, same selection, same keep set, three ways:
+
+| depth | full (native) | **compact NATIVE** | compact CACHE (shipped) |
+|---|---|---|---|
+| 0.15 | PASS | **PASS** | fail |
+| 0.55 | PASS | **PASS** | fail |
+| 0.75 | PASS | **PASS** | PASS |
+
+**The kept tokens are entirely sufficient.** At 0.15 and 0.55, handing the model exactly the
+tokens we retain — at their dense positions, as a normal forward pass — retrieves
+`0x9AF4_STACK_FAIL` perfectly, while the identical token set routed through our cache-surgery
+pipeline fails. Selection is fine. Retention is fine. **The compaction machinery is the
+defect.**
+
+**Why, measured directly** (`src/cache_vs_native.py`). Comparing the shipped cache's tensors
+against the native compact cache's, per position:
+
+| depth | all positions | needle position |
+|---|---|---|
+| | cos K / cos V | cos K / cos V |
+| 0.15 | 0.863 / 0.925 | **0.866** / 0.999 |
+| 0.55 | 0.822 / 0.924 | **0.750** / 0.999 |
+
+**Dense re-rotation does not reproduce the key the model would have built.** Rotating a
+surviving key from its old position to its new one yields a vector at cos ≈ 0.75–0.87 from
+the key that a native forward at that position produces. The worst layers are early-to-mid
+(6, 7, 13, 18 — cos as low as 0.51).
+
+**This corrects Finding 16.** That test recomputed **only the needle's** K and V and found
+no change, and I concluded conditioning was refuted. That conclusion was too strong: the
+needle is **one token out of 578–1210**. Recomputing one token leaves every other key in the
+cache rotated-but-not-recomputed, and native-vs-cache shows the whole cache has to be right.
+The needle's own V really is nearly perfect (0.999) — but that was never the load-bearing
+quantity.
+
+**What this means for the method.**
+
+- **`select → evict → re-rotate` does not work.** Rotating cached keys preserves the
+  *content* each key was computed with — content conditioned on a prefix that compaction has
+  changed. The rotation fixes the position and nothing else, and the tensors differ from the
+  valid ones by cos 0.75–0.87.
+- **`select → re-prefill the compacted sequence` does work**, at every depth measured, at the
+  same KV savings (34.0 / 36.6 / 37.5%), and it is what `compact_native` is.
+- **The cost is a re-prefill**, i.e. this is the same trade Finding 4 identified for text
+  squashing: the compaction saves KV memory, and the price is recomputing the retained
+  prefix. On CPU that is the dominant cost, so the honest framing of the method is
+  *"selection buys you a shorter sequence to recompute"*, not *"rotation lets you avoid
+  recomputing"*.
+
+**What survives from the earlier work.** The selector matters — line pooling and the mid
+band are the two that pass shallow depths, and `compact_native` uses the selector's output,
+so a better selector is still a real gain. The rotation analysis (Finding 2) measured a real
+causal effect: without re-rotation the answer collapses to system-prompt recitation. But it
+was the right fix for the wrong frame — it is *less wrong* than no rotation, not *correct*.
+Against a native recompute, cos 0.86 is not close enough.
+
+**The honest headline for the repository.** A 60% KV compaction that preserves a mid-context
+needle requires recomputing the retained sequence; key-only rotation is insufficient, and
+the nine scalar explanations in Findings 8–17 were all measuring the symptom of that one
+fact.
