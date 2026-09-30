@@ -1343,3 +1343,44 @@ of the global cache** to every block, because a `DynamicCache` is mutated in pla
 forward pass — share the object and block 2 inherits block 1's keys, silently destroying the
 isolation. `build_table` asserts the global cache did not grow, so the trap cannot return
 quietly.
+
+## Finding 31 — needle preservation per sifter: the metric that predicts success
+
+Finding 27 showed the answer survives any selection that retains the needle and its local
+context, and that two sifters with only 19% overlap both succeed. So the binding constraint is
+not "does the sifter select well" but **"does it drop the evidence"**. That makes needle
+preservation the metric that predicts success — and it costs no generation and no consumer
+model, just the selected set.
+
+`src/needle_preservation.py`, 0.5B, 3 depths × 4 budgets, random averaged over 5 seeds:
+
+| sifter | needle preserved |
+|---|---|
+| **attention-05b** | **11/12 (92%)** |
+| last-k (keep the trailing run) | 10/12 (83%) |
+| random | 27/60 (45%) |
+| **first-k** (keep the leading run) | **2/12 (17%)** |
+
+**★ `first-k` — which is what a naive prefix cache does — drops the needle 83% of the time.**
+Any scheme that keeps the head and discards the tail is failing on this workload by
+construction. That is the same conflict Finding 23 found from the other direction.
+
+**★ The single failure of attention-05b is a BUDGET failure, not a scoring failure.**
+
+| depth | needle at | k=30% | k=45% | k=60% | k=75% |
+|---|---|---|---|---|---|
+| 0.15 | 46% of the region | **no** | YES | YES | YES |
+| 0.55 | 75% | YES | YES | YES | YES |
+| 0.75 | 78% | YES | YES | YES | YES |
+
+At depth 0.15 with a 30% budget the needle's score falls below the cutoff; at 45% the same
+selector finds it. So the shallow-depth failure is **under-budgeting**, not a broken scorer —
+and that reframes the 7B's known miss (Finding 19: needle rank 555 against a keep budget of
+539, short by **16**) as a marginal budget shortfall rather than a fundamental limitation. **The
+actionable fix is a larger keep budget at shallow depth, or the `f=0.15` force from Finding 22
+which lifts the needle's survival directly.**
+
+**★ `last-k` scoring 83% is a property of THIS log format, not a general truth.** The needle
+sits at 46–78% of the region because build errors appear late; tail-pruning is safe *here*
+for that reason and would not be on a workload with early evidence. That is exactly the caveat
+Finding 24 established: the layout decides, and a policy tuned on one layout does not transfer.

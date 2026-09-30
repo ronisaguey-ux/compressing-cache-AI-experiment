@@ -1,0 +1,39 @@
+=== needle preservation 06:54:34 ===
+[heavy_lock] model-small acquired (9005 MB available, need 3500 MB)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights:  26%|██▌       | 75/290 [00:00<00:00, 700.38it/s]Loading weights:  59%|█████▉    | 171/290 [00:00<00:00, 845.34it/s]Loading weights:  90%|█████████ | 262/290 [00:00<00:00, 872.82it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 875.30it/s]
+==============================================================================================
+NEEDLE PRESERVATION PER SIFTER  |  model=Qwen/Qwen2.5-0.5B
+==============================================================================================
+
+depth 0.15  c1=899  needle at chunk-1 index 414 (46% of the region)
+   sifter         k=30%  k=45%  k=60%  k=75%
+   attention-05b  no    YES   YES   YES
+   first-k        no    no    YES   YES
+   last-k         no    no    YES   YES
+   random         2/5   2/5   3/5   YES
+
+depth 0.55  c1=1953  needle at chunk-1 index 1468 (75% of the region)
+   sifter         k=30%  k=45%  k=60%  k=75%
+   attention-05b  YES   YES   YES   YES
+   first-k        no    no    no    no 
+   last-k         YES   YES   YES   YES
+   random         0/5   0/5   1/5   4/5
+
+depth 0.75  c1=2182  needle at chunk-1 index 1697 (78% of the region)
+   sifter         k=30%  k=45%  k=60%  k=75%
+   attention-05b  YES   YES   YES   YES
+   first-k        no    no    no    no 
+   last-k         YES   YES   YES   YES
+   random         2/5   2/5   3/5   3/5
+
+==============================================================================================
+AGGREGATE over 3 depths x 4 budgets
+==============================================================================================
+  attention-05b    11/12 preserved (92%)
+  first-k           2/12 preserved (17%)
+  last-k           10/12 preserved (83%)
+  random           27/60 preserved (45%)  [5 seeds]
+
+wrote data/needle_preservation.jsonl
+=== exit=0 06:55:54 ===
