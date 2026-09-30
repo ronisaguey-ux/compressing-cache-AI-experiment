@@ -1,0 +1,38 @@
+[01:12:24] density sweep start
+[heavy_lock] reclaiming stale lock model-small (pid=3586419 age=148s)
+[heavy_lock] model-small acquired (10580 MB available, need 3500 MB)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights:  34%|███▍      | 98/290 [00:00<00:00, 978.83it/s]Loading weights:  68%|██████▊   | 196/290 [00:00<00:00, 737.22it/s]Loading weights:  94%|█████████▍| 274/290 [00:00<00:00, 713.30it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 759.14it/s]
+{"depth": 0.1, "mode": "baseline", "c1": 765, "needle_rel": 280, "rank": 322, "keep": 459, "needle_kept": true, "density_pm16": 1.0, "density_pm64": 0.9141, "density_pm256": 0.668, "kept_before": 148, "kept_before_frac": 0.529, "kv_saved_pct": 32.96, "pass_": false, "answer": "You are a build assistant.\nSYSTEM_FLAG_A = ALPHA_VERIFIED\nAlways answer with the", "model": "Qwen/Qwen2.5-0.5B", "sec": 17.1}
+{"depth": 0.2, "mode": "baseline", "c1": 1042, "needle_rel": 557, "rank": 370, "keep": 625, "needle_kept": true, "density_pm16": 1.0, "density_pm64": 0.9688, "density_pm256": 0.6914, "kept_before": 291, "kept_before_frac": 0.522, "kv_saved_pct": 35.89, "pass_": false, "answer": "The failure code in the build log was 1.", "model": "Qwen/Qwen2.5-0.5B", "sec": 19.9}
+{"depth": 0.3, "mode": "baseline", "c1": 1288, "needle_rel": 803, "rank": 547, "keep": 772, "needle_kept": true, "density_pm16": 1.0, "density_pm64": 0.9609, "density_pm256": 0.707, "kept_before": 394, "kept_before_frac": 0.491, "kv_saved_pct": 36.25, "pass_": true, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL.", "model": "Qwen/Qwen2.5-0.5B", "sec": 25.5}
+{"depth": 0.4, "mode": "baseline", "c1": 1567, "needle_rel": 1082, "rank": 420, "keep": 940, "needle_kept": true, "density_pm16": 1.0, "density_pm64": 0.9609, "density_pm256": 0.6875, "kept_before": 505, "kept_before_frac": 0.467, "kv_saved_pct": 36.86, "pass_": true, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL.", "model": "Qwen/Qwen2.5-0.5B", "sec": 28.1}
+{"depth": 0.5, "mode": "baseline", "c1": 1811, "needle_rel": 1326, "rank": 515, "keep": 1086, "needle_kept": true, "density_pm16": 1.0, "density_pm64": 0.9609, "density_pm256": 0.8066, "kept_before": 644, "kept_before_frac": 0.486, "kv_saved_pct": 36.97, "pass_": true, "answer": "The failure code in the build log is 0x9AF4. This indicates that there was an er", "model": "Qwen/Qwen2.5-0.5B", "sec": 33.8}
+{"depth": 0.6, "mode": "baseline", "c1": 2087, "needle_rel": 1602, "rank": 445, "keep": 1252, "needle_kept": true, "density_pm16": 1.0, "density_pm64": 0.9688, "density_pm256": 0.7598, "kept_before": 826, "kept_before_frac": 0.516, "kv_saved_pct": 37.35, "pass_": false, "answer": "The failure code in the build log is 1. This indicates that there was an error d", "model": "Qwen/Qwen2.5-0.5B", "sec": 39.2}
+{"depth": 0.7, "mode": "baseline", "c1": 2182, "needle_rel": 1697, "rank": 389, "keep": 1309, "needle_kept": true, "density_pm16": 1.0, "density_pm64": 0.9766, "density_pm256": 0.75, "kept_before": 875, "kept_before_frac": 0.516, "kv_saved_pct": 37.46, "pass_": true, "answer": "The failure code in the build log is 0x9af4_stack_fail. This indicates that ther", "model": "Qwen/Qwen2.5-0.5B", "sec": 40.5}
+{"depth": 0.8, "mode": "baseline", "c1": 2182, "needle_rel": 1697, "rank": 389, "keep": 1309, "needle_kept": true, "density_pm16": 1.0, "density_pm64": 0.9766, "density_pm256": 0.75, "kept_before": 875, "kept_before_frac": 0.516, "kv_saved_pct": 37.46, "pass_": true, "answer": "The failure code in the build log is 0x9af4_stack_fail. This indicates that ther", "model": "Qwen/Qwen2.5-0.5B", "sec": 40.0}
+
+model=Qwen/Qwen2.5-0.5B  mode=baseline  keep=0.60
+depth   c1     needle  rank      kept    d16       d64       d256      kept_before verdict
+0.1     765    280     322       True    1.0       0.9141    0.668     0.529     fail
+0.2     1042   557     370       True    1.0       0.9688    0.6914    0.522     fail
+0.3     1288   803     547       True    1.0       0.9609    0.707     0.491     PASS
+0.4     1567   1082    420       True    1.0       0.9609    0.6875    0.467     PASS
+0.5     1811   1326    515       True    1.0       0.9609    0.8066    0.486     PASS
+0.6     2087   1602    445       True    1.0       0.9688    0.7598    0.516     fail
+0.7     2182   1697    389       True    1.0       0.9766    0.75      0.516     PASS
+0.8     2182   1697    389       True    1.0       0.9766    0.75      0.516     PASS
+
+verdict pattern over 8 depths: F F P P P F P P
+fail count: 3 of 8
+
+==========================================================================
+DOES CONTEXT DENSITY SEPARATE PASS FROM FAIL?
+==========================================================================
+  density_pm16      PASS mean 1.000 (n=5)   FAIL mean 1.000 (n=3)   delta +0.000
+  density_pm64      PASS mean 0.967 (n=5)   FAIL mean 0.951 (n=3)   delta +0.017
+  density_pm256     PASS mean 0.740 (n=5)   FAIL mean 0.706 (n=3)   delta +0.034
+  kept_before_frac  PASS mean 0.495 (n=5)   FAIL mean 0.522 (n=3)   delta -0.027
+
+wrote data/density_sweep.jsonl
+[01:16:42] rc=0 done

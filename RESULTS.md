@@ -586,6 +586,39 @@ The one row where the line was genuinely broken (`posnorm`, 0.15: 12 of 16 token
 run 7) failed — consistent with fragmentation mattering *when it happens*, but it happens
 once in twelve, so it is not the mechanism behind the other failures.
 
+## Finding 15 — position-independent caching is WORSE than dense re-rotation
+
+The last untested arm. `apply_delta` rotates survivors to their new DENSE positions, which
+keeps the geometry internally consistent but shortens every relative distance (a needle 485
+tokens away becomes 230 away at 60% compaction). The alternative in the literature —
+SGLang RFC #30928, LazyAttention — is to leave key rotations at their ORIGINAL positions
+and place the query at the original sequence length, so a retained token sits at exactly
+the distance the model was trained on. `src/origpos.py` builds that arm with an explicit
+`cache_position` (transformers otherwise derives the query position from the cache length,
+which is the whole reason the distances move).
+
+| depth | full | evict (dense re-rotation) | origpos (original positions) |
+|---|---|---|---|
+| 0.15 | PASS | fail | fail |
+| 0.35 | **PASS** | **PASS** | **fail** |
+| 0.55 | PASS | fail | fail |
+| 0.75 | **PASS** | **PASS** | **fail** |
+
+**origpos fixed 0 depths and broke 2.** Where dense re-rotation passed, origpos failed. It
+is strictly worse, at identical retention and identical KV savings (34.0 / 36.2 / 37.2 /
+37.5% both arms, same `keep` set, same rank).
+
+**What this settles.** The dense re-rotation in this harness is not merely a reasonable
+choice — it is the better one, and preserving the trained relative distances is worse than
+remapping them onto the compacted sequence. That points away from the conditioning-loss
+account: if the model needed the absolute distances it was trained on, origpos would have
+helped. It did not. **Conditioning loss via RoPE geometry is refuted as the mechanism.**
+
+Combined with Findings 13 and 13b, four mechanism hypotheses are now dead by measurement:
+attention-sink displacement, sequence fragmentation, context density, and RoPE geometry.
+The failure is real, compaction-caused, retention-dependent, and invisible to every scalar
+this project has measured.
+
 ## Limits
 
 - **The 7B column is 8-bit and covers three of four depths.** Quantisation changes numerics
