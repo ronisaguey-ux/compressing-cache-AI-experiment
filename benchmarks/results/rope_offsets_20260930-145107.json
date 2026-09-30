@@ -1,0 +1,125 @@
+[
+  {
+    "model": "qwen2.5-7b",
+    "trials": 10,
+    "rates": {
+      "full": 0.0,
+      "static": 0.0,
+      "compact": 1.0
+    },
+    "mean_static_drift": 15.208203125,
+    "mean_compact_drift": 15.208203125,
+    "rows": [
+      {
+        "trial": 1,
+        "want": "31353?auth=EXAMPLE_KEY_6137ab287ab9",
+        "full": false,
+        "static": false,
+        "compact": true,
+        "static_drift": 14.1640625,
+        "compact_drift": 14.1640625,
+        "static_ans": "TARGET_PORT\nPORT\nport\nport\nport\nport\nport\nport\npor",
+        "compact_ans": "31353?auth=EXAMPLE_KEY_6137ab287ab9\nYou are a build as"
+      },
+      {
+        "trial": 2,
+        "want": "57792?auth=EXAMPLE_KEY_cf5c64c6b1a2",
+        "full": false,
+        "static": false,
+        "compact": true,
+        "static_drift": 14.5390625,
+        "compact_drift": 14.5390625,
+        "static_ans": "TARGET_PORT\nPORT\nTARGET_PORT\nport\nTARGET_PORT\nport",
+        "compact_ans": "57792?auth=EXAMPLE_KEY_cf5c64c6b1a2\nYou are a build as"
+      },
+      {
+        "trial": 3,
+        "want": "30169?auth=EXAMPLE_KEY_d0f2572efb6b",
+        "full": false,
+        "static": false,
+        "compact": true,
+        "static_drift": 16.015625,
+        "compact_drift": 16.015625,
+        "static_ans": "TARGET_PORT\nPORT 30169\nauth admin\nenvoy\nenvoy\nenvo",
+        "compact_ans": "30169?auth=EXAMPLE_KEY_d0f2572efb6b\nYou are a build as"
+      },
+      {
+        "trial": 4,
+        "want": "33351?auth=EXAMPLE_KEY_22a40424fce5",
+        "full": false,
+        "static": false,
+        "compact": true,
+        "static_drift": 14.90234375,
+        "compact_drift": 14.90234375,
+        "static_ans": "TARGET_PORT\nPORT\nTARGET_PORT\nport\nTARGET_PORT\nport",
+        "compact_ans": "33351?auth=EXAMPLE_KEY_22a40424fce5\nYou are a build as"
+      },
+      {
+        "trial": 5,
+        "want": "56956?auth=EXAMPLE_KEY_278249b32cb3",
+        "full": false,
+        "static": false,
+        "compact": true,
+        "static_drift": 14.421875,
+        "compact_drift": 14.421875,
+        "static_ans": "TARGET_PORT\nPORT\nport\nport\nport\nport\nport\nport\npor",
+        "compact_ans": "56956?auth=EXAMPLE_KEY_278249b32cb3\nYou are a build as"
+      },
+      {
+        "trial": 6,
+        "want": "11939?auth=EXAMPLE_KEY_267bb2c45ab0",
+        "full": false,
+        "static": false,
+        "compact": true,
+        "static_drift": 15.62109375,
+        "compact_drift": 15.62109375,
+        "static_ans": "TARGET_PORT\nPORT\nTARGET_PORT\nport\nTARGET_PORT\nport",
+        "compact_ans": "11939?auth=EXAMPLE_KEY_267bb2c45ab0\nYou are a build as"
+      },
+      {
+        "trial": 7,
+        "want": "34671?auth=EXAMPLE_KEY_bc6667e34b55",
+        "full": false,
+        "static": false,
+        "compact": true,
+        "static_drift": 15.25,
+        "compact_drift": 15.25,
+        "static_ans": "TARGET_PORT\nPORT\nport\nport\nport\nport\nport\nport\npor",
+        "compact_ans": "34671?auth=EXAMPLE_KEY_bc6667e34b55\nYou are a build as"
+      },
+      {
+        "trial": 8,
+        "want": "23784?auth=EXAMPLE_KEY_ad2c9f506dcd",
+        "full": false,
+        "static": false,
+        "compact": true,
+        "static_drift": 15.72265625,
+        "compact_drift": 15.72265625,
+        "static_ans": "TARGET_PORT\nPORT\nport\nport\nport\nport\nport\nport\npor",
+        "compact_ans": "23784?auth=EXAMPLE_KEY_ad2c9f506dcd"
+      },
+      {
+        "trial": 9,
+        "want": "61130?auth=EXAMPLE_KEY_2d79f5b6c9bf",
+        "full": false,
+        "static": false,
+        "compact": true,
+        "static_drift": 15.99609375,
+        "compact_drift": 15.99609375,
+        "static_ans": "TARGET_PORT\nYou are a a build assistant. Always an",
+        "compact_ans": "61130?auth=EXAMPLE_KEY_2d79f5b6c9bf\nYou are a build as"
+      },
+      {
+        "trial": 10,
+        "want": "64025?auth=EXAMPLE_KEY_4bc5c1a0b4f7",
+        "full": false,
+        "static": false,
+        "compact": true,
+        "static_drift": 15.44921875,
+        "compact_drift": 15.44921875,
+        "static_ans": "TARGET_PORT\nPORT\nTARGET_PORT\nport\nTARGET_PORT\nport",
+        "compact_ans": "64025?auth=EXAMPLE_KEY_4bc5c1a0b4f7"
+      }
+    ]
+  }
+]

@@ -1,0 +1,125 @@
+[
+  {
+    "model": "mistral-7b-instruct",
+    "trials": 10,
+    "rates": {
+      "full": 0.6,
+      "static": 0.0,
+      "compact": 0.0
+    },
+    "mean_static_drift": 15.074609375,
+    "mean_compact_drift": 15.074609375,
+    "rows": [
+      {
+        "trial": 1,
+        "want": "31353?auth=EXAMPLE_KEY_6137ab287ab9",
+        "full": true,
+        "static": false,
+        "compact": false,
+        "static_drift": 17.16015625,
+        "compact_drift": 17.16015625,
+        "static_ans": "\"31353\" \"EXAMPLE_KEY_6137ab287ab9\"",
+        "compact_ans": "\"31353:auth=EXAMPLE_KEY_6137ab287ab9\""
+      },
+      {
+        "trial": 2,
+        "want": "57792?auth=EXAMPLE_KEY_cf5c64c6b1a2",
+        "full": false,
+        "static": false,
+        "compact": false,
+        "static_drift": 14.04296875,
+        "compact_drift": 14.04296875,
+        "static_ans": "\"57792:TOKEN\" where TOKEN is the token generated b",
+        "compact_ans": "\"57792:auth=EXAMPLE_KEY_cf5c64c6b1a2\""
+      },
+      {
+        "trial": 3,
+        "want": "30169?auth=EXAMPLE_KEY_d0f2572efb6b",
+        "full": true,
+        "static": false,
+        "compact": false,
+        "static_drift": 14.4453125,
+        "compact_drift": 14.4453125,
+        "static_ans": "\"30169\" \"EXAMPLE_KEY_d0f2572efb6b\" | tr -d '\\n'",
+        "compact_ans": "\"30169:auth=EXAMPLE_KEY_d0f2572efb6b\""
+      },
+      {
+        "trial": 4,
+        "want": "33351?auth=EXAMPLE_KEY_22a40424fce5",
+        "full": true,
+        "static": false,
+        "compact": false,
+        "static_drift": 17.296875,
+        "compact_drift": 17.296875,
+        "static_ans": "\"33351\" \"EXAMPLE_KEY_22a40424fce5\"",
+        "compact_ans": "\"33351:auth=EXAMPLE_KEY_22a40424fce5\""
+      },
+      {
+        "trial": 5,
+        "want": "56956?auth=EXAMPLE_KEY_278249b32cb3",
+        "full": true,
+        "static": false,
+        "compact": false,
+        "static_drift": 13.60546875,
+        "compact_drift": 13.60546875,
+        "static_ans": "\"56956:56956@\"\n\nThis is a combination of the TARGE",
+        "compact_ans": "\"56956:auth=EXAMPLE_KEY_278249b32cb3\""
+      },
+      {
+        "trial": 6,
+        "want": "11939?auth=EXAMPLE_KEY_267bb2c45ab0",
+        "full": false,
+        "static": false,
+        "compact": false,
+        "static_drift": 16.16796875,
+        "compact_drift": 16.16796875,
+        "static_ans": "\"11939\" \"EXAMPLE_KEY_267bb2c45ab0\" | tr -d '\\n' | base",
+        "compact_ans": "\"11939:auth=EXAMPLE_KEY_267bb2c45ab0\""
+      },
+      {
+        "trial": 7,
+        "want": "34671?auth=EXAMPLE_KEY_bc6667e34b55",
+        "full": false,
+        "static": false,
+        "compact": false,
+        "static_drift": 14.1015625,
+        "compact_drift": 14.1015625,
+        "static_ans": "\"34671\" \"EXAMPLE_KEY_bc6667e34b55\"",
+        "compact_ans": "\"34671:auth=EXAMPLE_KEY_bc6667e34b55\""
+      },
+      {
+        "trial": 8,
+        "want": "23784?auth=EXAMPLE_KEY_ad2c9f506dcd",
+        "full": true,
+        "static": false,
+        "compact": false,
+        "static_drift": 14.55078125,
+        "compact_drift": 14.55078125,
+        "static_ans": "\"23784:<AUTH_SECRET>\" (Assuming AUTH_SECRET is the",
+        "compact_ans": "\"23784:auth=EXAMPLE_KEY_ad2c9f506dcd\""
+      },
+      {
+        "trial": 9,
+        "want": "61130?auth=EXAMPLE_KEY_2d79f5b6c9bf",
+        "full": false,
+        "static": false,
+        "compact": false,
+        "static_drift": 14.7109375,
+        "compact_drift": 14.7109375,
+        "static_ans": "\"61130\" \"EXAMPLE_KEY_2d79f5b6c9bf\" | tr -d '\\n'",
+        "compact_ans": "\"61130:auth=EXAMPLE_KEY_2d79f5b6c9bf\""
+      },
+      {
+        "trial": 10,
+        "want": "64025?auth=EXAMPLE_KEY_4bc5c1a0b4f7",
+        "full": true,
+        "static": false,
+        "compact": false,
+        "static_drift": 14.6640625,
+        "compact_drift": 14.6640625,
+        "static_ans": "\"64025:TARGET_PORT\"\n\nNow, the topology follows. Le",
+        "compact_ans": "\"64025:auth=EXAMPLE_KEY_4bc5c1a0b4f7\""
+      }
+    ]
+  }
+]

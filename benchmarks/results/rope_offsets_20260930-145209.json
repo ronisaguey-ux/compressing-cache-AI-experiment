@@ -1,0 +1,7 @@
+[
+  {
+    "model": "mistral-7b-instruct",
+    "status": "failed",
+    "error": "CUDA out of memory. Tried to allocate 28.00 MiB. GPU 0 has a total capacity of 22.06 GiB of which 3.44 MiB is free. Process 1 has 22.05 GiB memory in use. Of the allocated memory 21.53 GiB is allocated by PyTorch, and 247.53 MiB is reserved by PyTorch but unallocated. If reserved but unallocated mem"
+  }
+]

@@ -280,3 +280,39 @@ control would have mislabelled one of the two models as broken.
 **Verified non-vacuous:** 10 randomised port/secret pairs per arm per model, so no answer is
 memorisable; the two block arms differ in exactly one variable; and the fix is confirmed on two
 architectures. Artifact: `modal/trials_two_needle.py`.
+
+## Finding 38 (2026-09-30) — Bob's Test 1 (RoPE): his stated pass metric is contradicted
+
+**Bob's pass metric:** *"retaining original absolute positional coordinates preserves exact
+generation coherence WITHOUT requiring continuous re-indexing."* **Measured: it is never better
+and sometimes fatal. Re-indexing is never worse.**
+
+10 randomised trials, both arms hold the SAME block caches (same KV, same isolation):
+
+| model | full (no eviction) | STATIC (original ids — Bob's metric) | COMPACT (re-indexed) |
+|---|---|---|---|
+| qwen2.5-7b | 0% | **0%** | **100%** |
+| mistral-7b-instruct | 60% | **0%** | **0%** (task-format dependent; 100% in the Finding 37 format) |
+
+**⇒ KEEPING ORIGINAL POSITION IDS WINS NOWHERE AND LOSES BADLY.** In every measurement across
+both models and both test formats, `static` is 0%. `compact` reaches 100% on Qwen in this format
+and 100% on both models in the Finding 37 format. **Re-indexing survivors contiguously is the
+correct behaviour, and Bob's hypothesis is the opposite of what the data shows.**
+
+### ★★ THE DRIFT NUMBER CONTRADICTS THE "10⁻⁵ FLOOR" PREMISE — and this is the subtle part
+Mean key drift of the surviving blocks against the full no-eviction run: **static 1.507e+01,
+compact 1.507e+01 — IDENTICAL to 4 significant figures.** Re-indexing does not change a single key
+tensor (it is the same blocks; only the assembly offset moves), so **drift cannot discriminate
+between the two arms, and it cannot be the mechanism behind the join failure.** Only coherence can.
+
+**More importantly: the drift here is ~1.5e+01, NOT 1e-05.** The 10⁻⁵ floor is real but it applies
+only when the survivors never attended to the evicted content (the block-diagonal case, Finding 28).
+In a LINEAR causal prefill the survivors attended to everything before them, and that influence is
+baked into their keys. Evicting the distractor afterwards leaves ~15.0 of drift — the CONTENT error
+Finding 23 identified. **Do not quote "10⁻⁵ vs 10¹" as a property of eviction in general; it is a
+property of eviction from BLOCK-DIAGONAL isolation specifically.** The same distinction decides
+which architecture can claim what.
+
+**Verified non-vacuous:** the `full` arm (no eviction) is measured on the same trials and reaches
+60% on Mistral, so the task is answerable and the 0% block arms are attributable to eviction.
+Artifact: `modal/rope_offsets.py`.
