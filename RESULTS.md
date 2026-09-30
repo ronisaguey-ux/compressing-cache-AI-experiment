@@ -944,3 +944,47 @@ no line pooling, and no conditioning patch.
 one. "Compaction" here means *shorter sequence to recompute*, not *avoid recomputation*. That
 is a different and weaker claim than the one the repository opened with, and it is the one the
 measurements support.
+
+## Finding 21 — prefix-preserving re-prefill: correct, verified exact, and worth 7.7%
+
+Bob's optimisation. Causal attention is strictly left-to-right, so any token whose entire
+prefix survived untouched has the same hidden state and the same RoPE phase as in the
+uncompressed run — the first `k` entries of the original cache are pristine and need not be
+recomputed. Implemented in `src/prefix_cache.py` to the spec: find the first `k` where
+`selected[k] != k`, slice the cache to `[:k]`, forward only the remaining kept tokens against
+it with `cache_position = arange(k, k + len(remaining))`.
+
+**The prefix is bit-identical — asserted every run.** The spec asked for cosine similarity
+exactly `1.0`. That is not assertable: cosine reports **0.9999998** even on two identical
+tensors, because the norm and dot product round. The real test is `torch.equal`, and it passes
+at every layer for both keys and values. Cosine was kept as a reported statistic, not as the
+assertion, because asserting on it would be asserting on my own arithmetic.
+
+**Retrieval holds: 4/4 PASS**, `0x9AF4_STACK_FAIL` at every depth — the same result as a cold
+re-prefill, so the reuse changes nothing about correctness.
+
+| depth | N | keep | prefix | **prefix / keep** | prefix / N | re-prefill saved | wall-clock |
+|---|---|---|---|---|---|---|---|
+| 0.15 | 938 | 539 | 69 | **12.8%** | 7.4% | 11.6% | — |
+| 0.35 | 1460 | 852 | 74 | 8.7% | 5.1% | 8.1% | — |
+| 0.55 | 1992 | 1171 | 106 | 9.1% | 5.3% | 8.6% | **+7.7%** (median of 3) |
+| 0.75 | 2221 | 1309 | 106 | 8.1% | 4.8% | 7.8% | — |
+
+**Three different numbers, and only the middle one is the honest claim.** The prefix is
+**7.8–11.6% of the re-prefill** (a real saving, measured at 7.7% wall-clock), **4.8–7.4% of the
+full sequence** (the small figure), and **0.6–1.3% of the FLOPs** (because the skipped tokens
+are at the *front*, where attention is cheapest — a quadratic's first 100 terms cost almost
+nothing). The wall-clock sits near the token figure because CPU CPU forward cost is dominated
+by per-token linear work (projections, MLP), not by the attention quadratic at these lengths.
+
+**Why the win is small, and where a bigger one lives.** Attention-based selection starts
+evicting around **chunk-1 index 30–67** (measured), so the untouched prefix is short — only 69
+to 106 tokens including the 39-token system prompt. The prefix length is set by the *selection
+pattern*, not by the caching mechanics: scattered top-k evictions produce a short prefix by
+construction. **A contiguous-middle eviction scheme would give a very long pristine prefix**,
+and the same caching code would then save a large fraction of the re-prefill — at the cost of
+giving up the freedom to evict wherever attention is lowest.
+
+**Status of the optimisation.** It is implemented, exactness-verified, correctness-preserving,
+and worth ~8% of the recompute. It does not change the method's economics: the re-prefill is
+still the cost, and this shortens it slightly rather than removing it.
