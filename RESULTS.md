@@ -988,3 +988,46 @@ giving up the freedom to evict wherever attention is lowest.
 **Status of the optimisation.** It is implemented, exactness-verified, correctness-preserving,
 and worth ~8% of the recompute. It does not change the method's economics: the re-prefill is
 still the cost, and this shortens it slightly rather than removing it.
+
+## Finding 22 — the selection pattern IS the lever: 3x the reuse for free
+
+Finding 21 showed the pristine prefix is short (8-12% of the re-prefill) and named the cause:
+scattered top-k evicts early, so the untouched prefix is short by construction. That is a
+claim about the *selection*, so it is testable directly. `src/prefix_tradeoff.py` force-keeps
+the first `f` of chunk 1, allocates the rest of the budget by attention as before, and
+measures both the reusable prefix and the retrieval verdict.
+
+| force | reuse of re-prefill | avg re-prefill | retrieval |
+|---|---|---|---|
+| **0.00** (scattered top-k) | 9.2% | 918 tok | **4/4** |
+| **0.15** | **28.4%** | 724 tok | **4/4** |
+| 0.30 | 52.1% | 484 tok | 3/4 |
+| 0.45 | 76.4% | 240 tok | 1/4 |
+
+**★ `f = 0.15` is free — a 3.1x increase in reusable prefix at zero retrieval cost.** The
+scattered selector was already keeping those early tokens most of the time; forcing them
+costs nothing and makes the prefix *contiguous*, which is what the caching code needs. 4/4 at
+every depth, and the average re-prefill drops 918 → 724 tokens (21%).
+
+**★ Past 0.15 the budget, not the prefix, becomes the binding constraint.** Keep is fixed at
+60% of chunk 1, so every forced token is a token that cannot be spent on attention-selected
+ones — and attention had a reason for picking them.
+
+| depth | force | needle kept | verdict | what failed |
+|---|---|---|---|---|
+| 0.15 | 0.30 / 0.45 | **False** | fail | the needle itself was evicted |
+| 0.55 | 0.45 | **True** | fail | needle present, but something it depends on was cut |
+
+The 0.55/0.45 row is the interesting one: the needle survived and the answer still broke, which
+means the needle is not the only thing the model needs — the same "partial reconstruction
+from surrounding context" that Finding 19 saw at 7B/0.15. Quality here is a property of the
+whole retained region, not of one token.
+
+**⇒ The practical recommendation is `f = 0.15`.** It is strictly better than the current
+scattered selector: same verdicts, 3x the prefix reuse, 21% less re-prefill work. It is also
+the safe setting, because the failure mode at 0.30+ is evicting mid-context evidence, and
+that failure is silent — the answer reads as a confident wrong code.
+
+**On chunk 0 being retained.** At any `keep >= c0/(1-f)` the 39-token system prefix would be
+pristine regardless. Forcing `f` of chunk 1 makes chunk 0 + `f` contiguous, and the reuse
+grows roughly linearly in `f` as the table shows.
