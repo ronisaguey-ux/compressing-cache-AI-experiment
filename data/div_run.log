@@ -1,0 +1,212 @@
+[01:22:31] decode divergence across 8 depths
+[heavy_lock] reclaiming stale lock model-small (pid=3592885 age=71s)
+[heavy_lock] model-small acquired (10563 MB available, need 3500 MB)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights:  22%|██▏       | 63/290 [00:00<00:00, 606.25it/s]Loading weights:  47%|████▋     | 135/290 [00:00<00:00, 653.63it/s]Loading weights:  71%|███████▏  | 207/290 [00:00<00:00, 677.32it/s]Loading weights:  96%|█████████▌| 279/290 [00:00<00:00, 691.57it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 697.18it/s]
+/tmp/opencode/ccai/src/decode_divergence.py:48: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /__w/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:820.)
+  ent = float(-(p * (p + 1e-12).log()).sum())
+==============================================================================
+depth=0.10  c1=765  needle_rel=280  rank=322  keep=459  kv_saved=33.8%
+==============================================================================
+step FULL top1                  EVICT top1                 kl        d_top1p   same
+0    'The'                      'You'                      1.6344    0.3122    NO  <-- diverge
+1    ' failure'                 ' are'                     14.1841   0.1043    NO  <-- diverge
+2    ' code'                    ' a'                       9.6462    0.0890    NO  <-- diverge
+3    ' in'                      ' build'                   10.4399   -0.1514   NO  <-- diverge
+4    ' the'                     ' assistant'               12.8312   0.0106    NO  <-- diverge
+5    ' build'                   '.\n'                      13.1682   0.2236    NO  <-- diverge
+6    ' log'                     'SYSTEM'                   13.9948   0.3859    NO  <-- diverge
+7    ' is'                      '_FLAG'                    12.3827   -0.5168   NO  <-- diverge
+8    ' '                        '_A'                       12.1144   -0.2571   NO  <-- diverge
+9    '0'                        ' ='                       9.4110    -0.0884   NO  <-- diverge
+10   'x'                        ' ALPHA'                   16.9591   0.0994    NO  <-- diverge
+11   '9'                        '_VER'                     14.3012   0.0068    NO  <-- diverge
+12   'AF'                       'IFIED'                    15.0806   -0.0247   NO  <-- diverge
+13   '4'                        '\n'                       10.8209   0.0778    NO  <-- diverge
+
+full  text: 'The failure code in the build log is 0x9AF4_STACK_FAIL'
+evict text: 'You are a build assistant.\nSYSTEM_FLAG_A = ALPHA_VERIFIED\nAlways answe'
+first divergence at step: 0
+
+==============================================================================
+depth=0.20  c1=1042  needle_rel=557  rank=370  keep=625  kv_saved=35.8%
+==============================================================================
+step FULL top1                  EVICT top1                 kl        d_top1p   same
+0    'The'                      'The'                      1.0940    0.3384    yes
+1    ' failure'                 ' failure'                 0.0897    0.1487    yes
+2    ' code'                    ' code'                    0.0041    0.0060    yes
+3    ' in'                      ' in'                      0.4134    0.3744    yes
+4    ' the'                     ' the'                     0.0007    0.0014    yes
+5    ' build'                   ' build'                   0.0013    0.0020    yes
+6    ' log'                     ' log'                     0.0003    0.0005    yes
+7    ' is'                      ' was'                     0.0637    0.0385    NO  <-- diverge
+8    ' '                        ' '                        0.3627    0.1542    yes
+9    '0'                        '1'                        0.7627    0.4892    NO  <-- diverge
+10   'x'                        '.'                        9.7976    0.6574    NO  <-- diverge
+11   '9'                        '<|endoftext|>'            6.3313    0.8569    NO  <-- diverge
+
+full  text: 'The failure code in the build log is 0x9AF4_STACK_FAIL'
+evict text: 'The failure code in the build log was 1.'
+first divergence at step: 7
+
+==============================================================================
+depth=0.30  c1=1288  needle_rel=803  rank=547  keep=772  kv_saved=36.3%
+==============================================================================
+step FULL top1                  EVICT top1                 kl        d_top1p   same
+0    'The'                      'The'                      1.9983    0.4502    yes
+1    ' failure'                 ' failure'                 0.2298    0.3013    yes
+2    ' code'                    ' code'                    0.0063    0.0089    yes
+3    ' in'                      ' in'                      0.2231    0.1240    yes
+4    ' the'                     ' the'                     0.0003    0.0006    yes
+5    ' build'                   ' build'                   0.0013    0.0028    yes
+6    ' log'                     ' log'                     0.0002    0.0004    yes
+7    ' is'                      ' is'                      0.2084    -0.1124   yes
+8    ' '                        ' '                        0.8529    0.3722    yes
+9    '0'                        '0'                        0.3834    0.3910    yes
+10   'x'                        'x'                        0.1592    0.1780    yes
+11   '9'                        '9'                        0.5627    0.4398    yes
+12   'AF'                       'AF'                       0.7372    0.5447    yes
+13   '4'                        '4'                        0.9715    0.6227    yes
+
+full  text: 'The failure code in the build log is 0x9AF4_STACK_FAIL'
+evict text: 'The failure code in the build log is 0x9AF4_STACK_FAIL'
+first divergence at step: None
+
+==============================================================================
+depth=0.40  c1=1567  needle_rel=1082  rank=420  keep=940  kv_saved=36.9%
+==============================================================================
+step FULL top1                  EVICT top1                 kl        d_top1p   same
+0    'The'                      'The'                      1.6207    0.4443    yes
+1    ' failure'                 ' failure'                 0.0693    0.1255    yes
+2    ' code'                    ' code'                    0.0026    0.0040    yes
+3    ' in'                      ' in'                      0.1048    -0.0789   yes
+4    ' the'                     ' the'                     0.0001    0.0000    yes
+5    ' build'                   ' build'                   0.0012    0.0011    yes
+6    ' log'                     ' log'                     0.0008    0.0013    yes
+7    ' is'                      ' is'                      0.1453    -0.1103   yes
+8    ' '                        ' '                        0.7653    0.3791    yes
+9    '0'                        '0'                        0.4416    0.4426    yes
+10   'x'                        'x'                        0.1434    0.1680    yes
+11   '9'                        '9'                        0.7534    0.5366    yes
+12   'AF'                       'AF'                       2.2095    0.8798    yes
+13   '4'                        '4'                        0.2061    0.1883    yes
+
+full  text: 'The failure code in the build log is 0x9AF4_STACK_FAIL'
+evict text: 'The failure code in the build log is 0x9AF4_STACK_FAIL'
+first divergence at step: None
+
+==============================================================================
+depth=0.50  c1=1811  needle_rel=1326  rank=515  keep=1086  kv_saved=37.4%
+==============================================================================
+step FULL top1                  EVICT top1                 kl        d_top1p   same
+0    'The'                      'The'                      0.5173    0.2327    yes
+1    ' failure'                 ' failure'                 0.2342    0.2871    yes
+2    ' code'                    ' code'                    0.0039    0.0063    yes
+3    ' in'                      ' in'                      0.2917    0.0609    yes
+4    ' the'                     ' the'                     0.0011    0.0019    yes
+5    ' build'                   ' build'                   0.0012    0.0016    yes
+6    ' log'                     ' log'                     0.0006    0.0014    yes
+7    ' is'                      ' is'                      0.4534    -0.0200   yes
+8    ' '                        ' '                        0.2766    0.0865    yes
+9    '0'                        '0'                        0.2391    0.2900    yes
+10   'x'                        'x'                        0.1099    0.1370    yes
+11   '9'                        '9'                        0.3974    0.3388    yes
+12   'AF'                       'AF'                       0.9852    0.6411    yes
+13   '4'                        '4'                        0.3004    0.2612    yes
+
+full  text: 'The failure code in the build log is 0x9AF4_STACK_FAIL'
+evict text: 'The failure code in the build log is 0x9AF4. This'
+first divergence at step: 14
+
+==============================================================================
+depth=0.60  c1=2087  needle_rel=1602  rank=445  keep=1252  kv_saved=37.7%
+==============================================================================
+step FULL top1                  EVICT top1                 kl        d_top1p   same
+0    'The'                      'The'                      0.7715    0.3082    yes
+1    ' failure'                 ' failure'                 0.2578    0.3068    yes
+2    ' code'                    ' code'                    0.0062    0.0086    yes
+3    ' in'                      ' in'                      0.1083    0.0924    yes
+4    ' the'                     ' the'                     0.0013    0.0023    yes
+5    ' build'                   ' build'                   0.0010    0.0005    yes
+6    ' log'                     ' log'                     0.0003    0.0004    yes
+7    ' is'                      ' is'                      0.2136    0.1048    yes
+8    ' '                        ' '                        0.3363    0.0574    yes
+9    '0'                        '1'                        0.9782    0.5394    NO  <-- diverge
+10   'x'                        '.'                        10.1033   0.6755    NO  <-- diverge
+11   '9'                        ' This'                    6.5855    0.8064    NO  <-- diverge
+12   'AF'                       ' indicates'               20.3325   0.5523    NO  <-- diverge
+13   '4'                        ' that'                    19.2891   0.2764    NO  <-- diverge
+
+full  text: 'The failure code in the build log is 0x9AF4_STACK_FAIL'
+evict text: 'The failure code in the build log is 1. This indicates that there was'
+first divergence at step: 9
+
+==============================================================================
+depth=0.70  c1=2182  needle_rel=1697  rank=389  keep=1309  kv_saved=37.8%
+==============================================================================
+step FULL top1                  EVICT top1                 kl        d_top1p   same
+0    'The'                      'The'                      0.8448    0.3194    yes
+1    ' failure'                 ' failure'                 0.1275    0.1764    yes
+2    ' code'                    ' code'                    0.0054    0.0077    yes
+3    ' in'                      ' in'                      0.2831    0.2598    yes
+4    ' the'                     ' the'                     0.0037    0.0052    yes
+5    ' build'                   ' build'                   0.0025    0.0041    yes
+6    ' log'                     ' log'                     0.0007    0.0014    yes
+7    ' is'                      ' is'                      0.3281    0.0934    yes
+8    ' '                        ' '                        0.2293    0.1430    yes
+9    '0'                        '0'                        0.7177    0.5662    yes
+10   'x'                        'x'                        0.2012    0.2144    yes
+11   '9'                        '9'                        1.3529    0.7449    yes
+12   'AF'                       'af'                       2.4685    0.8314    NO  <-- diverge
+13   '4'                        '4'                        0.1000    0.0969    yes
+
+full  text: 'The failure code in the build log is 0x9AF4_STACK_FAIL'
+evict text: 'The failure code in the build log is 0x9af4_stack_fail'
+first divergence at step: 12
+
+==============================================================================
+depth=0.80  c1=2182  needle_rel=1697  rank=389  keep=1309  kv_saved=37.8%
+==============================================================================
+step FULL top1                  EVICT top1                 kl        d_top1p   same
+0    'The'                      'The'                      0.8448    0.3194    yes
+1    ' failure'                 ' failure'                 0.1275    0.1764    yes
+2    ' code'                    ' code'                    0.0054    0.0077    yes
+3    ' in'                      ' in'                      0.2831    0.2598    yes
+4    ' the'                     ' the'                     0.0037    0.0052    yes
+5    ' build'                   ' build'                   0.0025    0.0041    yes
+6    ' log'                     ' log'                     0.0007    0.0014    yes
+7    ' is'                      ' is'                      0.3281    0.0934    yes
+8    ' '                        ' '                        0.2293    0.1430    yes
+9    '0'                        '0'                        0.7177    0.5662    yes
+10   'x'                        'x'                        0.2012    0.2144    yes
+11   '9'                        '9'                        1.3529    0.7449    yes
+12   'AF'                       'af'                       2.4685    0.8314    NO  <-- diverge
+13   '4'                        '4'                        0.1000    0.0969    yes
+
+full  text: 'The failure code in the build log is 0x9AF4_STACK_FAIL'
+evict text: 'The failure code in the build log is 0x9af4_stack_fail'
+first divergence at step: 12
+
+==============================================================================
+SUMMARY
+==============================================================================
+  depth 0.10  first divergence step 0  mean kl 12.9421  full p1 0.868 -> evict p1 0.839
+            entropy full 0.70  evict 1.27
+  depth 0.20  first divergence step 7  mean kl 1.5768  full p1 0.864 -> evict p1 0.570
+            entropy full 0.73  evict 2.00
+  depth 0.30  first divergence step None  mean kl 0.4488  full p1 0.865 -> evict p1 0.620
+            entropy full 0.70  evict 2.08
+  depth 0.40  first divergence step None  mean kl 0.4566  full p1 0.870 -> evict p1 0.647
+            entropy full 0.67  evict 1.91
+  depth 0.50  first divergence step 14  mean kl 1.4309  full p1 0.861 -> evict p1 0.633
+            entropy full 0.73  evict 1.80
+  depth 0.60  first divergence step 9  mean kl 6.5172  full p1 0.866 -> evict p1 0.591
+            entropy full 0.72  evict 1.91
+  depth 0.70  first divergence step 12  mean kl 1.1284  full p1 0.866 -> evict p1 0.597
+            entropy full 0.71  evict 2.00
+  depth 0.80  first divergence step 12  mean kl 1.1284  full p1 0.866 -> evict p1 0.597
+            entropy full 0.71  evict 2.00
+
+wrote data/decode_divergence_all.jsonl
+[01:27:21] rc=0 done

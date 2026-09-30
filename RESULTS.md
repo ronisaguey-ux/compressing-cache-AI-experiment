@@ -619,6 +619,89 @@ attention-sink displacement, sequence fragmentation, context density, and RoPE g
 The failure is real, compaction-caused, retention-dependent, and invisible to every scalar
 this project has measured.
 
+## Finding 16 — conditioning loss in the needle's KV is REFUTED
+
+Two independent research agents converged on the same leading explanation: the needle's
+**value** is conditioned on its antecedents, so evicting them leaves a cached V that was
+written for a context that no longer exists (Kamera's conditioning loss). Agent 1 proposed
+a cosine probe; Agent 2 proposed recomputing the KV under the compacted prefix.
+
+**The cosine probe is vacuous in this harness and was not run.** `Harness.resize` does
+`index_select` on keys **and values**, and `apply_delta` rotates **only keys** — so V is
+byte-identical between the full and compacted caches and the cosine would be exactly 1.0
+by construction. A test whose result is fixed by the implementation cannot be evidence.
+
+Agent 2's version is the real test, and it was run (`src/recompute_needle.py`): build the
+compacted token sequence, forward it fresh, and **splice in the needle's K and V as computed
+in that compacted context**, then decode.
+
+| depth | evict + re-rotation | **+ recomputed needle KV** | cos(orig, recomputed) K | V |
+|---|---|---|---|---|
+| 0.15 | fail | **fail** | 0.866 | **0.999** |
+| 0.35 | PASS | **PASS** | 0.841 | **0.999** |
+
+**Refuted, and the measurement is unusually clean.** Recomputing the needle's own KV in the
+correct context changes the verdict nowhere — 0.15 still fails, 0.35 still passes. Two
+further facts fall out:
+
+- **V barely moves at all.** Cosine 0.9986 / 0.9991 between the cached and recomputed values,
+  at every layer and in the mid band (8–18). The conditioning shift in the **value** is
+  ~0.1%. The hypothesis assumed V carries the context dependence; it does not.
+- **K moves far more** (cos 0.866 / 0.841, mid-band 0.854 / 0.813). The key is the
+  context-sensitive tensor here, and it is the one dense re-rotation already repairs.
+
+**Where this leaves the mechanism.** The needle's representation is not the problem — not
+cached, not recomputed, not its keys, not its values. Combined with the refutations already
+recorded (attention mass, contiguity, density, RoPE geometry, conditioning) and with the
+two positive results (`full` cache passes everywhere; `evict` fails only sometimes), the
+failure is in the **readout of the compacted context as a whole**, not in the retained
+needle. Every attempt to blame a property of the needle has now failed.
+
+## Research-agent audit — what was useful, what was wrong
+
+Two external agents produced 82 KB of analysis against `docs/DEEP-RESEARCH-BRIEF.md`. The
+prior-art survey is the most valuable part; several specific claims do not survive checking.
+
+**Genuinely new and usable:**
+- **The prior-art landscape is far more crowded than this document assumed.** LazyAttention,
+  **MEPIC** (arXiv 2512.16822), **MiniPIC** (arXiv 2606.13126), **Irminsul** (arXiv
+  2605.05696), **SemPIC** (arXiv 2607.28069), **COMB** (arXiv 2602.01519) and **Leyline**
+  all do position-independent KV caching with RoPE correction. This project was framed as
+  nearly novel; it is not. **Its contribution is CPU-executability, not mechanism novelty** —
+  every published implementation of exact RoPE re-rotation on cached keys is GPU-only.
+- **Layer-stratified saliency.** Summing attention uniformly over all layers mixes
+  high-entropy early-layer syntactic attention into a sparse mid-layer retrieval signal.
+  This is consistent with Finding 1's own per-layer rank table (needle 303rd at layer 0,
+  46th at layer 16) and it is cheap to test.
+- One agent independently predicted **the generation-vs-retrieval split** that
+  `src/decode_divergence.py` had already measured: the answer's first token is reachable and
+  the decode cannot complete it.
+
+**Checked and corrected — do not carry these forward:**
+- **Agent 1's "+2.019 vs +1.776 nats" catch is CORRECT.** `RESULTS.md` records +2.019 as the
+  max of the earlier 4-point sweep and +1.776 as the keep-50% comparison; the brief conflated
+  the two runs. The document was right and the brief was wrong.
+- **Agent 1's Rank-1 experiment (value-cosine probe) is vacuous** — see above.
+- **Agent 2 cites `src/heavy_lock.py:112-145` for "cumulative phase quantization drift in key
+  re-rotation".** That file is 137 lines and is the **memory lock**; it contains no rotation
+  code, no RoPE, no keys. The citation is fabricated.
+- **Agent 2's subword-fragmentation hypothesis (H1)** was already refuted by
+  `src/fragmentation.py`: the needle's full 16-token line survives intact in 11 of 12 rows
+  and the pass rate among intact rows is still 45%.
+- **Agent 2's 8-bit dequantisation hypothesis (H8) cannot explain this failure.** The 0.5B is
+  **fp32** and fails identically at 0.15%. A quantisation artefact cannot be the mechanism in
+  a run that never quantises.
+- **Agent 2's H9 (posnorm penalises shallow positions) is CORRECT and was confirmed both
+  ways**: `sel_position_normalized` divides position `i` by `chunk1_len - i`, so early tokens
+  carry the largest denominator, and the data agrees (0.15: baseline rank 564, posnorm 633 —
+  worse; 0.35 and 0.55: posnorm better). posnorm's 15% failure is a normalisation artefact,
+  not a selector verdict.
+
+**Net:** the brief was worth sending — it produced a prior-art map worth several days of
+searching and one hypothesis sharp enough to kill decisively. It also produced one fabricated
+citation and one experiment that would have returned a guaranteed 1.0. Treat it as a lead
+generator, which is what it was asked to be.
+
 ## Limits
 
 - **The 7B column is 8-bit and covers three of four depths.** Quantisation changes numerics
