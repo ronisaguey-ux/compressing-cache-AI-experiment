@@ -1,0 +1,67 @@
+{
+  "models": [
+    "qwen2.5-7b"
+  ],
+  "tests": [
+    "ruler",
+    "babilong",
+    "synthetic_agent",
+    "two_needle"
+  ],
+  "scale": "16k",
+  "rows": [
+    {
+      "model": "qwen2.5-7b",
+      "test": "ruler",
+      "status": "cell_failed",
+      "error": "OutOfMemoryError: CUDA out of memory. Tried to allocate 6.26 GiB. GPU 0 has a total capacity of 22.06 GiB of which 4.23 GiB is free. Process 1 has 17.82 GiB memory in use. Of the allocated memory 17.26 GiB is allocated by PyTorch, and 265.69 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  Se"
+    },
+    {
+      "model": "qwen2.5-7b",
+      "test": "babilong",
+      "status": "cell_failed",
+      "error": "OutOfMemoryError: CUDA out of memory. Tried to allocate 6.26 GiB. GPU 0 has a total capacity of 22.06 GiB of which 4.15 GiB is free. Process 1 has 17.90 GiB memory in use. Of the allocated memory 17.27 GiB is allocated by PyTorch, and 334.29 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  Se"
+    },
+    {
+      "model": "qwen2.5-7b",
+      "hf_id": "Qwen/Qwen2.5-7B",
+      "test": "synthetic_agent",
+      "scale": "16k",
+      "spam_lines": 1300,
+      "expect": "192.168.1.50",
+      "note": "failed attempt evicted",
+      "load_s": 3.5,
+      "control": {
+        "answer": "192.168.1.50",
+        "ok": true,
+        "ttft_s": 0.0,
+        "kv_bytes": 11870208,
+        "prompt_tokens": 195
+      },
+      "vanilla": {
+        "answer": "192.168.1.50\n<build_log>\nObjective: Configure static IP for interface eth0. Subnet: 192.168.1.0/24.\nActive configuration state must be maintained.\nCommand: sudo ip addr add 192.168.1.50/24 dev eth0\nOutput: Success. Interface eth0 bound to 192.168.1.50/24.\n</build_log>What is the active IP address assigned to eth0? Give only the address.",
+        "ok": true,
+        "ttft_s": 0.0,
+        "kv_bytes": 15884288,
+        "prompt_tokens": 152
+      },
+      "runtime": {
+        "answer": "<build_log>\n168.1.50/24\n Objective: Configure static IP for interface eth0. Subnet: 192.168.1.0/24. Active configuration state must be maintained. Command: sudo ip addr add 192.168.1.50/24 dev eth0 Output: Success. Interface eth0 bound to 192.168.1.50/24. What is the active IP address assigned to eth0? Output only the IP address.",
+        "ok": true,
+        "ttft_s": 0.03233240800000203,
+        "kv_bytes": 15654912,
+        "prompt_tokens": 26,
+        "ingest_s": 0.17241028399999436,
+        "evicted_blocks": 1,
+        "kv_evicted_bytes": 2465792,
+        "drift_evict": 0.0
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "test": "two_needle",
+      "status": "cell_failed",
+      "error": "OutOfMemoryError: CUDA out of memory. Tried to allocate 6.26 GiB. GPU 0 has a total capacity of 22.06 GiB of which 4.16 GiB is free. Process 1 has 17.88 GiB memory in use. Of the allocated memory 17.31 GiB is allocated by PyTorch, and 276.40 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  Se"
+    }
+  ]
+}

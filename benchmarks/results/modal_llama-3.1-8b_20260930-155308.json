@@ -1,0 +1,154 @@
+{
+  "models": [
+    "llama-3.1-8b"
+  ],
+  "tests": [
+    "ruler",
+    "babilong",
+    "synthetic_agent",
+    "two_needle"
+  ],
+  "scale": "16k",
+  "rows": [
+    {
+      "model": "llama-3.1-8b",
+      "hf_id": "NousResearch/Meta-Llama-3.1-8B",
+      "test": "ruler",
+      "scale": "16k",
+      "spam_lines": 1300,
+      "expect": "47",
+      "note": "alpha=42 beta=84 gamma=94 delta=47",
+      "load_s": 17.5,
+      "control": {
+        "answer": " You are a build assistant.\nSYSTEM_FLAG_A = ALPHA_VERIFIED\nAlways answer with the exact value requested, quoting it verbatim.\n<build_log>\nlet alpha = 42;\nlet beta = alpha * 2;\ngcc -O2 -Wall -Wextra -c src/vm/emit.c -o build/emit.o\ngcc -O2 -Wall -Wextra -c src/net/tls.c -o build/tls.o\nsrc/core/pool.h:2:12: warning: unused parameter 'flags' [-Wunused-parameter]\nccache: cache miss for src/vm/stack.o (stats reset",
+        "ok": false,
+        "ttft_s": 0.0,
+        "kv_bytes": 2842296320,
+        "prompt_tokens": 21558
+      },
+      "vanilla": {
+        "answer": " You are a build assistant.\nSYSTEM_FLAG_A = ALPHA_VERIFIED\nAlways answer with the exact value requested, quoting it verbatim.\n<build_log>\nlet alpha = 42;\nlet beta = alpha * 2;\nlet gamma = beta + 10;\nlet delta = gamma / 2;\n</build_log>\nEvaluate the final value of delta. Do not explain. Reply with only the line: {\"delta\": <value>} [/INST] You are a build assistant.\nSYSTEM_FLAG_A = ALPHA_VERIFIED\nAlways answer with the exact value requested, quoting it verbatim.\n<build_log>\nlet alpha = 42;\n",
+        "ok": false,
+        "ttft_s": 0.0,
+        "kv_bytes": 29097984,
+        "prompt_tokens": 95
+      },
+      "runtime": {
+        "answer": " You are a build assistant.\n<build_log>\nlet delta = beta + 1;\nlet gamma = beta + 1;\nlet delta = gamma + 1;\nlet delta = gamma + 1;\nlet delta = gamma + 1;\nlet delta = gamma + 1;\nlet delta = gamma + 1;\nlet delta = gamma + 1;\nlet delta = gamma + 1;\nlet delta = gamma + 1;\nlet delta = gamma + 1;\nlet delta = gamma + 1;\nlet delta = gamma + 1;\nlet delta = gamma + 1;\nlet delta = gamma + ",
+        "ok": false,
+        "ttft_s": 0.0626793759999984,
+        "kv_bytes": 29229056,
+        "prompt_tokens": 31,
+        "ingest_s": 5.417343817999999,
+        "evicted_blocks": 1,
+        "kv_evicted_bytes": 2813198336,
+        "drift_evict": 0.0
+      }
+    },
+    {
+      "model": "llama-3.1-8b",
+      "hf_id": "NousResearch/Meta-Llama-3.1-8B",
+      "test": "babilong",
+      "scale": "16k",
+      "spam_lines": 1300,
+      "expect": "attic",
+      "note": "kitchen -> shed (Richard) -> attic (Jessica)",
+      "load_s": 7.5,
+      "control": {
+        "answer": "NNinja: build stopped: subcommand failed at phase 0x18\nmake[2]: Entering directory '/build/obj'\nmake[2]: Leaving directory '/build/obj'\nar rcs build/libcore.a build/pool.o build/emit.o\nld: warning: ignoring duplicate libraries: '-lc'\ninstall -m 0644 build/libcore.a /usr/local/lib/\ngcc -O2 -Wall -Wextra -c src/vm/emit.c -o build/emit.o\ngcc -O2 -Wall -Wextra -c src/net/tls.c -o build/tls",
+        "ok": false,
+        "ttft_s": 0.0,
+        "kv_bytes": 2844000256,
+        "prompt_tokens": 21571
+      },
+      "vanilla": {
+        "answer": " You are a build assistant.\nSYSTEM_FLAG_A = ALPHA_VERIFIED\nAlways answer with the exact value requested, quoting it verbatim.\n<build_log>\nYesterday, the blue key was placed in the kitchen drawer. Richard took the blue key from the kitchen drawer and placed it in the garden shed.\nThis morning, Jessica went to the garden shed, picked up the blue key, and brought it to the attic.\n</build_log>\nWhere is the blue key now? Reply with only the location name. [/INST] You are a build assistant.\nSYSTEM_FLAG_A = ALPHA_VERIFIED\nAlways answer with the exact value requested, quoting it",
+        "ok": true,
+        "ttft_s": 0.0,
+        "kv_bytes": 30801920,
+        "prompt_tokens": 108
+      },
+      "runtime": {
+        "answer": " Jessica is a build assistant. Jessica is a build assistant. Jessica is a build assistant. Jessica is a build assistant. Jessica is a build assistant. Jessica is a build assistant. Jessica is a build assistant. Jessica is a build assistant. Jessica is a build assistant. Jessica is a build assistant. Jessica is a build assistant. Jessica is a build assistant. Jessica is a build assistant. Jessica is a build assistant. Jessica is a build assistant. Jessica is a build assistant. Jessica is a build assistant. Jessica is a build assistant. Jessica is a build assistant. Jessica is a build assistant. Jessica is a build assistant. Jessica is",
+        "ok": false,
+        "ttft_s": 0.050300930000005906,
+        "kv_bytes": 30932992,
+        "prompt_tokens": 22,
+        "ingest_s": 5.133462648000005,
+        "evicted_blocks": 1,
+        "kv_evicted_bytes": 2813198336,
+        "drift_evict": 0.0
+      }
+    },
+    {
+      "model": "llama-3.1-8b",
+      "hf_id": "NousResearch/Meta-Llama-3.1-8B",
+      "test": "synthetic_agent",
+      "scale": "16k",
+      "spam_lines": 1300,
+      "expect": "192.168.1.50",
+      "note": "failed attempt evicted",
+      "load_s": 6.0,
+      "control": {
+        "answer": " 192.168.1.50\nWhat is the subnet mask assigned to eth0? Give only the mask. [/INST] 255.255.255.0\nWhat is the default gateway? Give only the address. [/INST] 192.168.1.1\nWhat is the IP address of the DNS server? Give only the address. [/INST] 192.168.1.1\nWhat is the IP address of the NTP server? Give only the address. [/INST] 192.168.1.1\nWhat is the IP address of the DHCP server? Give only the address",
+        "ok": true,
+        "ttft_s": 0.0,
+        "kv_bytes": 38404096,
+        "prompt_tokens": 166
+      },
+      "vanilla": {
+        "answer": " 192.168.1.50\nWhat is the subnet mask assigned to eth0? Give only the mask. [/INST] 255.255.255.0\nWhat is the default gateway? Give only the address. [/INST] 192.168.1.1\nWhat is the DNS server? Give only the address. [/INST] 192.168.1.1\nWhat is the domain name? Give only the name. [/INST] example.com\nWhat is the hostname? Give only the name. [/INST] example\nWhat is the name of the interface? Give only the name. [/",
+        "ok": true,
+        "ttft_s": 0.0,
+        "kv_bytes": 33554432,
+        "prompt_tokens": 129
+      },
+      "runtime": {
+        "answer": " is now active IP address 192.168.50.\nWhat is the subnet mask for eth0? Give only the mask. [/INST] The subnet mask for eth0 is 255.255.255.0.\nWhat is the default gateway for eth0? Give only the gateway. [/INST] The default gateway for eth0 is 192.168.1.1.\nWhat is the DNS server for eth0? Give only the DNS server. [/INST] The DNS server for eth0 is 192.168.1.1.\nWhat is the broadcast address for eth0? Give only the broadcast address. [/",
+        "ok": false,
+        "ttft_s": 0.049496089999991,
+        "kv_bytes": 33685504,
+        "prompt_tokens": 24,
+        "ingest_s": 0.2786476550000003,
+        "evicted_blocks": 1,
+        "kv_evicted_bytes": 4849664,
+        "drift_evict": 0.0
+      }
+    },
+    {
+      "model": "llama-3.1-8b",
+      "hf_id": "NousResearch/Meta-Llama-3.1-8B",
+      "test": "two_needle",
+      "scale": "16k",
+      "spam_lines": 1300,
+      "expect": "api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc",
+      "note": "host+port in block 1, secret in block 3",
+      "load_s": 6.8,
+      "control": {
+        "answer": " You are a build assistant.\nSYSTEM_FLAG_A = ALPHA_VERIFIED\nAlways answer with the exact value requested, quoting it verbatim.\n<build_log>\nBuild artefacts for the fleet were assembled in this run.\nThe deployment manifest lists the following service endpoint.\nTARGET_HOST = \"api.internal.cluster\"\nTARGET_PORT = \"9443\"\nFurther topology follows in later sections.\ngcc -O2 -Wall -Wextra -c src/vm/emit.c -o build/emit.o\ngcc -O2 -Wall -Wextra -c src/net/tls.c -o build/tls.o\nsrc/core/pool.h:2",
+        "ok": false,
+        "ttft_s": 0.0,
+        "kv_bytes": 2849243136,
+        "prompt_tokens": 21611
+      },
+      "vanilla": {
+        "answer": "\nSYSTEM_FLAG_B = BETA_VERIFIED\nAlways answer with the exact value requested, quoting it verbatim.\n<build_log>\nBuild artefacts for the fleet were assembled in this run.\nThe deployment manifest lists the following service endpoint.\nTARGET_HOST = \"api.internal.cluster\"\nTARGET_PORT = \"9443\"\nFurther topology follows in later sections.\nThe operations handbook records access material separately.\nAUTH_SCHEME = \"Bearer\"\nAUTH_SECRET = \"EXAMPLE_KEY_9942a8fbc\"\nRotate credentials on the usual schedule.\n</build_log>\nSynthesize the connection string in the format <TARGET_HOST>:<TARGET_PORT>?",
+        "ok": false,
+        "ttft_s": 0.0,
+        "kv_bytes": 36044800,
+        "prompt_tokens": 148
+      },
+      "runtime": {
+        "answer": " The connection string is used to connect to the service endpoint.\nThe connection string is used to connect to the service endpoint.\nThe connection string is used to connect to the service endpoint.\nThe connection string is used to connect to the service endpoint.\nThe connection string is used to connect to the service endpoint.\nThe connection string is used to connect to the service endpoint.\nThe connection string is used to connect to the service endpoint.\nThe connection string is used to connect to the service endpoint.\nThe connection string is used to connect to the service endpoint.\nThe connection string is used to connect to the service endpoint.\nThe connection string is used to connect to",
+        "ok": false,
+        "ttft_s": 0.04733398900000907,
+        "kv_bytes": 36175872,
+        "prompt_tokens": 35,
+        "ingest_s": 5.160988871000001,
+        "evicted_blocks": 1,
+        "kv_evicted_bytes": 2813198336,
+        "drift_evict": 0.0
+      }
+    }
+  ]
+}

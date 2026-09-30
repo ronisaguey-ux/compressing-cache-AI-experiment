@@ -1,0 +1,29 @@
+{
+  "model": "qwen2.5-7b",
+  "arm": "gold",
+  "gpu": "A100-40GB",
+  "rows": [
+    {
+      "instance": "sympy__sympy-11870",
+      "status": "ok",
+      "resolved": true,
+      "f2p_pass": true,
+      "p2p_pass": true,
+      "f2p_summary": "1 passed, 7 warnings in 2.06s",
+      "p2p_summary": "58 passed, 18452 warnings in 15.37s",
+      "wall_s": 50.643712311,
+      "turns": 0
+    },
+    {
+      "instance": "sympy__sympy-11897",
+      "status": "ok",
+      "resolved": false,
+      "f2p_pass": true,
+      "p2p_pass": false,
+      "f2p_summary": "1 passed, 113 warnings in 1.34s",
+      "p2p_summary": "1 failed, 94 passed, 14 warnings in 0.87s",
+      "wall_s": 11.902348179999997,
+      "turns": 0
+    }
+  ]
+}
