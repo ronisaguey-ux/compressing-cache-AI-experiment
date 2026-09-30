@@ -1057,3 +1057,88 @@ is not a mysterious degradation; it is a budget that no longer reaches the evide
 That converts `f=0.30`+ being unsafe from an inference into a measured, computable margin: the
 forced prefix eats slots that the mid-context evidence needs, and the evidence sits far from
 the front.
+
+## Finding 23 — the inverted-context layout is the wrong way round
+
+Bob's hypothesis: push volatile/disposable content to the front (0..K) and hoist
+query-critical content to the suffix (K..N), then prune the front for free.
+`src/inverted_context.py` tests it, and the answer is no — for a directional reason.
+
+**Validity is a PREFIX property.** In causal attention `h_j = f(x_j, x_{j-1}, ..., x_0)`, so
+token `j`'s keys and values depend on *every* token before it. `j` is reusable only if
+`0..j-1` are untouched and unmoved. Two consequences, and both run against the hypothesis:
+
+- evicting from the **front** invalidates everything after the first dropped index, so a
+  suffix hoisted to the back is the **worst** place to put critical content;
+- evicting from the **end** leaves every earlier token pristine, giving the **longest**
+  reusable prefix of any policy.
+
+### Pristine prefix by eviction policy (depth 0.55, N=1992, keep=1171)
+
+| policy | pristine prefix | reuse | retrieval |
+|---|---|---|---|
+| no eviction (ceiling) | 1992 | 100% | PASS |
+| **suffix eviction (drop the tail)** | **1171** | **100%** | **fail** |
+| **front eviction (drop the head)** | **0** | **0%** | **PASS** |
+| middle scatter, `f=0.15` | 332 | 28.4% | PASS |
+| middle, attention sinks evicted | 0 | 0% | PASS |
+
+**★ The two middle rows are the finding: cache efficiency and retrieval are in direct
+conflict, and the needle's location decides which one you get.** Evicting the tail gives a
+*perfect* reusable prefix and fails; evicting the front reuses *nothing* and passes. A policy
+optimised on reusable-prefix length alone would pick exactly the wrong one.
+
+Also worth noting: evicting the four attention sinks cost nothing here (PASS, 0% prefix),
+consistent with Finding 13's refutation of sink-phase distortion.
+
+### The suffix drift equation
+
+Cosine of the suffix's K/V under a full prefix versus a front-truncated one, positions either
+shifted naturally or held at their original values:
+
+| front tokens dropped | cos K (shifted) | cos K (positions preserved) | cos V |
+|---|---|---|---|
+| 1 | 0.990808 | 0.999699 | 0.998959 |
+| 4 | 0.948038 | 0.999657 | 0.998728 |
+| 16 | 0.913514 | 0.999680 | 0.998866 |
+| 64 | 0.893211 | 0.999528 | 0.998089 |
+| 256 | 0.864652 | 0.999219 | 0.996630 |
+
+**No entry is 1.0 at any drop size, so the suffix is never reusable once anything before it
+changes.** Preserving the original position ids removes the *positional* error (0.8647 →
+0.9992) but not the *content* error: the suffix attended to the dropped tokens and that is
+baked into the weights. **Values hold up throughout; keys are what break** — the same
+signature as Finding 18, and the reason a value-cosine probe cannot see this class of damage.
+
+**⇒ The hypothesis is inverted.** Hoisting critical content to the suffix places it at the end
+of a causally-masked sequence, which is the first thing a tail-pruning policy discards. The
+serviceable version is the mirror image: **critical content early, disposable content late.**
+
+## Finding 24 — with the policy fixed, the layout is the knob
+
+The decisive test, and Bob's research agent proposed the same one independently. Hold the
+eviction policy fixed, move the needle, watch the verdict invert.
+
+| needle at | needle in retained tail? | suffix eviction | middle scatter `f=0.15` | full (ceiling) |
+|---|---|---|---|---|
+| 10% | **YES** | **PASS** (100% reuse) | PASS (33% reuse) | PASS |
+| 25% | no | **fail** (100% reuse) | PASS (31%) | PASS |
+| 45% | no | **fail** (100% reuse) | PASS (29%) | PASS |
+| 65% | no | **fail** (100% reuse) | PASS (28%) | PASS |
+| 85% | no | **fail** (100% reuse) | PASS (28%) | PASS |
+
+**The tail verdict tracks `needle_in_tail` exactly: 1/5 PASS, and the needle was in the tail
+in exactly 1/5 rows.** Moving one piece of content inverts the outcome while the policy, the
+budget and the model are unchanged. **The layout decides; the policy merely follows.**
+
+Two things this settles:
+
+1. **`f=0.15` middle scatter is ROI-robust** — 5/5 PASS with the needle anywhere from 10% to
+   85%, and 28–33% of the re-prefill reusable throughout. That is the configuration to ship:
+   it does not depend on knowing where the critical content is.
+2. **Tail pruning is free only if the critical content is not in the tail.** The 100% reuse
+   column is a trap: it is highest exactly when the policy has thrown away the answer.
+
+**Actionable, and it is a layout rule rather than a selection rule:** put critical content
+early, then the tail is disposable and a tail-pruning policy gets a perfect reusable prefix at
+no retrieval cost. No selection algorithm recovers from critical content placed last.

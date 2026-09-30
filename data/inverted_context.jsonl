@@ -1,0 +1,15 @@
+{"depth": 0.55, "policy": "no eviction (ceiling)", "N": 1992, "keep": 1992, "prefix_len": 1992, "reuse_pct": 100.0, "pass_": true, "sec": 5.68, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL."}
+{"depth": 0.55, "policy": "suffix eviction (tail)", "N": 1992, "keep": 1171, "prefix_len": 1171, "reuse_pct": 100.0, "pass_": false, "sec": 2.1, "answer": "The failure code in the build log is 1."}
+{"depth": 0.55, "policy": "front eviction (head)", "N": 1992, "keep": 1171, "prefix_len": 0, "reuse_pct": 0.0, "pass_": true, "sec": 19.26, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL."}
+{"depth": 0.55, "policy": "middle scatter (f=0.15)", "N": 1992, "keep": 1171, "prefix_len": 332, "reuse_pct": 28.4, "pass_": true, "sec": 20.31, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL."}
+{"depth": 0.55, "policy": "middle, sinks evicted", "N": 1992, "keep": 1167, "prefix_len": 0, "reuse_pct": 0.0, "pass_": true, "sec": 25.89, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL."}
+{"drop": 1, "preserve_positions": false, "cos_K": 0.9908082485198975, "cos_V": 0.9989585677782694, "cos_K_min": 0.9861893057823181, "cos_V_min": 0.9979528188705444, "N": 1992}
+{"drop": 1, "preserve_positions": true, "cos_K": 0.999698668718338, "cos_V": 0.998958577712377, "cos_K_min": 0.9990871548652649, "cos_V_min": 0.9979528188705444, "N": 1992}
+{"drop": 4, "preserve_positions": false, "cos_K": 0.9480381707350413, "cos_V": 0.9987280070781708, "cos_K_min": 0.9165658950805664, "cos_V_min": 0.9974439740180969, "N": 1992}
+{"drop": 4, "preserve_positions": true, "cos_K": 0.9996574024359385, "cos_V": 0.9987280070781708, "cos_K_min": 0.9989812970161438, "cos_V_min": 0.9974439144134521, "N": 1992}
+{"drop": 16, "preserve_positions": false, "cos_K": 0.9135139087835947, "cos_V": 0.9988664090633392, "cos_K_min": 0.8535172343254089, "cos_V_min": 0.9975633025169373, "N": 1992}
+{"drop": 16, "preserve_positions": true, "cos_K": 0.9996795952320099, "cos_V": 0.9988664090633392, "cos_K_min": 0.9990485906600952, "cos_V_min": 0.9975633025169373, "N": 1992}
+{"drop": 64, "preserve_positions": false, "cos_K": 0.8932113846143087, "cos_V": 0.9980892936388651, "cos_K_min": 0.7937780618667603, "cos_V_min": 0.9955252408981323, "N": 1992}
+{"drop": 64, "preserve_positions": true, "cos_K": 0.999528169631958, "cos_V": 0.9980893035729727, "cos_K_min": 0.9985898733139038, "cos_V_min": 0.9955253005027771, "N": 1992}
+{"drop": 256, "preserve_positions": false, "cos_K": 0.8646517793337504, "cos_V": 0.9966302514076233, "cos_K_min": 0.7552486658096313, "cos_V_min": 0.9904996156692505, "N": 1992}
+{"drop": 256, "preserve_positions": true, "cos_K": 0.9992187817891439, "cos_V": 0.9966302315394083, "cos_K_min": 0.9973918199539185, "cos_V_min": 0.9904996156692505, "N": 1992}

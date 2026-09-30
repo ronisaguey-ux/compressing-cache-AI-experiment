@@ -1,0 +1,26 @@
+[heavy_lock] reclaiming stale lock /tmp/opencode/ccai/locks/_model_resident.lock (pid=3691576 age=894s)
+[heavy_lock] reclaiming stale lock /tmp/opencode/ccai/locks/model-small.lock (pid=3691576 age=894s)
+[heavy_lock] model-small acquired (5641 MB available, need 3500 MB)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights:   0%|          | 1/290 [00:00<01:04,  4.51it/s]Loading weights:  48%|████▊     | 139/290 [00:00<00:00, 541.68it/s]Loading weights:  76%|███████▌  | 220/290 [00:00<00:00, 382.89it/s]Loading weights:  96%|█████████▌| 277/290 [00:00<00:00, 335.50it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 335.06it/s]
+============================================================================================
+LAYOUT IS THE KNOB  |  model=Qwen/Qwen2.5-0.5B  depth=0.55  (the needle moves, the policy does not)
+============================================================================================
+
+needle   c1       needle  needle     | SUFFIX eviction (tail) | MIDDLE scatter f=0.15  | full (ceiling)
+                  index   in tail?   | prefix  reuse  verdict | prefix  reuse  verdict | verdict
+--------------------------------------------------------------------------------------------
+0.1      765      280     YES        | 459    100%   PASS     | 153    33%    PASS     | PASS
+0.25     1155     670     no         | 693    100%   fail     | 215    31%    PASS     | PASS
+0.45     1688     1203    no         | 1012   100%   fail     | 292    29%    PASS     | PASS
+0.65     2182     1697    no         | 1309   100%   fail     | 370    28%    PASS     | PASS
+0.85     2182     1697    no         | 1309   100%   fail     | 370    28%    PASS     | PASS
+
+  suffix eviction: 1/5 PASS; the needle was inside the retained tail in 1/5 rows
+  middle scatter : 5/5 PASS
+
+  If the tail verdict tracks needle_in_tail, the LAYOUT decides and the policy
+  merely follows it -- put critical content early and the tail is free to prune.
+  That is the INVERSE of hoisting critical content to the suffix.
+
+wrote data/needle_layout.jsonl

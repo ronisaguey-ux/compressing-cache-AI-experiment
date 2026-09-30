@@ -29,6 +29,11 @@ is no rotation step, no per-layer band, no line pooling, and no conditioning pat
 were tried, and all four turned out to be unnecessary once the cache was built by a correct
 forward pass rather than by surgery.
 
+**Where the critical content sits matters more than how you select.** Validity is a *prefix*
+property — a token is reusable only if everything before it is untouched — so evicting the
+tail is the only policy that preserves the leading tokens, and it is free only when the
+content you need is not in the tail. Findings 23 and 24.
+
 ## What this costs
 
 The recompute is the price. For a single request the sequence is prefilled twice — once to
@@ -69,6 +74,8 @@ runs are 8-bit and need ~10 GB. CPU only, no CUDA, no vLLM, no Triton — delibe
 | `src/native_7b.py` | the 7B confirmation, three failure modes separated |
 | `src/prefix_cache.py` | prefix-preserving re-prefill; asserts the prefix is bit-identical |
 | `src/prefix_tradeoff.py` | reuse vs retrieval as the forced-prefix fraction varies |
+| `src/inverted_context.py` | pristine prefix per eviction policy + the suffix drift equation |
+| `src/needle_layout.py` | the inversion test: move the needle, hold the policy fixed |
 | `src/sink_probe.py` | where attention mass actually goes |
 | `src/decode_divergence.py` | first token where a compacted decode diverges from full |
 | `src/depth_sweep.py` | the original depth sweep, rotation pipeline |
@@ -111,6 +118,8 @@ work.
 | **20** | **with the pipeline fixed, the selector barely matters** |
 | **21** | prefix-preserving re-prefill: exact (bit-identical, not cosine), correct, worth 7.7% |
 | **22** | **the selection pattern is the lever** — force 15% of chunk 1, 3x the reuse, verdicts unchanged |
+| **23** | **the inverted-context layout is the wrong way round** — suffix reuse is impossible; critical content early, not late |
+| **24** | **the layout is the knob** — with the policy fixed, the verdict tracks where the needle sits, 5/5 |
 
 ## Prior art
 
