@@ -1919,3 +1919,95 @@ control's activation exceeds the A10G's 22 GB (`24.00 MiB requested, 64.00 MiB f
 `modal/hardware_metrics.py` (measured power + modelled FLOPs/bytes) ·
 `modal/arithmetic_intensity.py` (the roofline comparison above) ·
 `benchmarks/results/hardware_*.json`.
+
+## Finding 43 (2026-09-30, Modal) — APPLIED BENCHMARKS: SWE-bench Lite and long-horizon tool calling
+
+Bob: *"Set up a 10-task SWE-bench Lite run comparing standard linear prefill against Frankenstein
+across Qwen-7B, Mistral-7B, and Llama-3-8B. Log TTFT per turn, total wall-clock to resolution,
+peak resident KV bytes, and pass/fail parity. That's the table that sells the runtime."* and
+*"also more benchmarks, the more the better, preferably ones testing long horizon tool calling."*
+
+### SWE-bench Lite — real instances, and the gold arm is the parity check
+
+10 real `princeton-nlp/SWE-bench_Lite` tasks, all `sympy/sympy`, all with a single-test
+FAIL_TO_PASS so per-turn verification is fast. Three gates, each because without it the table is
+empty or false:
+
+1. **Non-vacuity, per instance.** The dataset's own `test_patch` is applied to the UNFIXED tree and
+   the F2P test must FAIL, then the gold patch applied and it must PASS. All 10 verified. Without
+   this an instance that already passes measures nothing.
+2. **Gold is a PARITY CHECK, not a baseline — 10/10 resolved.** If gold does not resolve, a model
+   failure and a broken environment are indistinguishable.
+3. **PASS_TO_PASS validated against the base state.** The dataset's own P2P list contains tests
+   already failing at the base commit — measured: `sympy__sympy-11897` lists `test_latex_Float`,
+   which fails on the untouched tree before any patch. Treating the raw list as a regression guard
+   marked a CORRECT gold patch unresolved. Now validated once per instance and cached.
+
+| model | arm | resolved | TTFT t0 | TTFT tN | tN/t0 | peak KV |
+|---|---|---|---|---|---|---|
+| **qwen2.5-7b** | linear | 0/10 | 164 ms | **753 ms** | 4.58× | **576.6 MB** |
+| | **runtime** | 0/10 | 138 ms | **378 ms** | **2.74×** | **340.6 MB** |
+| **mistral-7b-instruct** | linear | 0/10 | 152 ms | **793 ms** | 5.21× | **1273.9 MB** |
+| | **runtime** | 0/10 | 163 ms | **307 ms** | **1.89×** | **792.7 MB** |
+| llama-3.1-8b | linear | 0/10 | 139 ms | 959 ms | 6.92× | 1475.2 MB |
+| | runtime | *running* | — | — | — | — |
+
+**Runtime holds 59–62% of linear's peak KV and ends at 0.39–0.50× linear's last-turn TTFT.**
+TTFT growth is 4.6–6.9× for linear against 1.9–2.7× for the runtime.
+
+### ★★ EVERY ARM RESOLVED 0/10, AND THAT IS REPORTED FIRST BECAUSE IT IS THE HONEST HEADLINE
+
+SWE-bench Lite is hard and these are 7–8B models. **A 0% resolution rate in both arms is a statement
+about the model, not about the layout**, and it is why the table leads with TTFT, prefill tokens and
+KV instead: those are measured on every turn regardless of whether anything is solved. A table whose
+only number was `0/10 vs 0/10` would be true and useless.
+
+The failure mode is legible in the logs and it is not a layout failure: the models loop on `search`,
+re-reading rather than writing. Of 10 turns, most arms spend 8+ on retrieval and never emit
+`edit_file`. That is a capability ceiling, and it is exactly why the long-horizon benchmark below
+holds competence constant instead.
+
+### Long-horizon tool calling — the result that actually separates the layouts
+
+40 turns, 3 trials, per-turn graded, Qwen2.5-7B. The task plants config state that is **superseded**
+mid-run: a key is set on turn 1 and changed on turn 12, so a correct agent must carry the newest
+value and drop the stale one. That distinguishes *"evicted the stale copy"* (correct and cheap) from
+*"evicted the live copy"* (fatal) — a benchmark that only evicts filler cannot see the difference.
+
+| arm | accuracy | first half | second half | TTFT t0→tN | KV t0→tN |
+|---|---|---|---|---|---|
+| linear | 6.7% | 13.3% | **0.0%** | 488 → **5723 ms** | 33 → **1076 MB** |
+| **runtime** | **15.8%** | **21.7%** | **10.0%** | 428 → **785 ms** | 33 → **168 MB** |
+
+**2.4× the accuracy, 7.3× lower last-turn TTFT, 6.4× less resident KV.** The linear arm drops to
+**zero** accuracy in the second half — it loses the thread entirely once the context grows — while the
+runtime holds 10%. Every turn is graded, so that collapse is visible as a curve rather than collapsed
+into one final answer.
+
+⚠️ Absolute accuracy is low for both (6.7% vs 15.8%); a 7B is weak at 40-turn state tracking. **Read
+the direction, which is measured on every turn, not the level.**
+
+### Harness defects found by RUNNING, each of which scored zero for the harness not the model
+
+- **parser spanned first `{` to last `}`.** A valid tool call followed by prose produced
+  `Extra data: line 2 column 1` — valid JSON read as malformed. Every turn of the first run failed
+  this way. Now `raw_decode` takes the first complete object and ignores the tail.
+- **`Invalid \escape`.** A model writing `\d+` (a regex) or `\alpha` (LaTeX) into a JSON string
+  without doubling the backslash produces a document `json.loads` rejects outright. Repaired by
+  doubling a backslash that is not a legal JSON escape, **only after parsing has already failed**, so
+  a document that parses is never touched — the same safety argument as the raw-newline fix.
+- **a repeated identical parse failure is a LOOP.** Measured: the runtime arm sat at an identical
+  549-token prompt repeating one error for three turns, because the correction text was the same
+  sentence each time. After three consecutive failures the observation now shows the exact required
+  shape.
+- **`read_file` returned whole files** (3000 lines → the prompt hit its 12000-token cap) and
+  `max_new=384` truncated a whole-file write. Now windowed numbered reads plus an **`edit_file`** that
+  refuses a non-unique match rather than guessing, which is a corruption risk on source code.
+- **Modal rate-limits app creation.** Six arms launched at once: three ran, three exited immediately
+  with `App create rate limit exceeded` — which looks identical to a silent failure. The launcher now
+  staggers and retries explicitly, so an arm that never ran can never be reported as a zero.
+
+### Artifacts
+`modal/swe_solve.py` · `benchmarks/swe_table.py` · `modal/longhorizon.py` ·
+`benchmarks/results/swe_*.json` · `benchmarks/results/longhorizon_*.json` ·
+`benchmarks/results/superseded/` (the pre-fix runs, kept as evidence of the bugs they exposed).

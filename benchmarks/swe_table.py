@@ -41,6 +41,28 @@ def load(pat):
     return out
 
 
+def load_latest(pat):
+    """One artifact per (model, arm): the NEWEST.
+
+    ★ WITHOUT THIS THE TABLE MIXES RUNS. A stale artifact from before the parser fixes sits next to
+    the re-run and the same arm appears twice with different numbers, which makes the comparison
+    read as noise. The newest run is the one whose code is current, so it wins; the superseded file
+    is moved to results/superseded/ so it stays on the record without entering the table.
+    """
+    best = {}
+    for p in sorted(glob.glob(os.path.join(R, pat))):
+        try:
+            d = json.load(open(p))
+        except Exception:
+            continue
+        if not (isinstance(d, dict) and "rows" in d):
+            continue
+        k = (d.get("model"), d.get("arm"))
+        if k not in best or os.path.getmtime(p) > os.path.getmtime(best[k][0]):
+            best[k] = (p, d)
+    return [v[1] for v in best.values()]
+
+
 def arm_summary(d):
     rows = [x for x in d["rows"] if x.get("status") == "ok"]
     if not rows:
@@ -59,7 +81,7 @@ def arm_summary(d):
 
 
 def main():
-    gold = load("swe_*_gold_*.json")
+    gold = load_latest("swe_*_gold_*.json")
     print("=" * 104)
     print("GOLD PARITY CHECK — the dataset's own patch. If this is not 100%, the harness is wrong "
           "and no model number counts.")
@@ -79,7 +101,8 @@ def main():
     print("=" * 104)
     print("LINEAR vs RUNTIME — measured per turn")
     print("=" * 104)
-    arms = [arm_summary(d) for d in load("swe_*_linear_*.json") + load("swe_*_runtime_*.json")]
+    arms = [arm_summary(d) for d in load_latest("swe_*_linear_*.json")
+            + load_latest("swe_*_runtime_*.json")]
     arms = [a for a in arms if a]
     if not arms:
         print("  (no model arms yet)")
