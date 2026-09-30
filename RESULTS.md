@@ -452,6 +452,68 @@ depths we can measure on a 7B"*, not *"robust"*. The shallow-position case is op
 says it will need a mechanism that is not more parameters. Re-rotation is still required in every
 passing combo: the rotation-off twins fail (Finding 2).
 
+## Finding 13 — attention-sink displacement is REFUTED as the shallow-depth mechanism
+
+Finding 12 left the 15% failure as a mechanism question. The leading hypothesis was that
+the needle sits too close to the attention sink and is starved by it. Two measurements
+kill it — one correlational, one causal.
+
+**The sink is real, and enormous** (`src/sink_probe.py`, 0.5B fp32, every chunk-1 position
+as a query, causal softmax over all prefix keys):
+
+| depth | total tok | sink mass (keys 0-8) | needle mass | top-1 key |
+|---|---|---|---|---|
+| 0.15 | 938 | 0.5734 | 0.001415 | 0 |
+| 0.35 | 1460 | 0.5517 | 0.000656 | 0 |
+| 0.55 | 1992 | 0.5360 | 0.000613 | 0 |
+| 0.75 | 2221 | 0.5312 | 0.000426 | 0 |
+
+8 tokens absorb **~54% of all attention at every depth**, a per-token draw 200–700x the
+needle's, and position 0 is the single most-attended key everywhere. On the face of it
+that is exactly the hypothesis.
+
+**But the needle gets MORE attention where it FAILS than where it PASSES** — 0.001415 at
+15% (fails) against 0.000613 at 55% and 0.000426 at 75% (both pass). Raw attention mass to
+the needle does not predict the verdict, which independently reproduces Finding 9.
+
+**The causal test agrees** (`src/sink_pad.py`, depth 0.15, keep 0.60, rotation on — the
+exact configuration that fails). Filler is inserted to move the needle away from the sink
+basin, in two placements that separate two different stories:
+
+| where | pad | needle_rel | rank | needle kept | verdict |
+|---|---|---|---|---|---|
+| sys (filler before system) | 0 | 414 | 356 | yes | fail |
+| sys | 16 | 414 | **463** | yes | fail |
+| sys | 32 | 414 | **575** | **no** | fail |
+| needle (filler before needle) | 0 | 414 | 356 | yes | fail |
+| needle | 16 | 430 | **281** | yes | fail |
+| needle | 32 | 446 | **324** | yes | fail |
+
+**6 of 6 fail. Padding never flips the verdict.** Displacing the needle from the sink
+changes its *rank* but never its *verdict*, so proximity to the basin is not what decides
+success. Two details make the negative result sharper:
+
+- **Prepending filler actively harms.** In the `sys` placement the rank degrades
+  monotonically (356 → 463 → **575**) and at pad=32 the needle leaves the keep set
+  entirely. Moving the sink into the filler does not move the sink's effect.
+- **Rank is non-monotonic in padding distance** (356 → 281 → 324), the same
+  non-monotonicity Finding 9 recorded for `keep` — consistent with a system at the edge of
+  what it can do, not with a positional gradient.
+
+**The one positive signal, and where the evidence now points.** At `needle`/pad=32 the
+answer becomes `"The failure code in the build log is 0x9."` — the model reaches the
+needle and emits the first token of the code, then cannot complete `0x9AF4_STACK_FAIL`.
+That is a *partial* retrieval, and it is a different failure from the pad=0 case (which
+recites the system prompt). Together with Finding 9 — needle retained in 15 of 16
+combinations with the answer still wrong — the evidence has moved off the selector and
+off attention routing, and onto the decode: **the key is in the cache and attended to, and
+the model still cannot use it.** Whatever the shallow-depth wall is, it is downstream of
+attention.
+
+**Hypothesis status:** attention-sink displacement — **refuted** (causal test, 6/6).
+RoPE high-frequency phase clash and "line pooling averages out phase noise" remain open,
+and both predict a positional gradient that this data does not show.
+
 ## Limits
 
 - **The 7B column is 8-bit and covers three of four depths.** Quantisation changes numerics
