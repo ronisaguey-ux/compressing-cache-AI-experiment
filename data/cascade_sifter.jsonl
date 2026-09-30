@@ -1,0 +1,1 @@
+{"sifter": "Qwen/Qwen2.5-0.5B", "depth": 0.55, "deterministic": true, "sifter_alone_pass": true, "sifter_alone_answer": "The failure code in the build log is 0x9AF4_STACK_FAIL.", "sifter_alone_sec": 53.71, "N": 1992, "c0": 39, "c1": 1953, "keep": 1210, "prefill_s": 84.33, "score_s": 4.62}
