@@ -267,6 +267,16 @@ def detect_rope(model, head_dim):
 
 class Harness:
     def __init__(self, model_id=MODEL_ID):
+        # Take the heavy-run slot BEFORE loading weights. Wired here, in the one
+        # place a model is ever loaded, so no script can bypass it -- on
+        # 2026-09-29 a diagnostic loaded a second 7B beside a running sweep and
+        # took the box down, because the guard lived only in the harness entry
+        # point and the diagnostic used a different door.
+        size_mb = 9000 if ("7B" in (model_id or "")) else 3500
+        from heavy_lock import heavy_slot
+        self._slot = heavy_slot("model-" + ("7b" if size_mb > 5000 else "small"),
+                                need_mb=size_mb)
+        self._slot.__enter__()
         self.tok = AutoTokenizer.from_pretrained(model_id)
         # CCAI_QUANT=8bit loads through bitsandbytes. That is needed for 7B on this
         # box (28 GB fp32 / 14 GB bf16 against 15.7 GB shared RAM) but it CHANGES

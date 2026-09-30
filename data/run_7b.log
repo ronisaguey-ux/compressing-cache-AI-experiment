@@ -8,3 +8,15 @@
 [19:23:30] depth=0.35 mode=baseline avail=10536MB
     rc=0 avail_after=11159MB
 [19:37:26] depth=0.35 mode=line avail=11159MB
+    rc=0 avail_after=10613MB
+[19:52:26] depth=0.35 mode=posnorm avail=10613MB
+    rc=0 avail_after=10862MB
+[20:08:24] depth=0.55 mode=baseline avail=10867MB
+[20:48:07] RESUME start
+[20:48:07] skip 0.15 baseline (already recorded)
+[20:48:07] skip 0.15 line (already recorded)
+[20:48:07] skip 0.15 posnorm (already recorded)
+[20:48:07] skip 0.35 baseline (already recorded)
+[20:48:07] skip 0.35 line (already recorded)
+[20:48:07] skip 0.35 posnorm (already recorded)
+[20:48:07] run depth=0.55 mode=baseline avail=10875MB

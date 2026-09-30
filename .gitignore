@@ -1,2 +1,4 @@
 __pycache__/
 *.pyc
+locks/
+data/_7b_*
