@@ -36,7 +36,8 @@ GPU = os.environ.get("CCAI_GPU", "A100-40GB")
 image = (
     modal.Image.debian_slim(python_version="3.12")
     .apt_install("git", "curl", "build-essential")
-    .pip_install("torch==2.5.1", "transformers==5.17.0", "accelerate", "sentencepiece")
+    .pip_install("torch==2.5.1", "transformers==5.17.0", "accelerate", "sentencepiece",
+                 "bitsandbytes")
     .env({"HF_HOME": "/cache/hf", "HF_XET_HIGH_PERFORMANCE": "1",
           "TOKENIZERS_PARALLELISM": "false",
           "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
@@ -49,6 +50,14 @@ cache = modal.Volume.from_name("ccai-swe-cache", create_if_missing=True)
 
 MODELS = {
     "qwen2.5-7b": "Qwen/Qwen2.5-7B",
+    # ★ THE 7-8B MODELS CANNOT RESOLVE SWE-bench LITE, so a 0/10 vs 0/10 table says nothing about
+    # the LAYOUT -- resolution is capability-bound and never varies with the cache policy. A 32B
+    # coder at 4-bit CAN solve them, which turns resolution from a constant into a real measurement
+    # and lets the table separate the arms on the metric the leaderboard cares about. 4-bit (AWQ)
+    # keeps it inside a 40 GB card: 32.7 GB of weights -> ~18 GB.
+    "qwen2.5-coder-32b-awq": "Qwen/Qwen2.5-Coder-32B-Instruct-AWQ",
+    "qwen2.5-coder-32b-gptq": "Qwen/Qwen2.5-Coder-32B-Instruct-GPTQ-Int4",
+    "qwen2.5-coder-32b": "Qwen/Qwen2.5-Coder-32B-Instruct",
     "llama-3.1-8b": "NousResearch/Meta-Llama-3.1-8B",
     "mistral-7b-instruct": "mistralai/Mistral-7B-Instruct-v0.3",
 }
@@ -75,6 +84,51 @@ Rules:
   - there is no internet and you cannot install packages.
   - do not explain. One json object per reply.
 """
+
+
+def load_model(mid):
+    """Load a model, handling the 4-bit coder checkpoints.
+
+    ★ WHY THIS IS A FUNCTION. The 32B coder is the model that can actually resolve SWE-bench, and
+    it only fits in 4 bits. An AWQ checkpoint needs its quantisation backend named explicitly --
+    loading it as fp16 either OOMs or silently dequantises and blows the card -- and the two
+    formats (AWQ, GPTQ) take different configs. Centralising the choice means one place decides and
+    a failure names which backend rejected the checkpoint instead of surfacing as an OOM.
+    """
+    import torch
+    from transformers import AutoModelForCausalLM
+    low = mid.lower()
+    if "32b" in low and "awq" not in low and "gptq" not in low:
+        # ★ BITSANDBYTES nf4 FOR THE FULL 32B. `auto-gptq` fails to build a wheel in this image
+        # (subprocess-exited-with-error during the image build, which reads as a generic build
+        # failure rather than a specific package problem), and an image build is an expensive way
+        # to discover that. bitsandbytes installs cleanly, quantises on load, and the HF download is
+        # cached on the volume so it is paid once. The 4-bit config needs the compute dtype named
+        # explicitly or the first matmul raises.
+        from transformers import BitsAndBytesConfig
+        bnb = BitsAndBytesConfig(
+            load_in_4bit=True, bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.float16, bnb_4bit_use_double_quant=True)
+        return AutoModelForCausalLM.from_pretrained(
+            mid, quantization_config=bnb, device_map="cuda",
+            attn_implementation="sdpa").eval()
+    if "awq" in low:
+        from transformers import AwqConfig
+        try:
+            return AutoModelForCausalLM.from_pretrained(
+                mid, quantization_config=AwqConfig(bits=4, fuse_layers=True),
+                device_map="cuda", dtype=torch.float16).eval()
+        except Exception as e:
+            _glog("  AWQ load failed (%s); falling back to device_map auto" % type(e).__name__)
+            return AutoModelForCausalLM.from_pretrained(
+                mid, device_map="auto", dtype=torch.float16).eval()
+    if "gptq" in low:
+        from transformers import GPTQConfig
+        return AutoModelForCausalLM.from_pretrained(
+            mid, quantization_config=GPTQConfig(bits=4, disable_exllama=False),
+            device_map="cuda").eval()
+    return AutoModelForCausalLM.from_pretrained(
+        mid, dtype=torch.float16, device_map="cuda", attn_implementation="sdpa").eval()
 
 
 def _glog(msg):
@@ -223,9 +277,7 @@ def solve(model: str = "qwen2.5-7b", arm: str = "gold", limit: int = 10, max_tur
 
     if arm != "gold":
         tok = AutoTokenizer.from_pretrained(mid)
-        mdl = AutoModelForCausalLM.from_pretrained(mid, dtype=torch.float16, device_map="cuda",
-                                                   attn_implementation="sdpa")
-        mdl.eval()
+        mdl = load_model(mid)
 
     def complete(prompt, mnew):
         ids = tok(prompt, add_special_tokens=False)["input_ids"]

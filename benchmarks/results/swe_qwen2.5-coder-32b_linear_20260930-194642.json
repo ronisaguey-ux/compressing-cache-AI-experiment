@@ -1,0 +1,65 @@
+{
+  "model": "qwen2.5-coder-32b",
+  "arm": "linear",
+  "gpu": "A100-40GB",
+  "rows": [
+    {
+      "instance": "sympy__sympy-11870",
+      "status": "ok",
+      "arm": "linear",
+      "turns": 3,
+      "resolved": false,
+      "f2p_pass": false,
+      "p2p_pass": true,
+      "n_p2p_raw": 58,
+      "n_p2p_valid": 58,
+      "f2p_summary": "1 failed, 6 warnings in 0.23s",
+      "p2p_summary": "58 passed, 18685 warnings in 11.95s",
+      "declared_done": false,
+      "ttft_ms_mean": 978.7402030000104,
+      "ttft_ms_first": 844.8266450000119,
+      "ttft_ms_last": 1068.8939500000174,
+      "peak_kv_bytes": 721420288,
+      "peak_kv_mb": 721.420288,
+      "wall_s": 64.72126842400002,
+      "per_turn": [
+        {
+          "turn": 0,
+          "tool": "search",
+          "parse_error": null,
+          "ttft_ms": 844.8266450000119,
+          "kv_bytes": 113246208,
+          "wall_ms": 3104.467729000021,
+          "prompt_tokens": 412,
+          "gen_tokens": 21,
+          "reply": "{\"tool\": \"search\", \"query\": \"trigsimp\", \"glob\": \"*.py\"}",
+          "observation": "sympy/algebras/tests/test_quaternion.py:5:from sympy import diff, integrate, trigsimp\nsympy/algebras/tests/test_quaternion.py:19:    q3 = trigsimp(Quaternion.from_rotation_matrix(M))\nsympy/algebras/tests/test_quaternion.py:102:    assert trigsimp(q2.to_rotation_matrix()) == Matrix(\nsympy/algebras/qu"
+        },
+        {
+          "turn": 1,
+          "tool": "read_file",
+          "parse_error": null,
+          "ttft_ms": 1022.500014000002,
+          "kv_bytes": 658243584,
+          "wall_ms": 4913.143624999975,
+          "prompt_tokens": 2474,
+          "gen_tokens": 38,
+          "reply": "{\"tool\": \"read_file\", \"path\": \"sympy/core/expr.py\", \"start\": 3150, \"end\": 3160}",
+          "observation": "FILE sympy/core/expr.py  lines 3150-3160 of 3409\n 3150|     def trigsimp(self, **args):\n 3151|         \"\"\"See the trigsimp function in sympy.simplify\"\"\"\n 3152|         from sympy.simplify import trigsimp\n 3153|         return trigsimp(self, **args)\n 3154| \n 3155|     def radsimp(self, **kwargs):\n 31"
+        },
+        {
+          "turn": 2,
+          "tool": "read_file",
+          "parse_error": null,
+          "ttft_ms": 1068.8939500000174,
+          "kv_bytes": 721420288,
+          "wall_ms": 4627.7662470000105,
+          "prompt_tokens": 2718,
+          "gen_tokens": 35,
+          "reply": "{\"tool\": \"read_file\", \"path\": \"sympy/simplify/trigsimp.py\", \"start\": 1, \"end\": 50}",
+          "observation": "FILE sympy/simplify/trigsimp.py  lines 1-50 of 1188\n    1| from __future__ import print_function, division\n    2| \n    3| from collections import defaultdict\n    4| \n    5| from sympy.core.cache import cacheit\n    6| from sympy.core import (sympify, Basic, S, Expr, expand_mul, factor_terms,\n    7|  "
+        }
+      ]
+    }
+  ]
+}
