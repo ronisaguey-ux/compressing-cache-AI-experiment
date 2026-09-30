@@ -1,0 +1,20 @@
+{"depth": 0.15, "selector": "baseline", "pipeline": "native", "c1": 899, "keep": 539, "rank": 356, "needle_kept": true, "pass_": true, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL."}
+{"depth": 0.15, "selector": "line", "pipeline": "native", "c1": 899, "keep": 539, "rank": 356, "needle_kept": true, "pass_": true, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL."}
+{"depth": 0.15, "selector": "mid", "pipeline": "native", "c1": 899, "keep": 539, "rank": 268, "needle_kept": true, "pass_": true, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL."}
+{"depth": 0.15, "selector": "random", "pipeline": "native", "c1": 899, "keep": 539, "rank": null, "needle_kept": false, "pass_": false, "answer": "The failure code in the build log is 1."}
+{"depth": 0.15, "selector": "baseline", "pipeline": "cache", "c1": 899, "keep": 539, "rank": null, "needle_kept": null, "pass_": false, "answer": "The failure code in the build log is 0x0000000000000"}
+{"depth": 0.35, "selector": "baseline", "pipeline": "native", "c1": 1421, "keep": 852, "rank": 493, "needle_kept": true, "pass_": true, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL."}
+{"depth": 0.35, "selector": "line", "pipeline": "native", "c1": 1421, "keep": 852, "rank": 493, "needle_kept": true, "pass_": true, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL."}
+{"depth": 0.35, "selector": "mid", "pipeline": "native", "c1": 1421, "keep": 852, "rank": 366, "needle_kept": true, "pass_": true, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL."}
+{"depth": 0.35, "selector": "random", "pipeline": "native", "c1": 1421, "keep": 852, "rank": null, "needle_kept": true, "pass_": false, "answer": "The failure code in the build log is 1."}
+{"depth": 0.35, "selector": "baseline", "pipeline": "cache", "c1": 1421, "keep": 852, "rank": null, "needle_kept": null, "pass_": true, "answer": "The failure code in the build log is 0x9AF4. This indicates that there"}
+{"depth": 0.55, "selector": "baseline", "pipeline": "native", "c1": 1953, "keep": 1171, "rank": 361, "needle_kept": true, "pass_": true, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL."}
+{"depth": 0.55, "selector": "line", "pipeline": "native", "c1": 1953, "keep": 1171, "rank": 361, "needle_kept": true, "pass_": true, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL."}
+{"depth": 0.55, "selector": "mid", "pipeline": "native", "c1": 1953, "keep": 1171, "rank": 296, "needle_kept": true, "pass_": true, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL."}
+{"depth": 0.55, "selector": "random", "pipeline": "native", "c1": 1953, "keep": 1171, "rank": null, "needle_kept": false, "pass_": false, "answer": "The failure code in the build log is 94. This indicates that there was"}
+{"depth": 0.55, "selector": "baseline", "pipeline": "cache", "c1": 1953, "keep": 1171, "rank": null, "needle_kept": null, "pass_": false, "answer": "arian\narian\narian\narian\narian\narian\narian\narian\narian\narian\narian\naria"}
+{"depth": 0.75, "selector": "baseline", "pipeline": "native", "c1": 2182, "keep": 1309, "rank": 389, "needle_kept": true, "pass_": true, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL."}
+{"depth": 0.75, "selector": "line", "pipeline": "native", "c1": 2182, "keep": 1309, "rank": 389, "needle_kept": true, "pass_": true, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL."}
+{"depth": 0.75, "selector": "mid", "pipeline": "native", "c1": 2182, "keep": 1309, "rank": 235, "needle_kept": true, "pass_": true, "answer": "The failure code in the build log is 0x9AF4_STACK_FAIL."}
+{"depth": 0.75, "selector": "random", "pipeline": "native", "c1": 2182, "keep": 1309, "rank": null, "needle_kept": true, "pass_": true, "answer": "The failure code in the build log is 09AF4_FAIL."}
+{"depth": 0.75, "selector": "baseline", "pipeline": "cache", "c1": 2182, "keep": 1309, "rank": null, "needle_kept": null, "pass_": true, "answer": "The failure code in the build log is 0x9af4_stack_fail. This indicates"}

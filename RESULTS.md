@@ -890,3 +890,57 @@ attributing the failure to attention, geometry, conditioning, contiguity or dens
 never any of those. It was a **selector that occasionally misses** plus **cache surgery that
 silently corrupts the tensors it keeps**. Both are ordinary engineering defects, and both are
 now named, measured, and testable.
+
+## Finding 20 — ★★ WITH THE PIPELINE FIXED, THE SELECTOR BARELY MATTERS
+
+Every selector comparison in this document was run inside the broken rotation pipeline. Re-run
+against the corrected one (`select → re-prefill the compacted sequence`), on identical rows:
+
+| depth | baseline | line | mid-band | random | **old cache path** |
+|---|---|---|---|---|---|
+| 0.15 | PASS | PASS | PASS | fail | fail |
+| 0.35 | PASS | PASS | PASS | fail | PASS |
+| 0.55 | PASS | PASS | PASS | fail | fail |
+| 0.75 | PASS | PASS | PASS | PASS | PASS |
+| **pass** | **4/4** | **4/4** | **4/4** | **1/4** | **2/4** |
+
+**Plain all-layer self-attention — the ordinary `baseline` selector, with no line pooling and
+no layer band — passes at every depth once the cache is built correctly.** Random retains
+roughly the same number of tokens and passes 1 of 4, so the control is doing its job and the
+result is not an artefact of keeping enough tokens to stumble onto the needle.
+
+**Two conclusions, and both retract earlier findings.**
+
+**1. Line pooling's advantage was an artefact of the rotation defect.** Finding 12 made it the
+headline — *"the only mode that passes every measured depth at either scale"* — and Finding 19
+read the 7B near-miss as direct evidence for it. Both were measured against a pipeline that
+silently corrupts ~60% of the tokens it keeps. Line pooling survived every depth because
+keeping a whole line is **robust to that corruption**: when the tensor is wrong, having the
+neighbouring tokens still present is what lets the model reconstruct. Fix the tensor and the
+advantage vanishes, because it was never about selection.
+
+**2. The mid-layer band's advantage was also an artefact.** Finding 17 found it fixed depth
+0.15 (rank 356 → 268, fail → PASS). Under the corrected pipeline plain baseline already passes
+0.15, so the band has no gap left to close. It is not harmful — 4/4 — it is simply unnecessary.
+
+**This inverts the project's own narrative, and it is the most useful result in it.** Findings
+5, 6, 7, 12 and 17 are all selector findings: which tokens to keep, how to rank them, which
+layers to score, whether to pool by line. **All of that was compensating for a broken eval.**
+With the pipeline correct:
+
+- **the selector is not the lever**, and a plain attention sum is sufficient;
+- **the pipeline is the lever** — 4/4 versus 2/4 on identical rows, identical budgets,
+  identical selectors;
+- the effort spent optimising selection was effort spent making a corrupted cache slightly
+  more survivable.
+
+**What the corrected method is, plainly.** Score chunk-1 tokens by the attention they receive,
+keep the top 60%, and **run a fresh forward pass over the retained sequence**. KV memory drops
+34–37%, retrieval holds at every depth measured, on both a 0.5B and a 7B, and the only
+component that has to be right is the re-prefill. There is no rotation step, no per-layer band,
+no line pooling, and no conditioning patch.
+
+**The honest caveat, stated once.** The re-prefill is the cost, and on CPU it is the dominant
+one. "Compaction" here means *shorter sequence to recompute*, not *avoid recomputation*. That
+is a different and weaker claim than the one the repository opened with, and it is the one the
+measurements support.
