@@ -438,11 +438,22 @@ def run_matrix(models: list, tests: list, scale: str = "base", max_new: int = 12
             ingest_s = time.perf_counter() - t_ing
             kept = [c for c, e in zip(blk, flags) if not e]
             dropped = [c for c, e in zip(blk, flags) if e]
-            tbl = TC.concat_caches([g_cache] + kept)
-            tbl_full = TC.concat_caches([g_cache] + [c for c in blk if c is not None])
+            # ★ Finding 37: assemble the survivors RE-INDEXED CONTIGUOUSLY. The earlier version
+            # used concat_caches, which keeps each block's ORIGINAL absolute positions and
+            # leaves the evicted span as a hole. Measured 0/10 vs 10/10 on the cross-block join
+            # (two models, 10 randomised trials): with the gap the query lands ~3200 positions
+            # from block 1 instead of ~60 and block 1 falls out of attention range.
+            tbl = TC.assemble_contiguous(g_cache, kept)
+            tbl_full = TC.assemble_contiguous(g_cache, [c for c in blk if c is not None])
             drift = survivor_drift(tbl, tbl_full, G, pos, flags)
             q_ids = h.tok(qtext, add_special_tokens=False)["input_ids"]
-            r_ans, r_ttft, r_kv = prefill_and_decode(h, tbl, q_ids, total, max_new)
+            # ★ THE QUERY MUST SIT AT THE ASSEMBLED LENGTH, not at the original `total`. The
+            # table is now contiguous (assemble_contiguous), so `total` -- which still counts
+            # the evicted span -- would place the query ~2814 positions past the end of the
+            # keys. That mismatch is the same defect half-fixed: measured two_needle still
+            # failing with a re-indexed table until the query position is corrected too.
+            r_ans, r_ttft, r_kv = prefill_and_decode(
+                h, tbl, q_ids, TC.cache_len(tbl), max_new)
             r_ok = bool(task["check"](r_ans))
 
             row = dict(model=mkey, hf_id=mid, test=tname, scale=scale,

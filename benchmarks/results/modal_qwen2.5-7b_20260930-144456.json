@@ -1,0 +1,154 @@
+{
+  "models": [
+    "qwen2.5-7b"
+  ],
+  "tests": [
+    "two_needle",
+    "babilong",
+    "synthetic_agent",
+    "ruler"
+  ],
+  "scale": "base",
+  "rows": [
+    {
+      "model": "qwen2.5-7b",
+      "hf_id": "Qwen/Qwen2.5-7B",
+      "test": "two_needle",
+      "scale": "base",
+      "spam_lines": 600,
+      "expect": "api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc",
+      "note": "host+port in block 1, secret in block 3",
+      "load_s": 8.2,
+      "control": {
+        "answer": "The connection string is \"api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc\".",
+        "ok": true,
+        "ttft_s": 0.0,
+        "kv_bytes": 595689472,
+        "prompt_tokens": 10360
+      },
+      "vanilla": {
+        "answer": "api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc",
+        "ok": true,
+        "ttft_s": 0.0,
+        "kv_bytes": 10321920,
+        "prompt_tokens": 158
+      },
+      "runtime": {
+        "answer": "The connection string is \"api.internal.cluster:9443?auth=EXAMPLE_KEY_12341234567890123412345678901",
+        "ok": true,
+        "ttft_s": 0.025815899999997782,
+        "kv_bytes": 11812864,
+        "prompt_tokens": 37,
+        "ingest_s": 4.0896392970000015,
+        "evicted_blocks": 1,
+        "kv_evicted_bytes": 585023488,
+        "drift_evict": 0.0
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "hf_id": "Qwen/Qwen2.5-7B",
+      "test": "babilong",
+      "scale": "base",
+      "spam_lines": 600,
+      "expect": "attic",
+      "note": "kitchen -> shed (Richard) -> attic (Jessica)",
+      "load_s": 3.7,
+      "control": {
+        "answer": "The blue key is now in the attic.",
+        "ok": true,
+        "ttft_s": 0.0,
+        "kv_bytes": 592076800,
+        "prompt_tokens": 10316
+      },
+      "vanilla": {
+        "answer": "The blue key is now in the attic.",
+        "ok": true,
+        "ttft_s": 0.0,
+        "kv_bytes": 7053312,
+        "prompt_tokens": 114
+      },
+      "runtime": {
+        "answer": "The blue key is now in the garden shed.",
+        "ok": false,
+        "ttft_s": 0.023467805999999314,
+        "kv_bytes": 7168000,
+        "prompt_tokens": 24,
+        "ingest_s": 4.057719977000005,
+        "evicted_blocks": 1,
+        "kv_evicted_bytes": 585023488,
+        "drift_evict": 0.0
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "hf_id": "Qwen/Qwen2.5-7B",
+      "test": "synthetic_agent",
+      "scale": "base",
+      "spam_lines": 600,
+      "expect": "192.168.1.50",
+      "note": "failed attempt evicted",
+      "load_s": 3.6,
+      "control": {
+        "answer": "192.168.1.50",
+        "ok": true,
+        "ttft_s": 0.0,
+        "kv_bytes": 11870208,
+        "prompt_tokens": 195
+      },
+      "vanilla": {
+        "answer": "192.168.1.50\n<build_log>\nObjective: Configure static IP for interface eth0. Subnet: 192.168.1.0/24.\nActive configuration",
+        "ok": true,
+        "ttft_s": 0.0,
+        "kv_bytes": 11411456,
+        "prompt_tokens": 152
+      },
+      "runtime": {
+        "answer": "<build_log>\n168.1.50/24\n Objective: Configure static IP for interface eth0. Subnet: 192.168.1.0/24. Active configuration state",
+        "ok": false,
+        "ttft_s": 0.023557749999994826,
+        "kv_bytes": 11468800,
+        "prompt_tokens": 26,
+        "ingest_s": 0.15856447899999893,
+        "evicted_blocks": 1,
+        "kv_evicted_bytes": 2465792,
+        "drift_evict": 0.0
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "hf_id": "Qwen/Qwen2.5-7B",
+      "test": "ruler",
+      "scale": "base",
+      "spam_lines": 600,
+      "expect": "47",
+      "note": "alpha=42 beta=84 gamma=94 delta=47",
+      "load_s": 3.7,
+      "control": {
+        "answer": "{\"delta\": 31}",
+        "ok": false,
+        "ttft_s": 0.0,
+        "kv_bytes": 591331328,
+        "prompt_tokens": 10305
+      },
+      "vanilla": {
+        "answer": "{\"delta\": 52}",
+        "ok": false,
+        "ttft_s": 0.0,
+        "kv_bytes": 6307840,
+        "prompt_tokens": 103
+      },
+      "runtime": {
+        "answer": "{\"delta\": 84}",
+        "ok": false,
+        "ttft_s": 0.02439102999999676,
+        "kv_bytes": 6365184,
+        "prompt_tokens": 33,
+        "ingest_s": 4.060971281999997,
+        "evicted_blocks": 1,
+        "kv_evicted_bytes": 585023488,
+        "drift_evict": 0.0
+      }
+    }
+  ]
+}
