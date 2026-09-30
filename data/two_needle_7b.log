@@ -1,0 +1,1020 @@
+=== test3 two-needle 7B 13:22:04 ===
+[heavy_lock] model-7b acquired (9605 MB available, need 9000 MB)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/339 [00:00<?, ?it/s]Loading weights:   1%|          | 4/339 [00:00<00:50,  6.68it/s]Loading weights:   1%|▏         | 5/339 [00:01<01:40,  3.34it/s]Loading weights:   2%|▏         | 6/339 [00:02<02:18,  2.41it/s]Loading weights:   3%|▎         | 10/339 [00:02<01:01,  5.38it/s]Loading weights:   4%|▎         | 12/339 [00:02<00:48,  6.73it/s]Loading weights:   5%|▍         | 16/339 [00:03<00:55,  5.84it/s]Loading weights:   5%|▌         | 18/339 [00:04<01:37,  3.30it/s]Loading weights:   6%|▋         | 22/339 [00:04<01:00,  5.20it/s]Loading weights:   7%|▋         | 24/339 [00:04<00:51,  6.09it/s]Loading weights:   8%|▊         | 28/339 [00:05<00:55,  5.59it/s]Loading weights:   9%|▉         | 30/339 [00:07<01:32,  3.36it/s]Loading weights:  10%|█         | 34/339 [00:07<01:00,  5.07it/s]Loading weights:  11%|█         | 36/339 [00:07<00:50,  5.98it/s]Loading weights:  12%|█▏        | 40/339 [00:08<00:51,  5.82it/s]Loading weights:  12%|█▏        | 42/339 [00:09<01:20,  3.69it/s]Loading weights:  14%|█▎        | 46/339 [00:09<00:53,  5.49it/s]Loading weights:  14%|█▍        | 48/339 [00:09<00:45,  6.37it/s]Loading weights:  15%|█▌        | 52/339 [00:10<00:45,  6.26it/s]Loading weights:  16%|█▌        | 54/339 [00:11<01:21,  3.48it/s]Loading weights:  17%|█▋        | 58/339 [00:11<00:55,  5.11it/s]Loading weights:  18%|█▊        | 60/339 [00:12<00:47,  5.87it/s]Loading weights:  19%|█▉        | 64/339 [00:12<00:50,  5.50it/s]Loading weights:  19%|█▉        | 66/339 [00:14<01:22,  3.31it/s]Loading weights:  21%|██        | 70/339 [00:14<00:54,  4.91it/s]Loading weights:  21%|██        | 72/339 [00:14<00:47,  5.68it/s]Loading weights:  22%|██▏       | 76/339 [00:15<00:52,  4.98it/s]Loading weights:  23%|██▎       | 78/339 [00:17<01:27,  2.98it/s]Loading weights:  24%|██▍       | 82/339 [00:17<00:57,  4.47it/s]Loading weights:  25%|██▍       | 84/339 [00:17<00:48,  5.22it/s]Loading weights:  26%|██▌       | 88/339 [00:18<00:50,  4.99it/s]Loading weights:  27%|██▋       | 90/339 [00:20<01:29,  2.79it/s]Loading weights:  28%|██▊       | 94/339 [00:20<00:58,  4.21it/s]Loading weights:  28%|██▊       | 96/339 [00:20<00:49,  4.95it/s]Loading weights:  29%|██▉       | 100/339 [00:21<00:48,  4.89it/s]Loading weights:  30%|███       | 102/339 [00:23<01:19,  2.96it/s]Loading weights:  31%|███▏      | 106/339 [00:23<00:52,  4.45it/s]Loading weights:  32%|███▏      | 108/339 [00:23<00:43,  5.28it/s]Loading weights:  33%|███▎      | 112/339 [00:24<00:42,  5.29it/s]Loading weights:  34%|███▎      | 114/339 [00:25<01:08,  3.29it/s]Loading weights:  35%|███▍      | 118/339 [00:25<00:45,  4.84it/s]Loading weights:  35%|███▌      | 120/339 [00:25<00:38,  5.63it/s]Loading weights:  37%|███▋      | 124/339 [00:26<00:40,  5.32it/s]Loading weights:  37%|███▋      | 126/339 [00:28<01:03,  3.34it/s]Loading weights:  38%|███▊      | 130/339 [00:28<00:41,  5.00it/s]Loading weights:  39%|███▉      | 132/339 [00:28<00:35,  5.84it/s]Loading weights:  40%|████      | 136/339 [00:29<00:36,  5.56it/s]Loading weights:  41%|████      | 138/339 [00:30<01:02,  3.21it/s]Loading weights:  42%|████▏     | 142/339 [00:31<00:41,  4.77it/s]Loading weights:  42%|████▏     | 144/339 [00:31<00:35,  5.55it/s]Loading weights:  44%|████▎     | 148/339 [00:32<00:37,  5.12it/s]Loading weights:  44%|████▍     | 150/339 [00:33<01:05,  2.91it/s]Loading weights:  45%|████▌     | 154/339 [00:34<00:42,  4.36it/s]Loading weights:  46%|████▌     | 156/339 [00:34<00:35,  5.11it/s]Loading weights:  47%|████▋     | 160/339 [00:35<00:37,  4.76it/s]Loading weights:  48%|████▊     | 162/339 [00:37<01:05,  2.70it/s]Loading weights:  49%|████▉     | 166/339 [00:37<00:42,  4.08it/s]Loading weights:  50%|████▉     | 168/339 [00:37<00:35,  4.80it/s]Loading weights:  51%|█████     | 172/339 [00:38<00:35,  4.64it/s]Loading weights:  51%|█████▏    | 174/339 [00:40<01:00,  2.73it/s]Loading weights:  53%|█████▎    | 178/339 [00:40<00:39,  4.10it/s]Loading weights:  53%|█████▎    | 180/339 [00:40<00:33,  4.75it/s]Loading weights:  54%|█████▍    | 184/339 [00:41<00:33,  4.60it/s]Loading weights:  55%|█████▍    | 185/339 [00:42<00:44,  3.43it/s]Loading weights:  55%|█████▍    | 186/339 [00:43<00:57,  2.67it/s]Loading weights:  56%|█████▌    | 190/339 [00:43<00:33,  4.47it/s]Loading weights:  57%|█████▋    | 192/339 [00:43<00:27,  5.35it/s]Loading weights:  58%|█████▊    | 196/339 [00:44<00:28,  5.06it/s]Loading weights:  58%|█████▊    | 197/339 [00:45<00:39,  3.56it/s]Loading weights:  58%|█████▊    | 198/339 [00:45<00:53,  2.64it/s]Loading weights:  60%|█████▉    | 202/339 [00:46<00:30,  4.50it/s]Loading weights:  60%|██████    | 204/339 [00:46<00:24,  5.41it/s]Loading weights:  61%|██████▏   | 208/339 [00:47<00:29,  4.40it/s]Loading weights:  62%|██████▏   | 209/339 [00:48<00:46,  2.77it/s]Loading weights:  62%|██████▏   | 210/339 [00:49<00:54,  2.36it/s]Loading weights:  63%|██████▎   | 214/339 [00:49<00:30,  4.12it/s]Loading weights:  64%|██████▎   | 216/339 [00:49<00:24,  5.04it/s]Loading weights:  65%|██████▍   | 220/339 [00:50<00:25,  4.73it/s]Loading weights:  65%|██████▌   | 221/339 [00:51<00:38,  3.04it/s]Loading weights:  65%|██████▌   | 222/339 [00:52<00:47,  2.46it/s]Loading weights:  67%|██████▋   | 226/339 [00:52<00:26,  4.30it/s]Loading weights:  67%|██████▋   | 228/339 [00:52<00:21,  5.21it/s]Loading weights:  68%|██████▊   | 232/339 [00:53<00:20,  5.15it/s]Loading weights:  69%|██████▉   | 234/339 [00:55<00:35,  2.98it/s]Loading weights:  70%|███████   | 238/339 [00:55<00:21,  4.61it/s]Loading weights:  71%|███████   | 240/339 [00:55<00:18,  5.41it/s]Loading weights:  72%|███████▏  | 244/339 [00:56<00:17,  5.50it/s]Loading weights:  73%|███████▎  | 246/339 [00:57<00:28,  3.31it/s]Loading weights:  74%|███████▎  | 250/339 [00:57<00:17,  5.00it/s]Loading weights:  74%|███████▍  | 252/339 [00:58<00:14,  5.91it/s]Loading weights:  76%|███████▌  | 256/339 [00:58<00:15,  5.49it/s]Loading weights:  76%|███████▌  | 258/339 [01:00<00:26,  3.03it/s]Loading weights:  77%|███████▋  | 262/339 [01:00<00:17,  4.48it/s]Loading weights:  78%|███████▊  | 264/339 [01:00<00:14,  5.18it/s]Loading weights:  79%|███████▉  | 268/339 [01:01<00:15,  4.57it/s]Loading weights:  79%|███████▉  | 269/339 [01:02<00:21,  3.30it/s]Loading weights:  80%|███████▉  | 270/339 [01:03<00:26,  2.65it/s]Loading weights:  81%|████████  | 274/339 [01:03<00:14,  4.45it/s]Loading weights:  81%|████████▏ | 276/339 [01:04<00:11,  5.35it/s]Loading weights:  83%|████████▎ | 280/339 [01:04<00:12,  4.87it/s]Loading weights:  83%|████████▎ | 281/339 [01:05<00:16,  3.45it/s]Loading weights:  83%|████████▎ | 282/339 [01:06<00:21,  2.64it/s]Loading weights:  84%|████████▍ | 286/339 [01:06<00:11,  4.52it/s]Loading weights:  85%|████████▍ | 288/339 [01:07<00:09,  5.43it/s]Loading weights:  86%|████████▌ | 292/339 [01:07<00:09,  4.81it/s]Loading weights:  86%|████████▋ | 293/339 [01:09<00:14,  3.16it/s]Loading weights:  87%|████████▋ | 294/339 [01:09<00:18,  2.41it/s]Loading weights:  88%|████████▊ | 298/339 [01:10<00:09,  4.22it/s]Loading weights:  88%|████████▊ | 300/339 [01:10<00:07,  5.16it/s]Loading weights:  90%|████████▉ | 304/339 [01:11<00:06,  5.00it/s]Loading weights:  90%|█████████ | 306/339 [01:12<00:11,  2.94it/s]Loading weights:  91%|█████████▏| 310/339 [01:12<00:06,  4.54it/s]Loading weights:  92%|█████████▏| 312/339 [01:13<00:05,  5.30it/s]Loading weights:  93%|█████████▎| 316/339 [01:13<00:04,  4.84it/s]Loading weights:  94%|█████████▍| 318/339 [01:15<00:07,  2.72it/s]Loading weights:  95%|█████████▍| 322/339 [01:16<00:04,  4.04it/s]Loading weights:  96%|█████████▌| 324/339 [01:16<00:03,  4.71it/s]Loading weights:  97%|█████████▋| 328/339 [01:17<00:02,  4.52it/s]Loading weights:  97%|█████████▋| 329/339 [01:18<00:02,  3.34it/s]Loading weights:  97%|█████████▋| 330/339 [01:18<00:03,  2.59it/s]Loading weights:  99%|█████████▊| 334/339 [01:19<00:01,  4.31it/s]Loading weights:  99%|█████████▉| 336/339 [01:19<00:00,  5.19it/s]Loading weights: 100%|██████████| 339/339 [01:19<00:00,  4.28it/s]
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+/tmp/opencode/run_t3_7b.sh: line 11: 3974624 Killed                  /home/roni/Roni_workspace/humanizer/.venv/bin/python tests/test_two_needle_synthesis.py --model Qwen/Qwen2.5-7B --trials 10 --spam-lines 120 --json data/two_needle_7b.jsonl
+=== exit=137 13:41:32 ===

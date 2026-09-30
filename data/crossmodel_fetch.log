@@ -1,0 +1,11 @@
+[fetch] using HF token from /home/roni/Roni_workspace/text-improver/.secrets/hf_token
+=== fetch start 13:05:08 ===
+[fetch] trying meta-llama/Llama-3.1-8B
+Fetching 12 files:   0%|          | 0/12 [00:00<?, ?it/s]Fetching 12 files:   0%|          | 0/12 [00:00<?, ?it/s]
+FAIL GatedRepoError 403 Client Error. (Request ID: Root=1-6abd4145-61ec1e705b851e8f007a0ec2;c37f0777-aea1-4e88-b72c-a6917124d7e9)
+
+Cannot access gated repo for url https://huggingface.co/meta-llama/Llama-3.1-8B/resolve/d
+[fetch] unusable: meta-llama/Llama-3.1-8B
+[fetch] trying mistralai/Mistral-7B-v0.3
+Fetching 13 files:   0%|          | 0/13 [00:00<?, ?it/s]Fetching 13 files:   8%|▊         | 1/13 [00:00<00:02,  4.03it/s]Fetching 13 files:  31%|███       | 4/13 [00:00<00:00, 12.50it/s]Fetching 13 files:  46%|████▌     | 6/13 [00:00<00:00, 11.21it/s]Fetching 13 files:  62%|██████▏   | 8/13 [00:19<00:00, 11.21it/s]Fetching 13 files:  69%|██████▉   | 9/13 [00:41<00:26,  6.66s/it]Fetching 13 files:  77%|███████▋  | 10/13 [15:58<08:50, 176.89s/it]Fetching 13 files:  85%|████████▍ | 11/13 [16:06<04:42, 141.30s/it]Fetching 13 files:  92%|█████████▏| 12/13 [16:07<01:48, 108.71s/it]Fetching 13 files: 100%|██████████| 13/13 [24:48<00:00, 211.09s/it]Fetching 13 files: 100%|██████████| 13/13 [24:48<00:00, 114.48s/it]
+OK /tmp/opencode/hfhome/hub/models--mistralai--Mistral-7B-v0.3/snapshots/caa1feb0e54d415e2df31207e5f4e273e33509b1

@@ -1,0 +1,82 @@
+{
+  "models": [
+    "qwen2.5-7b"
+  ],
+  "tests": [
+    "ruler",
+    "babilong"
+  ],
+  "scale": "smoke",
+  "rows": [
+    {
+      "model": "qwen2.5-7b",
+      "hf_id": "Qwen/Qwen2.5-7B",
+      "test": "ruler",
+      "scale": "smoke",
+      "spam_lines": 140,
+      "expect": "47",
+      "note": "alpha=42 beta=84 gamma=94 delta=47",
+      "load_s": 12.8,
+      "control": {
+        "answer": "The final value of delta is 26.0.\n{\"delta\": 26.0}",
+        "ok": false,
+        "ttft_s": 0.6037194919999997,
+        "kv_bytes": 144220160,
+        "prompt_tokens": 2494
+      },
+      "vanilla": {
+        "answer": "The final value of delta is 52. Here's the step-by-step reasoning:\n1. alpha is assigned the value 42.\n2. beta is assigned the value of alpha * 2, which is 42 * 2 = 84.\n3. gamma is assigned the value of beta + 10, which is 84 + 10 = 94.\n4. delta is assigned the value of gamma / 2, which is 94 / 2 = 47.\n{\"delta\": 47}",
+        "ok": true,
+        "ttft_s": 0.03490283899999724,
+        "kv_bytes": 13017088,
+        "prompt_tokens": 111
+      },
+      "runtime": {
+        "answer": "To evaluate the final value of `delta`, we need to follow these steps:\n\n1. **Evaluate `alpha`**: The value of `alpha` is given as 42.\n2. **Evaluate `beta`**: According to the code snippet, `beta` is calculated as `alpha * 2`. Substituting the value of `alpha`, we get:\n   \\[\n   \\text{beta} = 42 \\times 2 = 84\n   \\]\n3. **Evaluate `delta`**: The code snippet does not directly provide an expression for `delta`. However, based on the context provided",
+        "ok": false,
+        "ttft_s": 0.026278398999998842,
+        "kv_bytes": 13705216,
+        "prompt_tokens": 41,
+        "ingest_s": 0.8136362460000015,
+        "evicted_blocks": 1,
+        "kv_evicted_bytes": 136650752,
+        "drift_evict": 0.0
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "hf_id": "Qwen/Qwen2.5-7B",
+      "test": "babilong",
+      "scale": "smoke",
+      "spam_lines": 140,
+      "expect": "attic",
+      "note": "kitchen -> shed (Richard) -> attic (Jessica)",
+      "load_s": 12.8,
+      "control": {
+        "answer": "The blue key is now in the attic.",
+        "ok": true,
+        "ttft_s": 0.10471625399999951,
+        "kv_bytes": 143990784,
+        "prompt_tokens": 2502
+      },
+      "vanilla": {
+        "answer": "The blue key is now in the attic.",
+        "ok": true,
+        "ttft_s": 0.0252501890000012,
+        "kv_bytes": 7340032,
+        "prompt_tokens": 119
+      },
+      "runtime": {
+        "answer": "The blue key is now in the garden shed.",
+        "ok": false,
+        "ttft_s": 0.025570462000004568,
+        "kv_bytes": 7454720,
+        "prompt_tokens": 29,
+        "ingest_s": 0.7800051769999996,
+        "evicted_blocks": 1,
+        "kv_evicted_bytes": 136650752,
+        "drift_evict": 0.0
+      }
+    }
+  ]
+}

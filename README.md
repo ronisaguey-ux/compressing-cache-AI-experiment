@@ -143,3 +143,50 @@ needs fixing. Measured here, that assumption fails: a rotated key sits at cosine
 from the key a correct forward pass would build at the same position, and a retained needle
 survives a native recompute and dies through the rotation path on identical tokens. If that
 generalises, deferred-rotation caching is not a drop-in for recomputation.
+
+## Finding 35 (2026-09-30, Modal A10G — Bob's benchmark matrix)
+
+**The block runtime cannot perform a cross-block JOIN. Cause is PREFILL ISOLATION, not the
+positional gap left by eviction.** Measured, not inferred.
+
+Qwen2.5-7B, babilong task: Block 1 "Richard moved the key kitchen->shed", Block 3 "Jessica moved
+it shed->attic", distractor between, ROTATED OUT. Ground truth = **attic**.
+
+| arm | layout | answer |
+|---|---|---|
+| 3 | survivors in ONE causal sequence | **attic** PASS |
+| 4 | full causal + distractor | **attic** PASS |
+| 5 | survivors re-prefilled contiguously over the global cache | **attic** PASS |
+| 1 | block table, shipped layout (disjoint ranges, gap) | *garbage/degenerate* FAIL |
+| 2 | block table, block3 adjacent to block1 — **same isolation, NO gap** | *degenerate* FAIL |
+
+**arm1 vs arm2 is the experiment that decides it, and arm2 failing is the answer.** Both arms
+prefill the blocks in SEPARATE forwards, so both are isolated; only the positions differ. If the
+gap were the cause, arm2 would pass. It does not. **The gap is not the defect — the isolation is.**
+
+**⇒ WHY.** `tiered_cache.build_table` forwards each block against a FRESH CLONE of the global
+cache, so block 1's and block 3's keys never co-attended. Block 1 encodes "shed" in a hidden state
+conditioned on a context that does not contain block 3, and vice versa. The query can attend over
+both, but neither block carries anything the other can use. The join has to happen inside the
+query tier, and a single query forward cannot manufacture the relation that never existed.
+
+**This CONFIRMS Finding 34's prediction and extends it.** F34 showed at block granularity the
+binding constraint is CONTEXT, not evidence. F35 shows the same limitation on the hardest case: a
+relation split across two isolated blocks is not recoverable by eviction policy, selection, or
+position arithmetic.
+
+**⇒ WHAT DOES WORK, and it is the recompute path we already established.** arm5 — re-prefill the
+survivors as ONE contiguous span over the global cache — passes. That is F18/F21's answer again
+from a different direction: **when a cross-block relation matters, the survivors must be
+recomputed as a single sequence, not reassembled from independently-prefilled blocks.** Block
+tables remain correct for independent self-contained payloads (per-file summaries, retrieved
+passages, documents); they are the wrong shape for one artifact whose meaning spans its length.
+
+**Verified non-vacuous:** the three controls all PASS on the same model and the same surviving
+text, so the failures are attributable to the layout rather than to the model being unable to do
+the task. Survivor drift under eviction measured **0.000e+00** throughout — the blocks themselves
+are bit-identical, which is exactly why the failure is informative: the KV is intact and the
+answer is still wrong.
+
+Artifacts: `modal/probe_query.py` (decoder-vs-architecture, both fail identically ⇒ not a decoder
+bug) · `modal/probe_gap.py` (this experiment) · `modal/bench.py` (3-arm matrix on GPU).

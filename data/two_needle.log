@@ -1,0 +1,60 @@
+=== test3 two-needle 13:06:29 ===
+[heavy_lock] model-small acquired (8314 MB available, need 3500 MB)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights:  30%|███       | 87/290 [00:00<00:00, 848.28it/s]Loading weights:  60%|██████    | 174/290 [00:00<00:00, 854.26it/s]Loading weights:  93%|█████████▎| 269/290 [00:00<00:00, 894.27it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 922.46it/s]
+========================================================================================
+TEST 3 — TWO-NEEDLE CROSS-BLOCK SYNTHESIS
+  model=Qwen/Qwen2.5-0.5B  trials=10  spam=120 lines
+========================================================================================
+  A  both needles, middle block EVICTED      <- the actual test
+  B  both needles, nothing evicted           <- is the task answerable at all?
+  C  concatenated as one causal sequence     <- is a failure the layout or the task?
+
+  trial want           A evicted middle         B no eviction            C concatenated          
+  --------------------------------------------------------------------------------------
+  1     31353:3QV4BD   fail 'Human: What is '   fail '#include <stdio'   fail '})();\nconst { b' 
+  2     38155:T75BC9   fail 'Human: What is '   fail '#include <stdio'   fail '})();\nconst { b' 
+  3     57792:FMYE2W   fail 'Human: What is '   fail '#include <stdio'   fail '})();\nconst { b' 
+/tmp/opencode/run_t3.sh: line 11: 3966433 Killed                  /home/roni/Roni_workspace/humanizer/.venv/bin/python tests/test_two_needle_synthesis.py --model Qwen/Qwen2.5-0.5B --trials 10 --spam-lines 120 --json data/two_needle.jsonl
+=== exit=137 13:09:49 ===
+=== test3 two-needle 13:10:09 ===
+[heavy_lock] model-small acquired (10195 MB available, need 3500 MB)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights:   0%|          | 1/290 [00:00<01:32,  3.11it/s]Loading weights:  64%|██████▍   | 186/290 [00:00<00:00, 570.79it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 513.62it/s]
+========================================================================================
+TEST 3 — TWO-NEEDLE CROSS-BLOCK SYNTHESIS
+  model=Qwen/Qwen2.5-0.5B  trials=10  spam=120 lines
+========================================================================================
+  A  both needles, middle block EVICTED      <- the actual test
+  B  both needles, nothing evicted           <- is the task answerable at all?
+  C  concatenated as one causal sequence     <- is a failure the layout or the task?
+
+  trial want           A evicted middle         B no eviction            C concatenated          
+  --------------------------------------------------------------------------------------
+  1     31353:3QV4BD   fail 'The server is r'   fail 'Connect to Serv'   fail 'You are a build'  
+  2     38155:T75BC9   fail 'The server is r'   fail 'Connect to Serv'   fail 'You are a build'  
+  3     57792:FMYE2W   fail 'The server is r'   fail 'Connect to Serv'   fail 'You are a build'  
+  4     52774:E3CRAT   fail 'The server is r'   fail 'Connect to Serv'   fail 'You are a build'  
+  5     30169:GNLTY4   fail 'The server is r'   fail 'Connect to Serv'   fail 'You are a build'  
+  6     35645:TKMC3C   fail 'The server is r'   fail 'Connect to Serv'   fail 'You are a build'  
+  7     33351:SSAWNX   fail 'The server is r'   fail 'Connect to Serv'   fail 'You are a build'  
+  8     43720:SXMEJZ   fail 'The server is r'   fail 'Connect to Serv'   fail 'You are a build'  
+  9     56956:S57TW8   fail 'The server is r'   fail 'Connect to Serv'   fail 'You are a build'  
+  10    42615:CVSFCU   fail 'The server is r'   fail 'Connect to Serv'   fail 'You are a build'  
+
+========================================================================================
+  A  evicted middle (the test)        0/10  (0%)
+  B  no eviction (control)            0/10  (0%)
+  C  concatenated (cascade shape)     0/10  (0%)
+
+  !! the no-eviction control is not passing: the task itself is unreliable,
+     so A cannot be interpreted. Investigate that first.
+Traceback (most recent call last):
+  File "/tmp/opencode/ccai/tests/test_two_needle_synthesis.py", line 241, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/tmp/opencode/ccai/tests/test_two_needle_synthesis.py", line 234, in main
+    {kk: vv for kk, vv in v.items() if kk == "ok"}))
+                          ^^^^^^^
+AttributeError: 'int' object has no attribute 'items'
+=== exit=1 13:21:06 ===
