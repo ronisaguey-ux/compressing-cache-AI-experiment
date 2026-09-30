@@ -1250,3 +1250,49 @@ likely.
 **Practical consequence: sifting quality is a much weaker requirement than assumed.** You
 do not need a good sifter; you need a sifter that does not drop the evidence. That is far
 easier to guarantee, and it makes the cheap 0.5B front end genuinely sufficient.
+
+## Finding 28 — block-diagonal attention IS isolated, and the error is numerical not structural
+
+Bob's block-causal spike, depths 0.55, five blocks of ~398 tokens, evicting one whole block
+and recomputing the survivors with their **original position ids**.
+
+| eviction | error vs the full block-causal run |
+|---|---|
+| **block-causal** (same eviction) | **3.052e-05** |
+| **full causal** (same eviction) | **1.690e+01** |
+
+**553,852× smaller.** So the isolation claim holds: under block-diagonal attention, evicting
+a block leaves the survivors as they were, whereas under full causal attention the same
+eviction destroys them.
+
+**★ It is NOT bit-identical, and it cannot be.** The first version asserted `torch.equal`
+and failed — the same trap as asserting `cos == 1.0` in Finding 21. Block-diagonal attention
+changes the *shape* of the attention operator, so the batched matmul reduces in a different
+order and the result differs at float32 epsilon. The meaningful test is not bit-identity but
+the **contrast**: noise (~1e-5) versus structural damage (~1e+1). Four orders of magnitude
+separate them.
+
+*(An earlier debugging pass compared layer-0 keys and saw 0.0 difference — that was a bad
+probe, not a finding: layer-0 keys are `RoPE(W_k · embedding(t))` and never see the mask.
+Comparing last-layer hidden states showed the mask working exactly as designed: positions in
+block 0 unchanged, positions in block 1 changed by 24–53.)*
+
+## Finding 29 — the query MUST be its own tier; block-diagonal masking makes it otherwise unanswerable
+
+The block-causal ceiling failed — with *nothing evicted*, the answer was wrong. That looked
+like a bug and is not: it is the architecture.
+
+Under block-diagonal masking, **a query appended to the end of the sequence lives inside the
+last block**, and can therefore attend only within that block. The evidence in earlier blocks
+is unreachable by construction. Measured on the same log:
+
+| query placement | answer |
+|---|---|
+| appended inside the last block | **`'What'`** — garbage |
+| **its own forward over the block table** | **`'The failure code in the build log is 1.`** — coherent |
+
+**⇒ Tier 3 is load-bearing, not a design nicety.** The query must be a separate forward that
+attends over the assembled cache, which is exactly what the tiered architecture specifies.
+A single-pass "prefix + question" prompt cannot work under document masking. This also
+explains why the block-causal ceiling failed while the cascade — whose prompt is a single
+ordinary causal sequence — passed all three arms.

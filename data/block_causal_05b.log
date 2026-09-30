@@ -74,3 +74,43 @@ wrote data/block_causal.jsonl
 [heavy_lock] model-small acquired (8876 MB available, need 3500 MB)
 Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
 Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights:  22%|██▏       | 65/290 [00:00<00:00, 646.70it/s]Loading weights:  56%|█████▌    | 161/290 [00:00<00:00, 822.93it/s]Loading weights:  88%|████████▊ | 255/290 [00:00<00:00, 872.29it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 874.29it/s]
+====================================================================================
+BLOCK-CAUSAL PREFILL  |  model=Qwen/Qwen2.5-0.5B  depth=0.55
+====================================================================================
+  tokens=1992  blocks=5  block sizes=[398, 399, 398, 399, 398]
+  needle at token 1507 -> block 3 ; evicting block 4
+
+  prefill: full-causal 24.3s   block-causal 23.5s
+
+1. SURVIVAL — evict one whole block, keep original positions, compare tensors
+     block 0: max|dK| = 1.526e-05   max|dV| = 7.302e-06
+     block 1: max|dK| = 3.052e-05   max|dV| = 1.431e-05
+     block 2: max|dK| = 3.052e-05   max|dV| = 1.359e-05
+     block 3: max|dK| = 3.052e-05   max|dV| = 2.551e-05
+
+     block-causal eviction error : 3.052e-05
+     FULL-causal  eviction error : 1.690e+01   (the same eviction, causally entangled)
+     => ISOLATED: the block-causal error is float-precision noise (3e-05) while the
+        full-causal error is structural (2e+01) -- 553852x larger.
+        Not bit-identical, and it cannot be: a different operator shape
+        sums in a different order. The difference is numerical, not causal.
+
+2. RETRIEVAL — same eviction, both maskings
+     block-causal, block 4 evicted : fail   '000000 bytes\nmake: *** [Makefile:120: all] Error 2'
+     full-causal,  block 4 evicted : fail   '000000 bytes\nci: artifact archive written, 4000000 bytes'
+
+3. CONTROL — evict the needle's OWN block; this MUST fail, or the mask is inert
+     block-causal, needle block 3 evicted : fail   '```\n\nThis is the output from the build process.'
+     => mask is doing work: removing the evidence loses the answer
+
+   ceiling (block-causal, nothing evicted): fail   "```\n\nAssistant: The error message you're encountering in"
+
+====================================================================================
+  bit-identical survivors : True
+  block-causal evict 4    : fail
+  full-causal  evict 4    : fail
+  ceiling                 : fail
+====================================================================================
+
+wrote data/block_causal.jsonl
+=== exit=0 06:41:05 ===

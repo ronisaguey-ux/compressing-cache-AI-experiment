@@ -76,6 +76,11 @@ runs are 8-bit and need ~10 GB. CPU only, no CUDA, no vLLM, no Triton — delibe
 | `src/prefix_tradeoff.py` | reuse vs retrieval as the forced-prefix fraction varies |
 | `src/inverted_context.py` | pristine prefix per eviction policy + the suffix drift equation |
 | `src/needle_layout.py` | the inversion test: move the needle, hold the policy fixed |
+| `src/cascade_sifter.py` | two-speed cascade: cheap model sifts, expensive model consumes |
+| `src/block_causal.py` | block-diagonal attention: eviction isolation, with the causal contrast |
+| `src/tiered_cache.py` | global backbone + modular evictable blocks (Tier 1/2/3) |
+| `src/laya_sift.py` | Laya as a line-granularity sifter |
+| `src/laya_labels.py` | sifter training labels; distil vs ablation |
 | `src/sink_probe.py` | where attention mass actually goes |
 | `src/decode_divergence.py` | first token where a compacted decode diverges from full |
 | `src/depth_sweep.py` | the original depth sweep, rotation pipeline |
@@ -120,6 +125,11 @@ work.
 | **22** | **the selection pattern is the lever** — force 15% of chunk 1, 3x the reuse, verdicts unchanged |
 | **23** | **the inverted-context layout is the wrong way round** — suffix reuse is impossible; critical content early, not late |
 | **24** | **the layout is the knob** — with the policy fixed, the verdict tracks where the needle sits, 5/5 |
+| **25** | **Laya's HTTP API silently drops a plain-string state** — pass `{"text": ...}` |
+| **26** | base Laya zero-shot is not a usable sifter — needle ranks 6/109, behind compiler warnings |
+| **27** | **the cascade works** — cross-model sift 4/4 PASS, and two sifters with only 19% overlap both succeed |
+| **28** | **block-diagonal attention IS isolated** — eviction error 3e-05 vs 1.7e+01 causally |
+| **29** | **the query must be its own tier** — inside the last block it cannot see earlier blocks at all |
 
 ## Prior art
 
