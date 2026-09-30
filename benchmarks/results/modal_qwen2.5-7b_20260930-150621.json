@@ -1,0 +1,52 @@
+{
+  "models": [
+    "qwen2.5-7b"
+  ],
+  "tests": [
+    "two_needle"
+  ],
+  "scale": "smoke",
+  "rows": [
+    {
+      "model": "qwen2.5-7b",
+      "hf_id": "Qwen/Qwen2.5-7B",
+      "test": "two_needle",
+      "scale": "smoke",
+      "spam_lines": 140,
+      "expect": "api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc",
+      "note": "host+port in block 1, secret in block 3",
+      "load_s": 12.2,
+      "control": {
+        "answer": "Assistant: The connection string synthesized from the provided information is:\n\napi.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8",
+        "ok": true,
+        "ttft_s": 0.0,
+        "kv_bytes": 147488768,
+        "prompt_tokens": 2541
+      },
+      "vanilla": {
+        "answer": "api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc",
+        "ok": true,
+        "ttft_s": 0.0,
+        "kv_bytes": 10321920,
+        "prompt_tokens": 158
+      },
+      "runtime": {
+        "answer": "The connection string is \"api.internal.cluster:9443?auth=EXAMPLE_KEY_9942a8fbc\".",
+        "ok": true,
+        "ttft_s": 0.025532176000002238,
+        "kv_bytes": 10723328,
+        "prompt_tokens": 37,
+        "ingest_s": 0.7843840680000014,
+        "evicted_blocks": 1,
+        "kv_evicted_bytes": 136650752,
+        "drift_evict": 0.0
+      }
+    },
+    {
+      "model": "qwen2.5-7b",
+      "test": "two_needle",
+      "status": "cell_failed",
+      "error": "UnboundLocalError: cannot access local variable 'outdir' where it is not associated with a value"
+    }
+  ]
+}

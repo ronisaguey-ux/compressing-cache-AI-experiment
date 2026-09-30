@@ -67,6 +67,7 @@ image = (
           # OOM message, and it is the fragmentation case rather than a genuine overcommit.
           "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"})
     .add_local_dir(_SRC, "/root/ccai/src")
+    .add_local_file("/tmp/opencode/ccai/modal/cost.py", "/root/cost.py")
 )
 
 hf_cache = modal.Volume.from_name("ccai-hf-cache", create_if_missing=True)
@@ -102,6 +103,16 @@ _sys.path.insert(0, "/tmp/opencode/ccai/benchmarks")
     memory=32768,
 )
 def run_matrix(models: list, tests: list, scale: str = "base", max_new: int = 128):
+    import os as _os, sys as _sys2
+    _sys2.path.insert(0, "/root")
+    from cost import track, ROWS as _COST_ROWS
+    with track("bench_matrix", ",".join(models) + "|" + ",".join(tests)) as _c:
+        _c.note(gpu=_os.environ.get("CCAI_GPU", "A10G"), scale=scale, tests=len(tests))
+        _res = _run_body(models, tests, scale, max_new)
+    return {"rows": _res, "cost": list(_COST_ROWS)}
+
+
+def _run_body(models, tests, scale, max_new):
     import os as _os
     print("[container] gpu=%s torch=%s" % (_os.environ.get("CCAI_GPU","?"), __import__("torch").cuda.get_device_name(0)), flush=True)
     import os, json, time, sys, gc, re
@@ -518,6 +529,8 @@ def main(model: str = "qwen2.5-7b", tests: str = "ruler,babilong,synthetic_agent
     # fix it. A fresh container per (model, test) removes the accumulation class outright.
     # Cost is one model load per cell (~13s from the volume cache), which is cheap next to a
     # dead run. The model weights are cached on the Modal volume, so this is not a re-download.
+    outdir = "/tmp/opencode/ccai/benchmarks/results"
+    os.makedirs(outdir, exist_ok=True)
     r = []
     t_start = time.time()
     for m in ms:
@@ -525,14 +538,18 @@ def main(model: str = "qwen2.5-7b", tests: str = "ruler,babilong,synthetic_agent
             print("\n>>> CELL %s x %s  (%.0fs elapsed)" % (m, t, time.time() - t_start),
                   flush=True)
             try:
-                r.extend(run_matrix.remote([m], [t], scale, max_new))
+                _out = run_matrix.remote([m], [t], scale, max_new)
+                r.extend(_out["rows"] if isinstance(_out, dict) else _out)
+                _cost_rows = _out.get("cost", []) if isinstance(_out, dict) else []
+                _led = os.path.join(outdir, "cost_ledger.jsonl")
+                for _row in _cost_rows:
+                    _row["cell"] = "%s/%s" % (m, t)
+                    open(_led, "a").write(json.dumps(_row) + "\n")
             except Exception as e:
                 print("    CELL FAILED: %s: %s" % (type(e).__name__, str(e)[:300]), flush=True)
                 r.append({"model": m, "test": t, "status": "cell_failed",
                           "error": "%s: %s" % (type(e).__name__, str(e)[:400])})
 
-    outdir = "/tmp/opencode/ccai/benchmarks/results"
-    os.makedirs(outdir, exist_ok=True)
     out = os.path.join(outdir, "modal_%s_%s.json" % (
         "-".join(ms), time.strftime("%Y%m%d-%H%M%S")))
     with open(out, "w") as f:

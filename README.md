@@ -360,3 +360,17 @@ does not actually skip, `round(a,2)==round(b,2)` passed the intended counter-exa
 recursive `deep_sum` was already correct. All four would have reported as model failures.
 
 Artifacts: `modal/frankenstein.py` (task sets + arms), `modal/cost.py` (ledger).
+
+## Correction to Finding 36 (2026-09-30)
+
+**The multi-turn run evicted 3 turns, not 4.** `evict_idx` selects the even-indexed turns in
+`range(1, 8)`, which is `[2, 4, 6]` — three of them. An earlier report described the run as
+"8 turns / 4 evictions" following the specification; the measurement is **8 turns, 3 evictions**.
+The plot labels itself from the data and prints 3. `--turns 9` would produce 4 evictions. The cost
+figures are unaffected (they come from the run, not the spec), but the headline should read
+**8 turns / 3 evictions**.
+
+Artifact: `benchmarks/plot_results.py` -> `benchmark_wallclock_vs_recompute.png` (three panels:
+per-turn prefill work, cumulative wall clock with the one-time ingest drawn separately, and the
+memory watermark — the third panel deliberately shows the runtime NOT winning, because on this
+workload it does not).
