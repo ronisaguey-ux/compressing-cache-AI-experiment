@@ -1,0 +1,135 @@
+[
+  {
+    "model": "mistral-7b-instruct",
+    "trials": 10,
+    "spam_lines": 600,
+    "rates": {
+      "control": 1.0,
+      "vanilla": 0.0,
+      "runtime": 0.0,
+      "gap": 1.0
+    },
+    "rows": [
+      {
+        "trial": 1,
+        "want": "31353?auth=EXAMPLE_KEY_6137ab287ab9",
+        "control": true,
+        "vanilla": false,
+        "runtime": false,
+        "gap": true,
+        "c_ans": "\"31353?auth=EXAMPLE_KEY_6137ab287ab9\"",
+        "v_ans": "TARGET_PORT=31353:auth=EXAMPLE_KEY_6137ab287ab9",
+        "r_ans": "\"31353\"",
+        "g_ans": "\"31353?auth=EXAMPLE_KEY_6137ab287ab9\""
+      },
+      {
+        "trial": 2,
+        "want": "57792?auth=EXAMPLE_KEY_cf5c64c6b1a2",
+        "control": true,
+        "vanilla": false,
+        "runtime": false,
+        "gap": true,
+        "c_ans": "\"57792?auth=EXAMPLE_KEY_cf5c64c6b1a2\"",
+        "v_ans": "TARGET_PORT=57792:auth=EXAMPLE_KEY_cf5c64c6b1a2",
+        "r_ans": "\"57792\"",
+        "g_ans": "\"57792?auth=EXAMPLE_KEY_cf5c64c6b1a2\""
+      },
+      {
+        "trial": 3,
+        "want": "30169?auth=EXAMPLE_KEY_d0f2572efb6b",
+        "control": true,
+        "vanilla": false,
+        "runtime": false,
+        "gap": true,
+        "c_ans": "\"30169?auth=EXAMPLE_KEY_d0f2572efb6b\"",
+        "v_ans": "TARGET_PORT=30169:auth=EXAMPLE_KEY_d0f2572efb6b",
+        "r_ans": "\"30169\"",
+        "g_ans": "\"30169?auth=EXAMPLE_KEY_d0f2572efb6b\""
+      },
+      {
+        "trial": 4,
+        "want": "33351?auth=EXAMPLE_KEY_22a40424fce5",
+        "control": true,
+        "vanilla": false,
+        "runtime": false,
+        "gap": true,
+        "c_ans": "\"33351?auth=EXAMPLE_KEY_22a40424fce5\"",
+        "v_ans": "TARGET_PORT=33351:auth=EXAMPLE_KEY_22a40424fce5",
+        "r_ans": "\"33351\"",
+        "g_ans": "\"33351?auth=EXAMPLE_KEY_22a40424fce5\""
+      },
+      {
+        "trial": 5,
+        "want": "56956?auth=EXAMPLE_KEY_278249b32cb3",
+        "control": true,
+        "vanilla": false,
+        "runtime": false,
+        "gap": true,
+        "c_ans": "\"56956?auth=EXAMPLE_KEY_278249b32cb3\"",
+        "v_ans": "TARGET_PORT=56956:auth=EXAMPLE_KEY_278249b32cb3",
+        "r_ans": "\"56956\"",
+        "g_ans": "\"56956?auth=EXAMPLE_KEY_278249b32cb3\""
+      },
+      {
+        "trial": 6,
+        "want": "11939?auth=EXAMPLE_KEY_267bb2c45ab0",
+        "control": true,
+        "vanilla": false,
+        "runtime": false,
+        "gap": true,
+        "c_ans": "\"11939?auth=EXAMPLE_KEY_267bb2c45ab0\"",
+        "v_ans": "TARGET_PORT=11939:auth=EXAMPLE_KEY_267bb2c45ab0",
+        "r_ans": "\"11939\"",
+        "g_ans": "\"11939?auth=EXAMPLE_KEY_267bb2c45ab0\""
+      },
+      {
+        "trial": 7,
+        "want": "34671?auth=EXAMPLE_KEY_bc6667e34b55",
+        "control": true,
+        "vanilla": false,
+        "runtime": false,
+        "gap": true,
+        "c_ans": "\"34671?auth=EXAMPLE_KEY_bc6667e34b55\"",
+        "v_ans": "TARGET_PORT=34671:auth=EXAMPLE_KEY_bc6667e34b55",
+        "r_ans": "\"34671\"",
+        "g_ans": "\"34671?auth=EXAMPLE_KEY_bc6667e34b55\""
+      },
+      {
+        "trial": 8,
+        "want": "23784?auth=EXAMPLE_KEY_ad2c9f506dcd",
+        "control": true,
+        "vanilla": false,
+        "runtime": false,
+        "gap": true,
+        "c_ans": "\"23784?auth=EXAMPLE_KEY_ad2c9f506dcd\"",
+        "v_ans": "TARGET_PORT=23784:auth=EXAMPLE_KEY_ad2c9f506dcd",
+        "r_ans": "\"23784:auth\"",
+        "g_ans": "\"23784?auth=EXAMPLE_KEY_ad2c9f506dcd\""
+      },
+      {
+        "trial": 9,
+        "want": "61130?auth=EXAMPLE_KEY_2d79f5b6c9bf",
+        "control": true,
+        "vanilla": false,
+        "runtime": false,
+        "gap": true,
+        "c_ans": "\"61130?auth=EXAMPLE_KEY_2d79f5b6c9bf\"",
+        "v_ans": "TARGET_PORT=61130:auth=EXAMPLE_KEY_2d79f5b6c9bf",
+        "r_ans": "\"61130\"",
+        "g_ans": "\"61130?auth=EXAMPLE_KEY_2d79f5b6c9bf\""
+      },
+      {
+        "trial": 10,
+        "want": "64025?auth=EXAMPLE_KEY_4bc5c1a0b4f7",
+        "control": true,
+        "vanilla": false,
+        "runtime": false,
+        "gap": true,
+        "c_ans": "\"64025?auth=EXAMPLE_KEY_4bc5c1a0b4f7\"",
+        "v_ans": "TARGET_PORT=64025:auth=EXAMPLE_KEY_4bc5c1a0b4f7",
+        "r_ans": "\"64025\"",
+        "g_ans": "\"64025?auth=EXAMPLE_KEY_4bc5c1a0b4f7\""
+      }
+    ]
+  }
+]

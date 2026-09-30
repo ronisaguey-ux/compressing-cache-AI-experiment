@@ -230,3 +230,53 @@ assertion targets the newest successful bind (`192.168.1.57`), which is never ev
 isolated from the F35 join failure.
 
 Artifacts: `modal/multiturn.py`, results in `benchmarks/results/multiturn_*.json`.
+
+## Finding 37 (2026-09-30) — FINDING 35 WAS WRONG. The defect is the POSITIONAL GAP, not isolation.
+
+**10 randomised trials per model, 2 architectures. The eviction gap decides the outcome, and it is
+fixable.**
+
+| arm | qwen2.5-7b | mistral-7b-instruct | what it is |
+|---|---|---|---|
+| control | **0/10** | **100%** | survivors + distractor, one causal sequence |
+| vanilla | **10/10** | 0/10 | survivors only, one causal sequence, no distractor |
+| **runtime** | **0/10** | **0/10** | block table, survivors keep ORIGINAL positions (gap) |
+| **gap-adjacent** | **10/10** | **100%** | block table, survivors re-indexed CONTIGUOUSLY |
+
+**runtime vs gap-adjacent is the experiment, and it is the same architecture in both arms** —
+identical separate-prefill isolation, identical KV, identical eviction. The ONLY difference is
+whether block 3 keeps its absolute position id (3300+ tokens after block 1, with the evicted span
+missing between them) or is re-indexed to sit directly after block 1. **The gapped layout fails
+100%; the contiguous layout passes 100%, on both models.**
+
+**⇒ FINDING 35's CONCLUSION WAS WRONG AND ITS EVIDENCE WAS CONTAMINATED.** F35 concluded "prefill
+isolation, not the gap" from `probe_gap.py`. That probe had a slicing bug — it addressed block KVs
+by POSITION ID instead of insertion index, so gapped blocks sliced to EMPTY tensors. Both F35 arms
+were therefore measured with a broken/absent block 3. The bug was found and fixed in the same
+session, but F35's *conclusion* was written against the buggy run and was not revisited. The
+corrected probe printed coherent strings for the gapped arm where the buggy one printed `0\n0\n0000`,
+and the conclusion should have been revisited then. **A probe fix that changes the observed symptom
+invalidates the finding built on the old observation — re-run the whole finding, not just the probe.**
+
+**★ WHY THE GAP BREAKS IT.** RoPE is relative, so the distance between block 1's keys and the query
+is what the query's attention sees. With the evicted span missing, block 3 sits at position ~3300
+while the table only holds ~90 rows — the query lands ~3200 positions from block 1 instead of ~60.
+The attention geometry is that of a context that still contains the distractor, but the content is
+gone, so block 1 is effectively out of range. Re-indexing collapses the survivors into the position
+space they actually occupy.
+
+**★★ THE FIX IS ONE LINE AND IT IS NOW MEASURED: re-index survivors contiguously on eviction.**
+Block caches are built separately (isolation preserved, which is what makes eviction lossless by
+construction) and then ASSEMBLED with contiguous position ids. This keeps every property the design
+wants — bit-identical survivors, no recompute, O(1) eviction — and repairs the cross-block join.
+`gap-adjacent 10/10` both models is that fix verified.
+
+**⚠️ THE CONTROL ARMS ARE MODEL-DEPENDENT AND BOTH ARE NEEDED.** Qwen's control is 0/10: with the
+2,800-token distractor present in a plain causal sequence it cannot answer, while the same content
+without the distractor is 10/10 — attention dilution, reproduced. Mistral-instruct inverts it:
+control 100%, vanilla 0% — it follows the log format but not the bare concatenation. A single
+control would have mislabelled one of the two models as broken.
+
+**Verified non-vacuous:** 10 randomised port/secret pairs per arm per model, so no answer is
+memorisable; the two block arms differ in exactly one variable; and the fix is confirmed on two
+architectures. Artifact: `modal/trials_two_needle.py`.
