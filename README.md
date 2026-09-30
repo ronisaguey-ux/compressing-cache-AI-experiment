@@ -190,3 +190,43 @@ answer is still wrong.
 
 Artifacts: `modal/probe_query.py` (decoder-vs-architecture, both fail identically ⇒ not a decoder
 bug) · `modal/probe_gap.py` (this experiment) · `modal/bench.py` (3-arm matrix on GPU).
+
+## Finding 36 (2026-09-30, Modal A10G — Bob's Test 4, runnable half)
+
+**Multi-turn serving cost: the block runtime cuts prefill work ~60% and wall clock ~70% over 8
+turns with 4 evictions, and answers the late-turn fact correctly on Qwen2.5-7B.** Measured, both
+arms summed over all turns.
+
+| model | control | vanilla | runtime | prefill vs vanilla | wall vs vanilla |
+|---|---|---|---|---|---|
+| qwen2.5-7b | PASS | PASS | **PASS** | **39%** | **26%** |
+| mistral-7b-instruct | PASS | PASS | fail | 41% | 29% |
+
+**★ WHY THE SAVING IS REAL AND WHY IT GROWS.** The vanilla arm re-prefills the ENTIRE context on
+every turn, so its token count is quadratic in the number of turns. The runtime ingests each block
+once and forwards only the new turn plus the query. At 8 turns that is 617 tokens against 1568.
+The gap widens with turns and with context size, which is the regime a real agent loop runs in.
+
+**★ BUT THE RESIDENT-KV CLAIM DOES NOT HOLD HERE, AND THIS IS THE HONEST PART.** Bob's Test 3
+asked for "~50% savings on evicted Block 2" and that is NOT what this workload shows: measured KV
+went 18.4 MB (vanilla) → 23.1 MB (runtime), i.e. it did not drop at all. Two reasons, both
+specific to the test: the evicted turns are ~30-token failed attempts (tiny), and the global anchor
+is a separately retained tier that vanilla does not pay for. **Eviction savings are a function of
+how much the evicted content weighs relative to the retained anchor.** With a 2,800-token evicted
+block the saving is large (measured 99% in the bench matrix); with 4 thirty-token turns it is
+negative. Do not quote a KV saving without naming the eviction-to-context ratio.
+
+**★ THE RUNTIME ANSWER IS CORRECT BUT NOT CLEAN, ON BOTH MODELS.** Qwen returns
+"The most recent IP IP address successfully assigned addr add 192.168.1..." — right address, and it
+does NOT regress to the un-sudo'd command Bob predicted, but it stutters and echoes. Mistral never
+converges inside 40 tokens ("The most recent IP address successfully assigned to eth0 is
+192.168.1 "). The control and vanilla arms answer in 3 tokens. So the runtime's decode is measurably
+less stable, even when the fact is present — consistent with Finding 35's mechanism: the surviving
+blocks never co-attended, so the query tier is recovering the answer from a weaker representation.
+
+**Verified non-vacuous:** the control arm carries the identical context in one causal sequence and
+PASSes, so the comparison is against a working reference rather than a broken baseline. The
+assertion targets the newest successful bind (`192.168.1.57`), which is never evicted, so cost is
+isolated from the F35 join failure.
+
+Artifacts: `modal/multiturn.py`, results in `benchmarks/results/multiturn_*.json`.

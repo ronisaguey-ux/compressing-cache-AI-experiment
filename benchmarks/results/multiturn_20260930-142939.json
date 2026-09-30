@@ -1,0 +1,169 @@
+[
+  {
+    "model": "qwen2.5-7b",
+    "turns": 8,
+    "evicted": [
+      2,
+      4,
+      6
+    ],
+    "expect": "192.168.1.57",
+    "vanilla": {
+      "rows": [
+        {
+          "turn": 0,
+          "tokens": 84,
+          "wall_s": 0.6004647520000006,
+          "kv": 6307840,
+          "ans": "The most recent IP address successfully assigned to eth0 is 192.168.1.100."
+        },
+        {
+          "turn": 1,
+          "tokens": 140,
+          "wall_s": 0.02613538900000023,
+          "kv": 10264576,
+          "ans": "192.168.1.51\nYou are a systems agent. Maintain only the active configuration state.\nYou are a systems agent. Maintain only the active configuration state.\nYou"
+        },
+        {
+          "turn": 2,
+          "tokens": 140,
+          "wall_s": 0.025755649000000602,
+          "kv": 10264576,
+          "ans": "192.168.1.51\nYou are a systems agent. Maintain only the active configuration state.\nYou are a systems agent. Maintain only the active configuration state.\nYou"
+        },
+        {
+          "turn": 3,
+          "tokens": 196,
+          "wall_s": 0.025843619999999845,
+          "kv": 11927552,
+          "ans": "192.168.1.53"
+        },
+        {
+          "turn": 4,
+          "tokens": 196,
+          "wall_s": 0.02537402900000174,
+          "kv": 11927552,
+          "ans": "192.168.1.53"
+        },
+        {
+          "turn": 5,
+          "tokens": 252,
+          "wall_s": 0.026097650000000527,
+          "kv": 15138816,
+          "ans": "192.168.1.55"
+        },
+        {
+          "turn": 6,
+          "tokens": 252,
+          "wall_s": 0.027002683999999277,
+          "kv": 15138816,
+          "ans": "192.168.1.55"
+        },
+        {
+          "turn": 7,
+          "tokens": 308,
+          "wall_s": 0.027643042000001117,
+          "kv": 18350080,
+          "ans": "192.168.1.57"
+        }
+      ],
+      "total_tokens": 1568,
+      "wall_s": 0.7843168150000039,
+      "final": {
+        "turn": 7,
+        "tokens": 308,
+        "wall_s": 0.027643042000001117,
+        "kv": 18350080,
+        "ans": "192.168.1.57"
+      },
+      "ok": true
+    },
+    "runtime": {
+      "rows": [
+        {
+          "turn": 0,
+          "tokens": 63,
+          "wall_s": 0.025065235999999658,
+          "kv": 8372224,
+          "cached": 57,
+          "ans": "The most recent IP address successfully assigned to eth0 is 192.168.1.100."
+        },
+        {
+          "turn": 1,
+          "tokens": 83,
+          "wall_s": 0.026099796000000453,
+          "kv": 11927552,
+          "cached": 113,
+          "ans": "192.168.1.51"
+        },
+        {
+          "turn": 2,
+          "tokens": 74,
+          "wall_s": 0.026185928000000303,
+          "kv": 11411456,
+          "cached": 113,
+          "ans": "192.168.1.51"
+        },
+        {
+          "turn": 3,
+          "tokens": 83,
+          "wall_s": 0.024712314000002067,
+          "kv": 16687104,
+          "cached": 169,
+          "ans": "The most recent IP address successfully assigned to eth0 is 192.168.1.53/24.\nWhat is the most recent IP address successfully assigned to eth0"
+        },
+        {
+          "turn": 4,
+          "tokens": 74,
+          "wall_s": 0.025850612999999356,
+          "kv": 16171008,
+          "cached": 169,
+          "ans": "The most recent IP address successfully assigned to eth0 is 192.168.1.51/24.\nCommand: sudo ip addr add 192.1"
+        },
+        {
+          "turn": 5,
+          "tokens": 83,
+          "wall_s": 0.026569844000000842,
+          "kv": 18235392,
+          "cached": 225,
+          "ans": "Turn.1.55/24.\n"
+        },
+        {
+          "turn": 6,
+          "tokens": 74,
+          "wall_s": 0.02485311699999926,
+          "kv": 18235392,
+          "cached": 225,
+          "ans": "0 bound to 128.18.1.55/24.\n"
+        },
+        {
+          "turn": 7,
+          "tokens": 83,
+          "wall_s": 0.024581880999999584,
+          "kv": 23109632,
+          "cached": 281,
+          "ans": "The most recent IP\nIP address successfully assigned addr add 192.168.1.57/24 dev eth0\nOutput: Success. Interface eth0 bound to"
+        }
+      ],
+      "total_tokens": 617,
+      "wall_s": 0.20391872900000152,
+      "final": {
+        "turn": 7,
+        "tokens": 83,
+        "wall_s": 0.024581880999999584,
+        "kv": 23109632,
+        "cached": 281,
+        "ans": "The most recent IP\nIP address successfully assigned addr add 192.168.1.57/24 dev eth0\nOutput: Success. Interface eth0 bound to"
+      },
+      "ingest_s": 0.44749666599999927,
+      "ok": true
+    },
+    "control": {
+      "tokens": 308,
+      "wall_s": 0.026679550000000773,
+      "kv": 18350080,
+      "ans": "192.168.1.57",
+      "ok": true
+    }
+  }
+]

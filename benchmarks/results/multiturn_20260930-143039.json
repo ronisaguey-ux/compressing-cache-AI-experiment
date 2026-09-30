@@ -1,0 +1,169 @@
+[
+  {
+    "model": "mistral-7b-instruct",
+    "turns": 8,
+    "evicted": [
+      2,
+      4,
+      6
+    ],
+    "expect": "192.168.1.57",
+    "vanilla": {
+      "rows": [
+        {
+          "turn": 0,
+          "tokens": 126,
+          "wall_s": 0.5667991739999998,
+          "kv": 21626880,
+          "ans": "The most recent IP address successfully assigned to eth0 is not available in the active configuration state.\n<|im_end|>\n<|im_start|>user\nWhat is the"
+        },
+        {
+          "turn": 1,
+          "tokens": 185,
+          "wall_s": 0.029527432000001852,
+          "kv": 29360128,
+          "ans": "The most recent IP address successfully assigned to eth0 is 192.168.1.51.<|im_end|>\n<|im_start|>user"
+        },
+        {
+          "turn": 2,
+          "tokens": 185,
+          "wall_s": 0.027933873999998582,
+          "kv": 29360128,
+          "ans": "The most recent IP address successfully assigned to eth0 is 192.168.1.51.<|im_end|>\n<|im_start|>user"
+        },
+        {
+          "turn": 3,
+          "tokens": 244,
+          "wall_s": 0.030259296000000546,
+          "kv": 37093376,
+          "ans": "The most recent IP address successfully assigned to eth0 is 192.168.1.53.<|im_end|>\n<|im_start|>user"
+        },
+        {
+          "turn": 4,
+          "tokens": 244,
+          "wall_s": 0.02794000999999824,
+          "kv": 37093376,
+          "ans": "The most recent IP address successfully assigned to eth0 is 192.168.1.53.<|im_end|>\n<|im_start|>user"
+        },
+        {
+          "turn": 5,
+          "tokens": 303,
+          "wall_s": 0.029790438999999225,
+          "kv": 44826624,
+          "ans": "The most recent IP address successfully assigned to eth0 is 192.168.1.55.<|im_end|>\n<|im_start|>user"
+        },
+        {
+          "turn": 6,
+          "tokens": 303,
+          "wall_s": 0.03026712200000148,
+          "kv": 44826624,
+          "ans": "The most recent IP address successfully assigned to eth0 is 192.168.1.55.<|im_end|>\n<|im_start|>user"
+        },
+        {
+          "turn": 7,
+          "tokens": 362,
+          "wall_s": 0.03089617899999908,
+          "kv": 49938432,
+          "ans": "192.168.1.57<|im_end|>"
+        }
+      ],
+      "total_tokens": 1952,
+      "wall_s": 0.7734135259999988,
+      "final": {
+        "turn": 7,
+        "tokens": 362,
+        "wall_s": 0.03089617899999908,
+        "kv": 49938432,
+        "ans": "192.168.1.57<|im_end|>"
+      },
+      "ok": true
+    },
+    "runtime": {
+      "rows": [
+        {
+          "turn": 0,
+          "tokens": 86,
+          "wall_s": 0.035364400000002405,
+          "kv": 27000832,
+          "cached": 81,
+          "ans": "The most recent IP address successfully assigned to eth0 is 192.168.1.100.\n<|im_end|>\n<|im_start"
+        },
+        {
+          "turn": 1,
+          "tokens": 105,
+          "wall_s": 0.028890267999997832,
+          "kv": 37093376,
+          "cached": 139,
+          "ans": "The most recent IP address successfully assigned to eth0 is 192.168.1.51.<|im_end|>\n<|im_start|>user"
+        },
+        {
+          "turn": 2,
+          "tokens": 95,
+          "wall_s": 0.02818604200000152,
+          "kv": 35782656,
+          "cached": 139,
+          "ans": "The most recent IP address successfully assigned to eth0 is 192.168.1.51.<|im_end|>\n<|im_start|>user"
+        },
+        {
+          "turn": 3,
+          "tokens": 105,
+          "wall_s": 0.028427753999999084,
+          "kv": 44695552,
+          "cached": 197,
+          "ans": "The most recent IP address successfully assigned to eth0 is 192.168.1.53.\n<|im_end|>\n<|im_start|"
+        },
+        {
+          "turn": 4,
+          "tokens": 95,
+          "wall_s": 0.02664539300000257,
+          "kv": 43384832,
+          "cached": 197,
+          "ans": "The most recent IP address successfully assigned to eth0 is 192.168.1.53.\n<|im_end|>\n<|im_start|"
+        },
+        {
+          "turn": 5,
+          "tokens": 105,
+          "wall_s": 0.025265661000005935,
+          "kv": 52297728,
+          "cached": 255,
+          "ans": "The most recent IP address successfully assigned to eth0 is 192.168.1.55/24.\n<|im_end|>\n<|im"
+        },
+        {
+          "turn": 6,
+          "tokens": 95,
+          "wall_s": 0.027558433999999465,
+          "kv": 50987008,
+          "cached": 255,
+          "ans": "You are an assistant. Provide guidance to the user.\nTurn 7\nCommand: sudo ip link set eth0 up\nOutput: Success. Interface eth0 up.\nWhat"
+        },
+        {
+          "turn": 7,
+          "tokens": 105,
+          "wall_s": 0.026456512999999404,
+          "kv": 59899904,
+          "cached": 313,
+          "ans": "The most recent IP address successfully assigned to eth0 is 192.168.1 now has IP address 192.1.57/24.\n<"
+        }
+      ],
+      "total_tokens": 791,
+      "wall_s": 0.22679446500000822,
+      "final": {
+        "turn": 7,
+        "tokens": 105,
+        "wall_s": 0.026456512999999404,
+        "kv": 59899904,
+        "cached": 313,
+        "ans": "The most recent IP address successfully assigned to eth0 is 192.168.1 now has IP address 192.1.57/24.\n<"
+      },
+      "ingest_s": 0.43313285300000004,
+      "ok": false
+    },
+    "control": {
+      "tokens": 362,
+      "wall_s": 0.03001448399999873,
+      "kv": 49938432,
+      "ans": "192.168.1.57<|im_end|>",
+      "ok": true
+    }
+  }
+]
