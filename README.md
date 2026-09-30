@@ -378,7 +378,7 @@ workload it does not).
 ## Redaction of synthetic test credentials (2026-09-30)
 
 The two-needle and RoPE tests generate a RANDOM credential per trial
-(`"EXAMPLE_KEY_" + 12 random hex chars`) so no answer is memorisable. Those values are synthetic and
+(a Stripe-shaped live-key prefix plus 12 random hex chars) so no answer is memorisable. Those values are synthetic and
 were never valid, but committed into a **public** repository they are indistinguishable from
 leaked live keys — a scanner, or a reader, has no way to tell. **Every occurrence has been changed
 to `EXAMPLE_KEY_`, preserving the random suffix.**
