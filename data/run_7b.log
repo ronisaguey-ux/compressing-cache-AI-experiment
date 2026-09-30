@@ -20,3 +20,11 @@
 [20:48:07] skip 0.35 line (already recorded)
 [20:48:07] skip 0.35 posnorm (already recorded)
 [20:48:07] run depth=0.55 mode=baseline avail=10875MB
+    ok rc=0
+[21:07:57] run depth=0.55 mode=line avail=11201MB
+    ok rc=0
+[21:22:59] run depth=0.55 mode=posnorm avail=10774MB
+    ok rc=0
+[21:37:59] run depth=0.75 mode=baseline avail=11353MB
+[22:13:34] FAILED 0.75 baseline rc=137: MatMul8bitLt: inputs will be cast from torch.bfloat16 to float16 during quantization
+[22:13:34] run depth=0.75 mode=line avail=11207MB

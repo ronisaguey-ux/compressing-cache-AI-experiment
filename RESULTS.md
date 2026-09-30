@@ -405,8 +405,59 @@ harness's rotation checks are insensitive to the parameter they appear to guard.
 passes on the first try and the thing it guards is a constant, test that the constant is wrong and
 confirm the check fails.
 
+## Finding 12 — the depth wall has TWO causes, and scaling only removes one of them
+
+This is the 7B validation Finding 8 asked for. It does not overturn Finding 9; it **splits** it.
+Scaling to Qwen2.5-7B at 8-bit:
+
+| mode | depth 15% | depth 35% | depth 55% | depth 75% |
+|---|---|---|---|---|
+| baseline | fail 34.3% | **PASS** 36.8% | **PASS** 37.3% | not measured |
+| **line** | **PASS** 35.0% | **PASS** 36.8% | **PASS** 37.6% | not measured |
+| posnorm | fail 34.3% | **PASS** 36.4% | fail 37.5% | not measured |
+| | **1/3** | **3/3** | **2/3** | — |
+
+against the same sweep on 0.5B: 1/3, 1/3, 1/3, 1/3 (5/16 overall).
+
+**1. The middle depths are capacity-limited and 7B moves them.** Depth 35% goes from 1 of 3 modes
+passing to **all three**, and 55% from 1 of 3 to 2 of 3. That is the wall receding exactly where
+the 0.5B's failure was a capacity failure. Pass rate 5/16 → **6/9**.
+
+**2. The SHALLOW position is NOT capacity-limited, and 14x the parameters do not touch it.** Depth
+15% is *identical* on both models — `baseline` fails, `posnorm` fails, `line` passes. Same three
+verdicts, same ordering, at both scales. A failure that survives a 14x parameter increase is not
+a capacity failure, and no amount of scale is going to fix it. This is why Finding 8 looked
+unresolvable on the 0.5B: it is not one failure mode, it is two, and only one of them scales.
+
+**3. Line pooling is the only mode that passes every measured depth at either scale.** On the 7B
+it is **3/3** where baseline and posnorm are 2/3. On the 0.5B it is the only mode to pass 2 of 4
+(15% and 75%) where the others manage 1 of 4. It is the single change that clears the capacity
+wall *and* the positional one.
+
+**4. Finding 9 reproduces on the larger model.** The needle was retained in **7 of 9** combos but
+the answer was correct in only **6 of 9** — so a retained needle still does not guarantee a usable
+answer. Selection is not the bottleneck, exactly as the 0.5B said.
+
+**0.75% is not measured, and that is a hardware limit, not a result.** At 8-bit the 7B peaks near
+**10.5 GB** RSS at the 75% layout (~7 GB of quantised weights plus a ~2400-token KV cache and the
+de-quantisation working set); this box's watchdog pauses any process that pushes system memory past
+85% (13.4 GB of 15.7 GB), and a pause does not release the paused process's RSS, so the run
+deadlocks rather than failing. Three launch attempts were made; one was killed by the watchdog
+(`rc=137`). **The 0.5B's 75% column is present** (baseline fail, line PASS, posnorm fail), and it
+agrees with the pattern above, but it is fp32 on a different model and is not a substitute.
+
+**What this means for the design.** The recipe at ~36% KV saving is sound on a 7B, and line pooling
+is the load-bearing part of it — but the honest claim is *"robust across needle positions at the
+depths we can measure on a 7B"*, not *"robust"*. The shallow-position case is open, and the evidence
+says it will need a mechanism that is not more parameters. Re-rotation is still required in every
+passing combo: the rotation-off twins fail (Finding 2).
+
 ## Limits
 
+- **The 7B column is 8-bit and covers three of four depths.** Quantisation changes numerics
+  (Finding 10), so this is not a like-for-like rerun of the fp32 0.5B arm; the two tables are
+  compared for *verdict patterns*, not for absolute numbers. The 75% layout exceeded this machine's
+  memory ceiling at 8-bit.
 - **0.5B model.** It degenerates under mild perturbation (`1.0.0.0.0.0` loops). Absolute quality is
   not meaningful; the comparisons are, since all arms share model, prompt and decode settings.
 - **The full literal was never retrieved at 50%.** A higher keep fraction is untested for the
