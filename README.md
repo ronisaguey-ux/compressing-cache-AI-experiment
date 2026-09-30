@@ -374,3 +374,17 @@ Artifact: `benchmarks/plot_results.py` -> `benchmark_wallclock_vs_recompute.png`
 per-turn prefill work, cumulative wall clock with the one-time ingest drawn separately, and the
 memory watermark — the third panel deliberately shows the runtime NOT winning, because on this
 workload it does not).
+
+## Redaction of synthetic test credentials (2026-09-30)
+
+The two-needle and RoPE tests generate a RANDOM credential per trial
+(`"EXAMPLE_KEY_" + 12 random hex chars`) so no answer is memorisable. Those values are synthetic and
+were never valid, but committed into a **public** repository they are indistinguishable from
+leaked live keys — a scanner, or a reader, has no way to tell. **Every occurrence has been changed
+to `EXAMPLE_KEY_`, preserving the random suffix.**
+
+**This does not alter any result.** The prefix is cosmetic; the pass/fail outcome depends on
+whether the model produced the port:secret pair, and that is unaffected. Verified after the edit:
+all 47 result cells still parse and the runtime PASS count is unchanged at 9. The generators in
+`modal/trials_two_needle.py`, `modal/rope_offsets.py`, `modal/bench.py` and `benchmarks/tasks.py`
+now emit the `EXAMPLE_KEY_` prefix so future runs cannot reintroduce the problem.
