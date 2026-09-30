@@ -1,0 +1,132 @@
+[
+  {
+    "model": "qwen2.5-7b",
+    "rounds": 3,
+    "results": [
+      {
+        "model": "qwen2.5-7b",
+        "arm": "history",
+        "task": "lru",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "history",
+        "task": "merge_intervals",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "history",
+        "task": "calc",
+        "pass_at_1": false,
+        "pass_at_3": false,
+        "rounds_used": 3,
+        "frankenstein": false,
+        "final_kind": "assertion",
+        "final_detail": ""
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "history",
+        "task": "tok",
+        "pass_at_1": false,
+        "pass_at_3": false,
+        "rounds_used": 3,
+        "frankenstein": false,
+        "final_kind": "assertion",
+        "final_detail": ""
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "evict",
+        "task": "lru",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "evict",
+        "task": "merge_intervals",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "evict",
+        "task": "calc",
+        "pass_at_1": false,
+        "pass_at_3": false,
+        "rounds_used": 3,
+        "frankenstein": false,
+        "final_kind": "assertion",
+        "final_detail": ""
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "evict",
+        "task": "tok",
+        "pass_at_1": false,
+        "pass_at_3": false,
+        "rounds_used": 3,
+        "frankenstein": false,
+        "final_kind": "assertion",
+        "final_detail": ""
+      }
+    ],
+    "cost": [
+      {
+        "ts": "2026-09-30T19:02:46",
+        "label": "frankenstein",
+        "detail": "qwen2.5-7b/history",
+        "gpu": "A10G",
+        "seconds": 62.35,
+        "gpu_minutes": 1.039,
+        "usd": 0.019051,
+        "rate_per_hour": 1.1,
+        "source": "measured_wallclock_x_listprice",
+        "tasks": 4
+      },
+      {
+        "ts": "2026-09-30T19:03:51",
+        "label": "frankenstein",
+        "detail": "qwen2.5-7b/evict",
+        "gpu": "A10G",
+        "seconds": 64.38,
+        "gpu_minutes": 1.073,
+        "usd": 0.01967,
+        "rate_per_hour": 1.1,
+        "source": "measured_wallclock_x_listprice",
+        "tasks": 4
+      }
+    ],
+    "history": {
+      "pass1": 0.5,
+      "pass3": 0.5,
+      "frank": 0.0
+    },
+    "evict": {
+      "pass1": 0.5,
+      "pass3": 0.5,
+      "frank": 0.0
+    }
+  }
+]

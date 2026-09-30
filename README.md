@@ -316,3 +316,47 @@ which architecture can claim what.
 **Verified non-vacuous:** the `full` arm (no eviction) is measured on the same trials and reaches
 60% on Mistral, so the task is answerable and the 0% block arms are attributable to eviction.
 Artifact: `modal/rope_offsets.py`.
+
+## Finding 39 (2026-09-30) — Frankenstein vs history eviction: a NULL, and the null is informative
+
+**Bob's question:** when a model repairs code across iterations, does discarding earlier failed
+attempts let it cleanly overwrite its previous draft, or does it hallucinate deprecated variables
+from them?
+
+**Answer: neither, at this scale. Evicting earlier failures changed nothing, and produced zero
+Frankenstein artifacts.**
+
+Qwen2.5-7B, 3 repair rounds, every candidate genuinely exec'd against real assertions. Two arms
+differing ONLY in what stays in context (`history` = all prior attempts and errors; `evict` = only
+the most recent failure).
+
+| task set | arm | pass@1 | pass@3 | frankenstein |
+|---|---|---|---|---|
+| easy (6 trivial bugs) | history | 100% | 100% | 0% |
+| easy | evict | 100% | 100% | 0% |
+| hard (4 multi-piece) | history | **50%** | **50%** | **0%** |
+| hard | evict | **50%** | **50%** | **0%** |
+
+**★ THE EASY SET MEASURED NOTHING AND THAT WAS CAUGHT BY MEASURING.** pass@1 = 100% on both arms
+means every bug was fixed on the FIRST attempt: the repair loop never ran, so there was no
+multi-turn iteration to study and no opportunity for a Frankenstein artifact. The hard set was
+built in response, and it genuinely fails — `calc` and `tok` are never solved in 3 rounds.
+
+**★ THE RESULT: eviction is FREE here and Frankenstein did not appear.** Identical 50%/50% in both
+arms, and 0% undefined-name failures. Discarding earlier failed drafts neither helped the model
+recover nor hurt it, and did not produce a single ghost variable.
+
+**⚠️ SAMPLE SIZE — DO NOT OVER-READ THIS.** Only 2 of 4 hard tasks fail, so there are 4 failing
+trajectories total (2 tasks x 2 arms). **0/4 is weak evidence of "no Frankenstein"** and should not
+be reported as a rate. To make a claim about the phenomenon the harness needs many more tasks the
+model fails — which is exactly the real-repo multi-turn loop Bob's Test 4 specified, and which
+does not exist here. Reporting `frankenstein = 0%` without that caveat would be the overclaim.
+
+**★ A GRADER THAT CANNOT FAIL MEASURES NOTHING, TWICE OVER.** Both task sets were validated locally
+BEFORE any GPU time: every buggy version must FAIL its assertions and at least two independent
+correct implementations must PASS them. The first draft failed this check on **4 of 6 tasks** — a
+mutable default inside a factory does not actually share state, `for it in items[:]` while removing
+does not actually skip, `round(a,2)==round(b,2)` passed the intended counter-example, and a
+recursive `deep_sum` was already correct. All four would have reported as model failures.
+
+Artifacts: `modal/frankenstein.py` (task sets + arms), `modal/cost.py` (ledger).

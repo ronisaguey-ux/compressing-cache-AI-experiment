@@ -1,0 +1,176 @@
+[
+  {
+    "model": "qwen2.5-7b",
+    "rounds": 3,
+    "results": [
+      {
+        "model": "qwen2.5-7b",
+        "arm": "history",
+        "task": "windowed",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "history",
+        "task": "counter",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "history",
+        "task": "close_all",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "history",
+        "task": "near",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "history",
+        "task": "make_adders",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "history",
+        "task": "deep_sum",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "evict",
+        "task": "windowed",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "evict",
+        "task": "counter",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "evict",
+        "task": "close_all",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "evict",
+        "task": "near",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "evict",
+        "task": "make_adders",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "evict",
+        "task": "deep_sum",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      }
+    ],
+    "cost": [
+      {
+        "ts": "2026-09-30T18:59:39",
+        "label": "frankenstein",
+        "detail": "qwen2.5-7b/history",
+        "gpu": "A10G",
+        "seconds": 8.85,
+        "gpu_minutes": 0.148,
+        "usd": 0.002705,
+        "rate_per_hour": 1.1,
+        "source": "measured_wallclock_x_listprice",
+        "tasks": 6
+      },
+      {
+        "ts": "2026-09-30T18:59:48",
+        "label": "frankenstein",
+        "detail": "qwen2.5-7b/evict",
+        "gpu": "A10G",
+        "seconds": 8.3,
+        "gpu_minutes": 0.138,
+        "usd": 0.002537,
+        "rate_per_hour": 1.1,
+        "source": "measured_wallclock_x_listprice",
+        "tasks": 6
+      }
+    ],
+    "history": {
+      "pass1": 1.0,
+      "pass3": 1.0,
+      "frank": 0.0
+    },
+    "evict": {
+      "pass1": 1.0,
+      "pass3": 1.0,
+      "frank": 0.0
+    }
+  }
+]

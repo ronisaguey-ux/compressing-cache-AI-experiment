@@ -1,0 +1,4 @@
+{"ts": "2026-09-30T19:00:38", "label": "frankenstein", "detail": "qwen2.5-7b/history", "gpu": "A10G", "seconds": 8.85, "gpu_minutes": 0.147, "usd": 0.002704, "rate_per_hour": 1.1, "source": "measured_wallclock_x_listprice", "tasks": 6}
+{"ts": "2026-09-30T19:00:46", "label": "frankenstein", "detail": "qwen2.5-7b/evict", "gpu": "A10G", "seconds": 8.28, "gpu_minutes": 0.138, "usd": 0.002529, "rate_per_hour": 1.1, "source": "measured_wallclock_x_listprice", "tasks": 6}
+{"ts": "2026-09-30T19:02:46", "label": "frankenstein", "detail": "qwen2.5-7b/history", "gpu": "A10G", "seconds": 62.35, "gpu_minutes": 1.039, "usd": 0.019051, "rate_per_hour": 1.1, "source": "measured_wallclock_x_listprice", "tasks": 4}
+{"ts": "2026-09-30T19:03:51", "label": "frankenstein", "detail": "qwen2.5-7b/evict", "gpu": "A10G", "seconds": 64.38, "gpu_minutes": 1.073, "usd": 0.01967, "rate_per_hour": 1.1, "source": "measured_wallclock_x_listprice", "tasks": 4}

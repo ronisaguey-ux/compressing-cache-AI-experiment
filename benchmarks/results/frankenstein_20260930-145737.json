@@ -1,0 +1,150 @@
+[
+  {
+    "model": "qwen2.5-7b",
+    "rounds": 3,
+    "results": [
+      {
+        "model": "qwen2.5-7b",
+        "arm": "history",
+        "task": "sum_range",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "history",
+        "task": "avg",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "history",
+        "task": "clamp",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "history",
+        "task": "count_vowels",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "history",
+        "task": "dedupe",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "history",
+        "task": "find_max",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "evict",
+        "task": "sum_range",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "evict",
+        "task": "avg",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "evict",
+        "task": "clamp",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "evict",
+        "task": "count_vowels",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "evict",
+        "task": "dedupe",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      },
+      {
+        "model": "qwen2.5-7b",
+        "arm": "evict",
+        "task": "find_max",
+        "pass_at_1": true,
+        "pass_at_3": true,
+        "rounds_used": 1,
+        "frankenstein": false,
+        "final_kind": null,
+        "final_detail": null
+      }
+    ],
+    "history": {
+      "pass1": 1.0,
+      "pass3": 1.0,
+      "frank": 0.0
+    },
+    "evict": {
+      "pass1": 1.0,
+      "pass3": 1.0,
+      "frank": 0.0
+    }
+  }
+]

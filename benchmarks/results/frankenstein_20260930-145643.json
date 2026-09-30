@@ -1,0 +1,7 @@
+[
+  {
+    "model": "qwen2.5-7b",
+    "status": "failed",
+    "error": "record() got multiple values for argument 'gpu'"
+  }
+]
