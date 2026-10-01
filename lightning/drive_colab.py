@@ -34,6 +34,11 @@ for arm in ARMS:
         "CCAI_WORK": "/content/inc_%s" % arm,   # separate work dir per arm so solution.py cannot mix
         "CCAI_CKPT_DIR": "/content/ckpt",       # checkpoints survive a Colab reclaim
         "CCAI_RESUME": "1",
+        # ★ THE OOM WAS FRAGMENTATION, NOT CAPACITY. Measured error: "2.00 MiB requested, 1.81 MiB
+        # free ... 4.88 GiB reserved by PyTorch but unallocated" -- i.e. the memory was ours, just
+        # fragmented. expandable_segments lets the allocator reuse it instead of failing on a
+        # 2 MiB request with 4.88 GiB held.
+        "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
         "PYTHONUNBUFFERED": "1",
     })
     cmd = [sys.executable, RUNNER, "--model", MODEL, "--arm", arm,

@@ -395,9 +395,36 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
     def complete(prompt, mnew):
         ids = tok(prompt, add_special_tokens=False)["input_ids"]
         t0 = time.perf_counter()
+        # ★★ num_logits_to_keep=1 IS THE FIX FOR THE T4 OOM, AND IT KEEPS THE 12B VIABLE.
+        #
+        # MEASURED failure: `logits = logits / final_logit_softcapping` -> "Tried to allocate
+        # 2.62 GiB" on a 15.6 GB T4 whose weights only take 7.7 GB. The model was computing logits
+        # for EVERY position in the prompt: 6000 tokens x 262144 vocab x fp32 = ~6 GB, purely to
+        # throw away all but the last row. Greedy decoding needs one row.
+        #
+        # This is not a workaround for a small GPU -- computing all-positions logits during a
+        # prefill is wasted work on ANY card, and it is what made a 7.7 GB model fail on a 15.6 GB
+        # device. Passed on the prefill only; the decode step already has seq=1.
+        # ★★ CHUNKED PREFILL. A single forward over the whole prompt materialises the attention
+        # workspace for every position at once, which is what OOM'd a 15.6 GB T4 holding a 7.7 GB
+        # model (measured: `logits = logits / final_logit_softcapping` -> "Tried to allocate
+        # 2.62 GiB"). Feeding the prompt in PREFILL_CHUNK-token pieces carries the KV cache across
+        # chunks, so peak activation memory is bounded by the chunk rather than the whole prompt --
+        # the same technique the Modal harness needed for 16k contexts.
+        PREFILL_CHUNK = int(_os.environ.get("CCAI_PREFILL_CHUNK", "512"))
+        from transformers.cache_utils import DynamicCache as _DynCache
+        _cache = _DynCache()
+        _pos = 0
         with torch.no_grad():
-            o = mdl(input_ids=torch.tensor([ids], dtype=torch.long, device=_dev),
-                    use_cache=True)
+            _n = len(ids)
+            for _s in range(0, _n, PREFILL_CHUNK):
+                _ch = ids[_s:_s + PREFILL_CHUNK]
+                o = mdl(input_ids=torch.tensor([_ch], dtype=torch.long, device=_dev),
+                        past_key_values=_cache, use_cache=True,
+                        cache_position=torch.arange(_pos, _pos + len(_ch), device=_dev),
+                        num_logits_to_keep=1)
+                _cache = o.past_key_values
+                _pos += len(_ch)
         if _dev == "cuda":
             torch.cuda.synchronize()
         ttft = (time.perf_counter() - t0) * 1000
@@ -406,7 +433,8 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
         for _ in range(mnew - 1):
             with torch.no_grad():
                 o = mdl(input_ids=nxt, past_key_values=c, use_cache=True,
-                        cache_position=torch.tensor([p], device=_dev))
+                        cache_position=torch.tensor([p], device=_dev),
+                        num_logits_to_keep=1)
             c = o.past_key_values
             nxt = o.logits[:, -1, :].argmax(-1, keepdim=True)
             gen.append(nxt); p += 1

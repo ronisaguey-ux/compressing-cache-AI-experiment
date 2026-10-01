@@ -31,8 +31,23 @@ import sys
 import time
 import types
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-BENCH = os.path.join(os.path.dirname(HERE), "modal", "incremental_coding.py")
+# ★ `__file__` IS NOT DEFINED WHEN THIS FILE IS TRANSMITTED TO A KERNEL. `colab exec -f` reads the
+# file locally and sends its SOURCE to the Jupyter kernel as a cell, so the module has no path.
+# NameError: name '__file__' is not defined -- which cost a cycle. Fall back to explicit locations,
+# and allow an override so the benchmark can live anywhere.
+try:
+    HERE = os.path.dirname(os.path.abspath(__file__))
+except NameError:
+    HERE = os.environ.get("CCAI_HOME", "/content/ccai/lightning")
+
+_BENCH_ENV = os.environ.get("CCAI_BENCH")
+BENCH = _BENCH_ENV or os.path.join(os.path.dirname(HERE), "modal", "incremental_coding.py")
+if not os.path.exists(BENCH):
+    for _c in ("/content/ccai/modal/incremental_coding.py",
+               os.path.join(HERE, "incremental_coding.py")):
+        if os.path.exists(_c):
+            BENCH = _c
+            break
 
 
 def install_modal_stub():
@@ -82,13 +97,23 @@ def load_benchmark():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", default="qwen2.5-coder-32b")
-    ap.add_argument("--arm", default="linear", choices=["linear", "runtime"])
-    ap.add_argument("--features", type=int, default=40)
+    # ★ DEFAULTS COME FROM THE ENVIRONMENT so the script can be run with NO arguments.
+    # `colab exec -f script.py -- --flag` is NOT supported ("Got unexpected extra argument(s)"),
+    # and `colab exec` has no way to pass argv -- but it DOES have `--env KEY=VALUE`. So the
+    # parameters that vary per run are read from env, and the same uploaded file works for both arms.
+    ap.add_argument("--model", default=os.environ.get("CCAI_MODEL", "gemma-4-12b"))
+    ap.add_argument("--arm", default=os.environ.get("CCAI_ARM", "linear"),
+                    choices=["linear", "runtime"])
+    ap.add_argument("--features", type=int, default=int(os.environ.get("CCAI_TURNS", "40")))
     ap.add_argument("--keep-turns", type=int, default=4)
     ap.add_argument("--max-new", type=int, default=3072)
     ap.add_argument("--out", default=None)
-    a = ap.parse_args()
+    # ★ parse_known_args, NOT parse_args. When this file is transmitted to a Colab kernel, the
+    # Jupyter launcher injects its OWN argv (measured: "-f /root/.local/share/jupyter/runtime/
+    # kernel-<id>.json"), which argparse rejects with "unrecognized arguments" and the run dies
+    # before it starts. We only care about our own flags; anything else in argv belongs to the
+    # kernel host and must be ignored.
+    a, _unknown = ap.parse_known_args()
 
     mod = load_benchmark()
     print("[run] model=%s arm=%s features=%d  max_prompt=%s runtime=%s device=%s quant=%s"
@@ -101,7 +126,7 @@ def main():
     r = mod.run_inc(a.model, a.arm, a.features, a.keep_turns, a.max_new)
     elapsed = time.time() - t0
 
-    out = a.out or os.path.join(HERE, "results", "incremental_%s_%s_%s.json"
+    out = a.out or os.path.join(os.environ.get("CCAI_OUT", HERE), "results", "incremental_%s_%s_%s.json"
                                 % (a.model.replace("/", "-"), a.arm,
                                    time.strftime("%Y%m%d-%H%M%S")))
     os.makedirs(os.path.dirname(out), exist_ok=True)
