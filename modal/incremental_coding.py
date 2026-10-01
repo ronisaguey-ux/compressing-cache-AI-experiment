@@ -39,6 +39,12 @@ each feature was written, the context length per turn, TTFT, and peak resident K
 import json, os, modal
 
 app = modal.App("ccai-incremental-coding")
+
+# Context budget for the kept transcript, applied IDENTICALLY to both arms.
+# 24000 leaves ~8k of the 32k window for the system prompt, the new instruction
+# and the reply, so the comparison is about the context POLICY, not about which
+# arm happened to overflow the model first.
+MAX_PROMPT_TOKENS = 12000
 GPU = os.environ.get("CCAI_GPU", "A100-40GB")
 
 image = (
@@ -146,6 +152,120 @@ FEATURES = [
      "assert m.fn_39_second_max([5,1,5,3]) == 3"),
 ]
 
+# ── EXTENDING THE SET TO 120 ─────────────────────────────────────────────────────────────────
+# ★ WHY GENERATE RATHER THAN HAND-WRITE. The 40-feature set saturated: the whole module still fit
+# in context, so BOTH arms passed (40/41) and the benchmark could not discriminate -- the same
+# failure it was built to avoid. The difficulty is meant to come from HORIZON, so what is needed is
+# more turns, not harder individual turns.
+#
+# ★ THE GENERATED ONES ARE DELIBERATELY DISSIMILAR from each other in their constant and their
+# shape: a model that lost the spec for feature 73 cannot infer it from feature 74. Every test
+# carries a specific constant, so it cannot be guessed.
+_TEMPLATES = [
+    ("addk", "`fn_%02d_addk(xs, k)` returns every item of xs increased by %d"),
+    ("mulk", "`fn_%02d_mulk(xs, k)` returns every item of xs multiplied by %d"),
+    ("firstk", "`fn_%02d_firstk(xs, k)` returns the first %d items of xs"),
+    ("lastk", "`fn_%02d_lastk(xs, k)` returns the last %d items of xs"),
+    ("sum_sq", "`fn_%02d_sum_sq(xs)` returns the sum of the squares of xs"),
+    ("count", "`fn_%02d_count(s, ch)` returns how many times the character `%s` occurs in s"),
+    ("repeat", "`fn_%02d_repeat(s, n)` returns s repeated n times, joined with `%s`"),
+    ("zero_pad", "`fn_%02d_zero_pad(n, w)` returns n as a string left-padded to width w with zeros"),
+    ("minmax", "`fn_%02d_minmax(xs)` returns a tuple (minimum, maximum) of xs"),
+    ("join", "`fn_%02d_join(xs, sep)` joins xs with the separator `%s`"),
+    ("absmax", "`fn_%02d_absmax(xs)` returns the item of xs with the largest absolute value"),
+    ("step", "`fn_%02d_step(xs, start, k)` returns the items of xs from index start, taking every kth item"),
+]
+
+
+def _one_feature(i):
+    """Deterministically build feature `i` as (spec, test_body). No RNG: reruns are identical."""
+    kind, tmpl = _TEMPLATES[i % len(_TEMPLATES)]
+    k = (i % 7) + 2
+    base = ((i * 13) % 40) + 1
+    if kind in ("addk", "mulk"):
+        spec = tmpl % (i, k)
+        if kind == "addk":
+            xs = [base, base + 1]
+            want = [v + k for v in xs]
+        else:
+            xs = [base, base + 1]
+            want = [v * k for v in xs]
+        body = "assert m.fn_%02d_%s([%s], %d) == %s" % (
+            i, kind, ", ".join(map(str, xs)), k, want)
+    elif kind in ("firstk", "lastk"):
+        spec = tmpl % (i, k)
+        xs = [base, base + 1, base + 2, base + 3]
+        want = xs[:k] if kind == "firstk" else xs[-k:]
+        body = "assert m.fn_%02d_%s([%s], %d) == %s" % (
+            i, kind, ", ".join(map(str, xs)), k, want)
+    elif kind == "sum_sq":
+        spec = tmpl % i
+        xs = [base, base + 1, base + 2]
+        body = "assert m.fn_%02d_sum_sq([%s]) == %d" % (i, ", ".join(map(str, xs)),
+                                                        sum(v * v for v in xs))
+    elif kind == "count":
+        ch = "abcdefg"[i % 7]
+        s = ch * ((i % 3) + 1) + "xyz"
+        spec = tmpl % (i, ch)
+        body = "assert m.fn_%02d_count(%r, %r) == %d" % (i, s, ch, s.count(ch))
+    elif kind == "repeat":
+        sep = ["-", ".", "_"][i % 3]
+        n = (i % 3) + 2
+        spec = tmpl % (i, sep)
+        body = "assert m.fn_%02d_repeat('ab', %d) == %r" % (i, n, sep.join(["ab"] * n))
+    elif kind == "zero_pad":
+        spec = tmpl % i
+        n = (i % 90) + 5
+        body = "assert m.fn_%02d_zero_pad(%d, 4) == %r" % (i, n, str(n).zfill(4))
+    elif kind == "minmax":
+        spec = tmpl % i
+        xs = [base, base - 1, base + 2]
+        body = "assert m.fn_%02d_minmax([%s]) == %s" % (i, ", ".join(map(str, xs)),
+                                                       (min(xs), max(xs)))
+    elif kind == "join":
+        sep = ["-", "|", ":"][i % 3]
+        spec = tmpl % (i, sep)
+        body = "assert m.fn_%02d_join(['x', 'yz'], %r) == %r" % (i, sep, sep.join(["x", "yz"]))
+    elif kind == "absmax":
+        spec = tmpl % i
+        xs = [base, -base - 5, base + 1]
+        # ★ `max`, NOT `min`. The spec says "largest absolute value", and the first version of this
+        # test asserted `min(xs, key=abs)` -- which failed a CORRECT reference implementation on 7 of
+        # the 120 features (every absmax one). A grader that rejects the right answer would have been
+        # read as a model failure. Caught by generating a reference solution and grading it before
+        # spending any GPU time.
+        body = "assert m.fn_%02d_absmax([%s]) == %d" % (i, ", ".join(map(str, xs)),
+                                                        max(xs, key=abs))
+    else:  # step -- start and k are BOTH parameters, so the spec and the test cannot disagree
+        off = i % 3
+        kk = (i % 2) + 2
+        spec = tmpl % i
+        xs = [base + j for j in range(6)]
+        body = "assert m.fn_%02d_step([%s], %d, %d) == %s" % (
+            i, ", ".join(map(str, xs)), off, kk, xs[off::kk])
+    return spec, body
+
+
+FEATURES_ALL = list(FEATURES) + [_one_feature(i) for i in range(len(FEATURES), 200)]
+
+# ── THE TURN-1 CONTRACT ──────────────────────────────────────────────────────────────────────
+# ★★ THIS IS THE DISCRIMINATOR, AND IT IS STATED EXACTLY ONCE.
+#
+# A long context is only a problem when something in it still matters. The failure tested here does
+# not need a context overflow: an instruction given at the START, never repeated, that must still be
+# in force at turn 120 with ~120 turns of tool output between the model and it.
+#
+# The runtime anchors turn 1 (the spec) and evicts the disposable middle; `linear` carries all of it
+# and has to find the contract in the noise. If the regular version loses it, that is an ACCURACY
+# difference rather than a cost difference -- which is what makes this worth running.
+CONTRACT = (
+    "STANDING CONTRACT (set now, in force for the rest of this session, and it will NOT be "
+    "repeated): solution.py must ALSO define a module-level dict named REGISTRY. Every function you "
+    "implement, in this turn and in every later turn, must be registered in it: the key is the "
+    "function's name as a string, the value is the function object. REGISTRY must always contain "
+    "every function defined so far."
+)
+
 # ★ THE FINAL TURN IS THE INTERACTION TEST, AND IT IS WHAT MAKES THIS A CONTEXT RETENTION TASK
 # RATHER THAN N INDEPENDENT TASKS. It requires functions written many turns earlier to still exist
 # and to compose. A model that silently overwrote fn_02 or fn_14 while adding later features passes
@@ -167,6 +287,7 @@ Reply with EXACTLY ONE json object and nothing else:
 
   {"tool": "read_file"}
   {"tool": "write_file", "content": "<FULL new contents of solution.py>"}
+  {"tool": "append", "content": "<code to ADD to the end of solution.py>"}
   {"tool": "done"}
 
 Rules:
@@ -174,6 +295,9 @@ Rules:
   - ★ THE MODULE IS ACCUMULATIVE. Every instruction you were given is STILL REQUIRED. When you
     write solution.py you must include the functions from earlier turns as well as the new one.
   - write_file replaces the whole file, so include everything you are keeping.
+  - ★ `append` is the efficient choice once the module is long: it adds the new function without
+    re-sending the whole file. Everything already on disk STAYS, so appending is only correct if
+    you are not changing what is already there.
   - Omit nothing. A missing earlier function is a failure.
   - No explanations. One json object per reply.
 """
@@ -284,13 +408,22 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                 if fm and fm.group(1).strip():
                     return {"tool": "write_file", "content": fm.group(1)}, None
                 return None, "invalid JSON: %s" % e
-        if not isinstance(d, dict) or d.get("tool") not in ("read_file", "write_file", "done"):
+        if not isinstance(d, dict) or d.get("tool") not in ("read_file", "write_file", "append", "done"):
             return None, "bad or unknown tool"
         return d, None
 
     turns_log, per_feature_written = [], {}
-    use = [f for f in FEATURES[:max(1, min(features, len(FEATURES)))]]
+    use = [f for f in FEATURES_ALL[:max(1, min(features, len(FEATURES_ALL)))]]
     specs = [f[0] for f in use] + [INTERACTION_SPEC]
+
+    # ★ THE MODEL'S OWN WINDOW IS THE BUDGET, with headroom for the system prompt, the new
+    # instruction and the reply. Qwen2.5-Coder-32B is 32k; leaving ~8k for output and the system
+    # prompt keeps the comparison about the CONTEXT POLICY rather than about who hit the limit
+    # first. Applied identically to both arms, so it cannot favour either.
+    def _prompt_tokens(blocks):
+        s = "<|im_start|>system\n" + SYSTEM + "<|im_end|>\n" + "".join(
+            "<|im_start|>%s\n%s<|im_end|>\n" % (r, c) for r, c in blocks)
+        return len(tok(s, add_special_tokens=False)["input_ids"])
 
     transcript = []
     _fail = 0
@@ -298,10 +431,30 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
         instr = ("INSTRUCTION %d of %d: implement %s\n"
                  "Write the FULL solution.py including every function from every previous "
                  "instruction." % (i + 1, len(specs), spec))
+        if i == 0:
+            # ★ THE CONTRACT IS STATED EXACTLY ONCE, IN TURN 1, and never repeated. That is the
+            # whole point: at turn 120 it is ~120 turns away from the model, and a policy that
+            # carries everything has to find it while a policy that anchors it does not.
+            instr = CONTRACT + "\n\n" + instr
         if arm == "linear":
-            keep = transcript[-20:]                       # effectively unbounded at this scale
+            # ★ FULL TRANSCRIPT, TRUNCATED ONLY WHEN THE MODEL'S WINDOW FORCES IT -- oldest first.
+            # This is what "linear prefill" MEANS and the benchmark was WRONG about it until now:
+            # it kept only transcript[-20:], which is a WINDOW, so "linear" was already evicting
+            # and the two arms never really differed.
+            #
+            # ★ WHY FRONT-TRUNCATION IS THE HONEST FAILURE MODE, not a rigged one: a fixed context
+            # window means SOMETHING must go, and dropping the oldest is what every naive policy
+            # does. The contract sits at the oldest position precisely because a task brief
+            # normally does. `runtime` is the one that keeps it deliberately.
+            keep = list(transcript)
+            while keep and _prompt_tokens(keep) > MAX_PROMPT_TOKENS:
+                keep.pop(0)                                # drop oldest
         else:
-            keep = transcript[-(keep_turns * 2):]         # system + last K turns only
+            # ANCHOR + WINDOW: turn 1 (the contract) plus the last K turns. The middle is the
+            # disposable part -- that is the eviction the runtime is built to do.
+            keep = transcript[:1] + transcript[-(keep_turns * 2):]
+            while len(keep) > 1 and _prompt_tokens(keep) > MAX_PROMPT_TOKENS:
+                keep.pop(1)                                # drop the oldest MIDDLE turn
         prompt = ("<|im_start|>system\n" + SYSTEM + "<|im_end|>\n"
                   + "".join("<|im_start|>%s\n%s<|im_end|>\n" % (r, c) for r, c in keep)
                   + "<|im_start|>user\n" + instr + "<|im_end|>\n<|im_start|>assistant\n")
@@ -316,18 +469,28 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                 obs += '\nReply with EXACTLY: {"tool": "write_file", "content": "..."}'
         else:
             _fail = 0
-            if call["tool"] == "write_file":
+            if call["tool"] in ("write_file", "append"):
                 content = str(call.get("content", ""))
-                open(solution, "w").write(content)
+                if call["tool"] == "write_file":
+                    open(solution, "w").write(content)
+                else:
+                    # `append` keeps what is already on disk, so the model does not have to
+                    # re-emit a long module. It is equivalent to write_file only when the model
+                    # is purely adding, which the prompt states.
+                    with open(solution, "a") as f:
+                        f.write(("\n" if _os.path.exists(solution) else "") + content)
                 # ★ RECORD WHICH TURN DEFINED EACH FUNCTION, so a later failure can be traced to
-                # the point it was lost rather than only reported as absent.
+                # the point it was lost rather than only reported as absent. Read the WHOLE file:
+                # on an append the file is the source of truth, not the reply.
+                full = open(solution).read()
                 for fi, (fspec, _t) in enumerate(use):
                     fx = "fn_%02d_" % fi
-                    if "def %s" % fx in content:
+                    if "def %s" % fx in full:
                         per_feature_written.setdefault(fi, i)
-                if "def fn_99_" in content:
+                if "def fn_99_" in full:
                     per_feature_written.setdefault(99, i)
-                obs = "wrote solution.py (%d chars)" % len(content)
+                obs = "%s solution.py now (%d chars)" % (
+                    "wrote" if call["tool"] == "write_file" else "appended to", len(full))
             elif call["tool"] == "read_file":
                 obs = open(solution).read() if _os.path.exists(solution) else "(empty)"
             else:
@@ -356,6 +519,18 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
     lines.append("    RESULTS['interaction_99'] = True")
     lines.append("except Exception:")
     lines.append("    RESULTS['interaction_99'] = False")
+    # ★ THE CONTRACT CHECK, graded separately from the feature tests. A model can pass every
+    # feature and still fail this, because the contract was stated once at turn 1 and never
+    # repeated -- so this isolates RETENTION OF AN EARLY INSTRUCTION from coding ability.
+    lines.append("try:")
+    lines.append("    names = set(m.REGISTRY) if hasattr(m, 'REGISTRY') else set()")
+    lines.append("    N = %d" % len(use))
+    lines.append("    ok = hasattr(m, 'REGISTRY') and all(")
+    lines.append("        any(str(n).startswith('fn_%02d_' % i) for n in names) "
+                 "for i in range(N))")
+    lines.append("    RESULTS['contract'] = bool(ok and len(names) >= N)")
+    lines.append("except Exception:")
+    lines.append("    RESULTS['contract'] = False")
     lines.append("import json; print(json.dumps(RESULTS))")
     grader = _os.path.join(WORK, "grade.py")
     open(grader, "w").write("\n".join(lines))
