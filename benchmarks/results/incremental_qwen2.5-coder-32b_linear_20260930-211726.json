@@ -1,0 +1,63 @@
+{
+  "model": "qwen2.5-coder-32b",
+  "arm": "linear",
+  "features": 2,
+  "gpu": "A100-40GB",
+  "passed": 1,
+  "total": 3,
+  "per_feature": {
+    "feature_00": true,
+    "feature_01": false,
+    "interaction_99": false
+  },
+  "written": {
+    "0": 0
+  },
+  "ttft_first": 1010.8725280000073,
+  "ttft_last": 294.3962480000124,
+  "ttft_mean": 531.9980626666734,
+  "kv_peak": 141557760,
+  "kv_last": 141557760,
+  "prompt_first": 227,
+  "prompt_last": 394,
+  "solution_chars": 29,
+  "turns": [
+    {
+      "turn": 0,
+      "spec": "`fn_00_k` returns the integer 17",
+      "tool": "write_file",
+      "parse_error": null,
+      "raw_reply": "{\"tool\": \"write_file\", \"content\": \"def fn_00_k():\\n    return 17\\n\"}",
+      "ttft_ms": 1010.8725280000073,
+      "kv_bytes": 66584576,
+      "prompt_tokens": 227,
+      "wall_ms": 5139.487695
+    },
+    {
+      "turn": 1,
+      "spec": "`fn_01_name` returns the string \"quokka\"",
+      "tool": null,
+      "parse_error": "invalid JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)",
+      "raw_reply": "{'tool': 'write_file', 'content': 'def fn_00_k():\\n    return 17\\n\\ndef fn_01_name():\\n    return \"quokka\"\\n'}",
+      "ttft_ms": 290.72541200000046,
+      "kv_bytes": 92012544,
+      "prompt_tokens": 306,
+      "wall_ms": 6919.451242000008
+    },
+    {
+      "turn": 2,
+      "spec": "`fn_99_pipeline(s)` must strip the vowels from s, then upper-case the ",
+      "tool": null,
+      "parse_error": "invalid JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)",
+      "raw_reply": "{'tool': 'write_file', 'content': 'def fn_00_k():\\n    return 17\\n\\ndef fn_01_name():\\n    return \"quokka\"\\n\\ndef fn_14_strip_vowels(s):\\n    vowels = \"aeiouAEIOU\"\\n    return \\'\\'.join(char for char in s if char not in vowels)\\n\\ndef fn_06_up(s):\\n    return s.upper()\\n\\ndef fn_99_pipeline(s):\\n    stripped = fn_14_strip_vowels(s)\\n    uppercased = fn_06_up(stripped)\\n    return uppercased\\n'}",
+      "ttft_ms": 294.3962480000124,
+      "kv_bytes": 141557760,
+      "prompt_tokens": 394,
+      "wall_ms": 21030.175580000006
+    }
+  ],
+  "failed": [
+    "feature_01",
+    "interaction_99"
+  ]
+}

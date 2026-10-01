@@ -144,7 +144,7 @@ Rules:
               volumes={"/cache": hf_cache}, timeout=7200, memory=40960)
 def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int = 16,
             keep_turns: int = 4, max_new: int = 3072):
-    import gc, json as _json, os as _os, re, subprocess as sp, time, torch
+    import ast as _ast, gc, json as _json, os as _os, re, subprocess as sp, time, torch
     from transformers import AutoTokenizer, AutoModelForCausalLM
 
     mid = MODELS[model]
@@ -216,22 +216,28 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
         try:
             d, _ = _json.JSONDecoder().raw_decode(body)
         except Exception as e:
-            LEGAL = set('"\\/bfnrtu')
-            out, k, instr = [], 0, False
-            while k < len(body):
-                ch = body[k]
-                if ch == '"':
-                    bs, j = 0, k - 1
-                    while j >= 0 and body[j] == "\\":
-                        bs += 1; j -= 1
-                    if bs % 2 == 0:
-                        instr = not instr
-                    out.append(ch); k += 1; continue
-                if instr and ch == "\\":
-                    nx = body[k + 1] if k + 1 < len(body) else ""
-                    if nx not in LEGAL:
-                        out.append("\\\\"); k += 1; continue
-                out.append(ch); k += 1
+            # ★ PYTHON-LITERAL FALLBACK — this is the fix that mattered, and the defect it
+            # exposes is the whole reason the linear arm scored 1/17.
+            #
+            # Measured raw reply from the 32B coder:
+            #     {'tool': 'write_file', 'content': 'def fn_00_k(): ...'}
+            # Single quotes. That is a Python repr, not JSON, and json.loads rejects it with
+            # "Expecting property name enclosed in double quotes". `ast.literal_eval` parses
+            # exactly that grammar, and it is SAFE: it evaluates literals only and cannot
+            # execute a call, so a hostile reply gains nothing over json.loads.
+            #
+            # The model was doing the work correctly the entire time -- the raw reply shows it
+            # accumulating fn_00 AND fn_01 across turns -- and the parser was discarding it.
+            # **A parser that rejects valid input is indistinguishable from a model that cannot
+            # produce valid output**, which is the same blind spot recorded for the harness's
+            # flat-args and raw-newline bugs. Both scored zero for the harness, not the model.
+            try:
+                lit = _ast.literal_eval(body)
+                if isinstance(lit, dict) and lit.get("tool") in (
+                        "read_file", "write_file", "done"):
+                    return lit, None
+            except Exception:
+                pass
             try:
                 d, _ = _json.JSONDecoder().raw_decode("".join(out))
             except Exception:
@@ -288,7 +294,8 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
             else:
                 obs = "acknowledged"
         turns_log.append(dict(turn=i, spec=spec[:70], tool=(call or {}).get("tool"),
-                              parse_error=err, ttft_ms=m["ttft_ms"], kv_bytes=m["kv_bytes"],
+                              parse_error=err, raw_reply=txt[:400],
+                              ttft_ms=m["ttft_ms"], kv_bytes=m["kv_bytes"],
                               prompt_tokens=m["prompt_tokens"], wall_ms=m["wall_ms"]))
         ext = ("<|im_start|>user\n" + instr + "<|im_end|>\n<|im_start|>assistant\n"
                + str(call)[:4000] + "<|im_end|>\n")
