@@ -304,9 +304,23 @@ Rules:
 
 
 @app.function(image=image, gpu=GPU, secrets=[modal.Secret.from_name("hf-token")],
-              volumes={"/cache": hf_cache}, timeout=7200, memory=40960)
+              volumes={"/cache": hf_cache}, timeout=14400, memory=40960)
 def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int = 16,
-            keep_turns: int = 4, max_new: int = 3072):
+            keep_turns: int = 4, max_new: int = 768):
+    # ★★ TWO HARD CEILINGS, AND BOTH WERE HIT. Modal kills a function at `timeout`, and the first
+    # version used 7200 (2h) with max_new=3072 -- so a 200-turn run on a 32B died at exactly 2h
+    # with `FunctionTimeoutError` and THREW AWAY every turn it had completed. The launcher retries
+    # three times, so that would have burned ~6 GPU-hours producing nothing.
+    #
+    # The fix is not only a bigger ceiling:
+    #   1. `timeout=14400` (4h) gives real headroom.
+    #   2. `max_new=768` -- one function plus a json wrapper is ~150 tokens; 3072 was 20x the need
+    #      and, on a model that does not emit EOS promptly, is the entire cost of the run.
+    #   3. A WALL-CLOCK GUARD inside the loop that stops *before* the platform does and grades
+    #      whatever completed. A partial result with "turns_completed=N" is evidence; a timeout
+    #      exception is nothing. This is the difference between a job that can be interrupted and
+    #      one that can only be wasted.
+    TIME_BUDGET_S = 12000          # 3h20m, comfortably inside the 4h platform kill
     import ast as _ast, gc, json as _json, os as _os, re, subprocess as sp, time, torch
     from transformers import AutoTokenizer, AutoModelForCausalLM
 
@@ -435,7 +449,17 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
 
     transcript = []
     _fail = 0
+    _t_start = time.time()
+    _stopped_early = None
     for i, spec in enumerate(specs):
+        # ★ STOP BEFORE THE PLATFORM DOES. A partial run that grades is evidence; a run killed by
+        # the platform is an exception with nothing in it. Whatever completed is still a valid
+        # measurement of the turns that ran.
+        if time.time() - _t_start > TIME_BUDGET_S:
+            _stopped_early = i
+            print("[%s] TIME BUDGET reached at turn %d/%d -- grading what completed"
+                  % (arm, i, len(specs)), flush=True)
+            break
         instr = ("INSTRUCTION %d of %d: implement %s\n"
                  "Write the FULL solution.py including every function from every previous "
                  "instruction." % (i + 1, len(specs), spec))
@@ -540,24 +564,32 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
         transcript.append(("X", ext))   # pre-formatted block, role ignored on render
 
     # ── GRADE: one test per feature, plus the interaction, run in a fresh interpreter ─────────
+    # ★ GRADE ONLY WHAT WAS ATTEMPTED. A run stopped early by the time budget has NOT attempted the
+    # remaining features, so grading all 200 would report never-tried work as failures and make a
+    # partial run look like a catastrophic result. `n_features_done` is the number of FEATURE turns
+    # completed; the interaction ran only if every feature turn did.
+    n_features_done = (len(use) if _stopped_early is None
+                       else max(0, min(_stopped_early, len(use))))
+    ran_interaction = _stopped_early is None
     lines = ["import sys", "sys.path.insert(0, %r)" % WORK, "import solution as m", "RESULTS = {}"]
-    for fi, (_s, tbody) in enumerate(use):
+    for fi, (_s, tbody) in enumerate(use[:n_features_done]):
         lines.append("try:")
         lines.append("    %s" % tbody)
         lines.append("    RESULTS['feature_%02d'] = True" % fi)
         lines.append("except Exception:")
         lines.append("    RESULTS['feature_%02d'] = False" % fi)
-    lines.append("try:")
-    lines.append("    %s" % INTERACTION_TEST)
-    lines.append("    RESULTS['interaction_99'] = True")
-    lines.append("except Exception:")
-    lines.append("    RESULTS['interaction_99'] = False")
+    if ran_interaction:
+        lines.append("try:")
+        lines.append("    %s" % INTERACTION_TEST)
+        lines.append("    RESULTS['interaction_99'] = True")
+        lines.append("except Exception:")
+        lines.append("    RESULTS['interaction_99'] = False")
     # ★ THE CONTRACT CHECK, graded separately from the feature tests. A model can pass every
     # feature and still fail this, because the contract was stated once at turn 1 and never
     # repeated -- so this isolates RETENTION OF AN EARLY INSTRUCTION from coding ability.
     lines.append("try:")
     lines.append("    names = set(m.REGISTRY) if hasattr(m, 'REGISTRY') else set()")
-    lines.append("    N = %d" % len(use))
+    lines.append("    N = %d" % n_features_done)
     lines.append("    ok = hasattr(m, 'REGISTRY') and all(")
     lines.append("        any(str(n).startswith('fn_%02d_' % i) for n in names) "
                  "for i in range(N))")
@@ -578,7 +610,11 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
     ttfts = [t["ttft_ms"] for t in turns_log] or [0]
     kvs = [t["kv_bytes"] for t in turns_log] or [0]
     pts = [t["prompt_tokens"] for t in turns_log] or [0]
-    return dict(model=model, arm=arm, features=len(use), gpu=GPU,
+    return dict(model=model, arm=arm, features=len(use),
+                features_completed=n_features_done,
+                stopped_early=_stopped_early,
+                seconds=round(time.time() - _t_start, 1),
+                gpu=GPU,
                 passed=passed, total=total,
                 per_feature=results, written=per_feature_written,
                 ttft_first=ttfts[0], ttft_last=ttfts[-1],
@@ -599,6 +635,10 @@ def main(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int = 
         model.replace("/", "-"), arm, time.strftime("%Y%m%d-%H%M%S"))
     json.dump(r, open(p, "w"), indent=2)
     print("\n%s  arm=%s  features=%d" % (r["model"], r["arm"], r["features"]))
+    if r.get("stopped_early") is not None:
+        print("  ⚠️ PARTIAL RUN: stopped at turn %s after %.0f s (time budget) -- "
+              "grading only the %d features attempted"
+              % (r["stopped_early"], r.get("seconds", 0), r.get("features_completed", 0)))
     print("  PASSED %d/%d  (%.0f%%)" % (r["passed"], r["total"],
                                         100.0 * r["passed"] / max(1, r["total"])))
     print("  failed: %s" % (", ".join(r["failed"]) if r["failed"] else "none"))
