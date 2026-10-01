@@ -106,6 +106,38 @@ FEATURES = [
      "assert m.fn_22_gcd(48, 18) == 6"),
     ("`fn_23_caesar(s, k)` shifts each lowercase letter by k, wrapping past z",
      "assert m.fn_23_caesar(\"xyz\", 3) == \"abc\""),
+    ("`fn_24_zip2(a, b)` returns a list of [a[i], b[i]] pairs, stopping at the shorter input",
+     "assert m.fn_24_zip2([1,2,3],[4,5]) == [[1,4],[2,5]]"),
+    ("`fn_25_count_char(s, c)` returns how many times character c occurs in s",
+     "assert m.fn_25_count_char(\"banana\", \"a\") == 3"),
+    ("`fn_26_median(xs)` returns the middle value for an odd-length sorted-by-you list",
+     "assert m.fn_26_median([5,1,3]) == 3"),
+    ("`fn_27_swap_case(s)` swaps lower to upper and upper to lower",
+     "assert m.fn_27_swap_case(\"AbC\") == \"aBc\""),
+    ("`fn_28_intersect(a, b)` returns items present in both lists, without duplicates",
+     "assert sorted(m.fn_28_intersect([1,2,3],[2,3,4])) == [2,3]"),
+    ("`fn_29_roman(n)` converts 1..20 to a roman numeral string",
+     "assert m.fn_29_roman(14) == \"XIV\""),
+    ("`fn_30_bin_count(n)` returns the number of 1 bits in n's binary form",
+     "assert m.fn_30_bin_count(13) == 3"),
+    ("`fn_31_rotate(xs, k)` rotates xs left by k positions",
+     "assert m.fn_31_rotate([1,2,3,4], 1) == [2,3,4,1]"),
+    ("`fn_32_all_same(xs)` returns True iff every item is equal",
+     "assert (m.fn_32_all_same([7,7]), m.fn_32_all_same([7,8])) == (True, False)"),
+    ("`fn_33_ord_sum(s)` sums the unicode code points of the characters in s",
+     "assert m.fn_33_ord_sum(\"AB\") == 131"),
+    ("`fn_34_apply_n(f, x, n)` applies f to x exactly n times",
+     "assert m.fn_34_apply_n(lambda v: v + 3, 1, 4) == 13"),
+    ("`fn_35_trim_dup(xs)` removes CONSECUTIVE duplicates only",
+     "assert m.fn_35_trim_dup([1,1,2,2,2,3,1]) == [1,2,3,1]"),
+    ("`fn_36_is_sorted(xs)` returns True iff xs is non-decreasing",
+     "assert (m.fn_36_is_sorted([1,2,2]), m.fn_36_is_sorted([2,1])) == (True, False)"),
+    ("`fn_37_split_pairs(s)` splits a string into consecutive 2-char chunks",
+     "assert m.fn_37_split_pairs(\"abcde\") == [\"ab\",\"cd\",\"e\"]"),
+    ("`fn_38_scale(xs, f)` returns every item of xs multiplied by f",
+     "assert m.fn_38_scale([1,2,3], 3) == [3,6,9]"),
+    ("`fn_39_second_max(xs)` returns the second largest DISTINCT value",
+     "assert m.fn_39_second_max([5,1,5,3]) == 3"),
 ]
 
 # ★ THE FINAL TURN IS THE INTERACTION TEST, AND IT IS WHAT MAKES THIS A CONTEXT RETENTION TASK
@@ -114,11 +146,12 @@ FEATURES = [
 # their individual tests by luck of having rewrote them, but cannot satisfy this unless the module
 # genuinely accumulated — so it converts "kept a growing module" from a per-feature property into
 # one explicit measurement.
-INTERACTION_SPEC = ("`fn_99_pipeline(s)` must strip the vowels from s, then upper-case the result. "
-                    "It must reuse fn_14_strip_vowels and fn_06_up by CALLING them, not by "
+INTERACTION_SPEC = ("`fn_99_pipeline(s)` must strip the vowels from s, then upper-case the result, "
+                    "then split it into consecutive 2-char chunks. It must reuse "
+                    "fn_14_strip_vowels, fn_06_up and fn_37_split_pairs by CALLING them, not by "
                     "reimplementing them.")
 INTERACTION_TEST = ("assert m.fn_99_pipeline(\"banana split\") == "
-                    "m.fn_06_up(m.fn_14_strip_vowels(\"banana split\"))")
+                    "m.fn_37_split_pairs(m.fn_06_up(m.fn_14_strip_vowels(\"banana split\")))")
 
 SYSTEM = """You are a Python engineer building one module, `solution.py`, across many turns.
 
