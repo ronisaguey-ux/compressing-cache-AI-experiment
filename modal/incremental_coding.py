@@ -646,6 +646,17 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                 total -= costs.pop(1)
                 keep.pop(1)                                # drop the oldest MIDDLE turn
         prompt = _render_prompt(keep, instr)
+        # ★ DUMP THE EXACT FIRST PROMPT ONCE. A prompt rendered for the wrong model family does not
+        # error -- it reaches the model as literal text with invisible turn boundaries, and every
+        # number after that is about the wrong thing. This is the only way to prove what was sent.
+        if i == 0 and _os.environ.get("CCAI_DEBUG_PROMPT") == "1":
+            try:
+                print("[%s] FIRST PROMPT (%d chars, %d tok) starts: %r"
+                      % (arm, len(prompt),
+                         len(tok(prompt, add_special_tokens=False)["input_ids"]), prompt[:150]),
+                      flush=True)
+            except Exception:
+                pass
         txt, m = complete(prompt, max_new)
         out_text = txt
         call, err = parse(txt)
