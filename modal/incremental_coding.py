@@ -420,10 +420,18 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
     # instruction and the reply. Qwen2.5-Coder-32B is 32k; leaving ~8k for output and the system
     # prompt keeps the comparison about the CONTEXT POLICY rather than about who hit the limit
     # first. Applied identically to both arms, so it cannot favour either.
-    def _prompt_tokens(blocks):
-        s = "<|im_start|>system\n" + SYSTEM + "<|im_end|>\n" + "".join(
-            "<|im_start|>%s\n%s<|im_end|>\n" % (r, c) for r, c in blocks)
-        return len(tok(s, add_special_tokens=False)["input_ids"])
+    # ★ COUNT ONCE PER BLOCK, NOT ONCE PER CANDIDATE WINDOW. The first version called the
+    # tokenizer on the WHOLE transcript to discover it was too big, then popped one block and
+    # tokenized the whole thing again -- O(n^2) per turn, and it emitted a real
+    # "sequence longer than the model maximum (33516 > 32768)" warning on every turn even though
+    # the prompt actually sent was correctly capped. One tokenization per block, then a greedy walk
+    # from the end, removes both costs.
+    def _counts(blocks):
+        return [len(tok("<|im_start|>%s\n%s<|im_end|>\n" % (r, c),
+                        add_special_tokens=False)["input_ids"]) for r, c in blocks]
+
+    _SYS_TOKENS = len(tok("<|im_start|>system\n" + SYSTEM + "<|im_end|>\n",
+                          add_special_tokens=False)["input_ids"])
 
     transcript = []
     _fail = 0
@@ -447,13 +455,22 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
             # does. The contract sits at the oldest position precisely because a task brief
             # normally does. `runtime` is the one that keeps it deliberately.
             keep = list(transcript)
-            while keep and _prompt_tokens(keep) > MAX_PROMPT_TOKENS:
+            costs = _counts(keep)
+            budget = MAX_PROMPT_TOKENS - _SYS_TOKENS
+            total = sum(costs)
+            while keep and total > budget:
+                total -= costs.pop(0)
                 keep.pop(0)                                # drop oldest
         else:
             # ANCHOR + WINDOW: turn 1 (the contract) plus the last K turns. The middle is the
             # disposable part -- that is the eviction the runtime is built to do.
             keep = transcript[:1] + transcript[-(keep_turns * 2):]
-            while len(keep) > 1 and _prompt_tokens(keep) > MAX_PROMPT_TOKENS:
+            costs = _counts(keep)
+            budget = MAX_PROMPT_TOKENS - _SYS_TOKENS
+            total = sum(costs)
+            # index 1 onwards is droppable; index 0 is the anchored contract and is never popped.
+            while len(keep) > 1 and total > budget:
+                total -= costs.pop(1)
                 keep.pop(1)                                # drop the oldest MIDDLE turn
         prompt = ("<|im_start|>system\n" + SYSTEM + "<|im_end|>\n"
                   + "".join("<|im_start|>%s\n%s<|im_end|>\n" % (r, c) for r, c in keep)
@@ -499,6 +516,22 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                               parse_error=err, raw_reply=txt[:400],
                               ttft_ms=m["ttft_ms"], kv_bytes=m["kv_bytes"],
                               prompt_tokens=m["prompt_tokens"], wall_ms=m["wall_ms"]))
+        # ★★ PROGRESS MUST BE OBSERVABLE FROM OUTSIDE THE CONTAINER. The script printed nothing
+        # until the very end, so a 1.5-hour run looked identical to a wedged one and the only way
+        # to answer "is it progressing?" was to guess. /cache is a mounted Modal volume, so a line
+        # written here is readable from this box with `modal volume get` WHILE the run is live.
+        # A multi-hour job with no progress signal is a job nobody can supervise.
+        try:
+            with open("/cache/prog_%s.txt" % arm, "w") as _pf:
+                _pf.write("turn %d/%d  kept_blocks=%d  prompt_tokens=%d  ttft_ms=%.0f\n"
+                          % (i + 1, len(specs), len(keep), m["prompt_tokens"], m["ttft_ms"]))
+            if (i + 1) % 20 == 0:
+                hf_cache.commit()                      # make it visible without waiting for exit
+        except Exception:
+            pass                                       # progress reporting must never fail a run
+        print("[%s] turn %d/%d kept=%d prompt=%d tok ttft=%.0fms"
+              % (arm, i + 1, len(specs), len(keep), m["prompt_tokens"], m["ttft_ms"]),
+              flush=True)
         ext = ("<|im_start|>user\n" + instr + "<|im_end|>\n<|im_start|>assistant\n"
                + str(call)[:4000] + "<|im_end|>\n")
         if err:
