@@ -248,8 +248,8 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
         prompt = ("<|im_start|>system\n" + SYSTEM + "<|im_end|>\n"
                   + "".join("<|im_start|>%s\n%s<|im_end|>\n" % (r, c) for r, c in keep)
                   + "<|im_start|>user\n" + instr + "<|im_end|>\n<|im_start|>assistant\n")
-        out, m = complete(prompt, max_new)
-        call, err = parse(out["text"])
+        txt, m = complete(prompt, max_new)
+        call, err = parse(txt)
         obs = ""
         if err:
             _fail += 1
