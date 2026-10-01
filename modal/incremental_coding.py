@@ -292,12 +292,11 @@ Reply with EXACTLY ONE json object and nothing else:
 
 Rules:
   - You may only touch solution.py. There is no internet and no other files.
-  - ★ THE MODULE IS ACCUMULATIVE. Every instruction you were given is STILL REQUIRED. When you
-    write solution.py you must include the functions from earlier turns as well as the new one.
-  - write_file replaces the whole file, so include everything you are keeping.
-  - ★ `append` is the efficient choice once the module is long: it adds the new function without
-    re-sending the whole file. Everything already on disk STAYS, so appending is only correct if
-    you are not changing what is already there.
+  - ★ THE MODULE IS ACCUMULATIVE. Every instruction you were given is STILL REQUIRED.
+  - ★ WHEN AN INSTRUCTION ONLY ADDS A NEW FUNCTION, USE `append`. Do not resend the file.
+    Resending a long module wastes your reply budget and is how a reply gets cut off. `append`
+    adds to the end and keeps everything already there.
+  - Use `write_file` only when you must CHANGE something already in the file.
   - Omit nothing. A missing earlier function is a failure.
   - No explanations. One json object per reply.
 """
