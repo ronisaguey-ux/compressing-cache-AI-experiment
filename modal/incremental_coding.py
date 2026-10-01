@@ -202,7 +202,16 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                     t = pp; break
         i = t.find("{")
         if i < 0:
-            return None, "no JSON object"
+            # ★ A CODING MODEL'S DOMINANT PRIOR IS A FENCED CODE BLOCK, NOT JSON. Measured:
+            # the linear arm emitted no JSON object for SIXTEEN consecutive turns and wrote
+            # exactly once, so its final file was 29 chars and it scored 1/17. Reporting that
+            # as a context-retention result would have been a harness bug dressed as a finding.
+            # The reply is unambiguous in intent -- a ```python fence in a turn whose only job is
+            # to write one file -- so it is accepted as a write_file rather than rejected.
+            m = re.search(r"```(?:python|py)?\s*\n(.*?)```", t, re.S)
+            if m and m.group(1).strip():
+                return {"tool": "write_file", "content": m.group(1)}, None
+            return None, "no JSON object and no code fence"
         body = t[i:]
         try:
             d, _ = _json.JSONDecoder().raw_decode(body)
@@ -226,6 +235,9 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
             try:
                 d, _ = _json.JSONDecoder().raw_decode("".join(out))
             except Exception:
+                fm = re.search(r"```(?:python|py)?\s*\n(.*?)```", t, re.S)
+                if fm and fm.group(1).strip():
+                    return {"tool": "write_file", "content": fm.group(1)}, None
                 return None, "invalid JSON: %s" % e
         if not isinstance(d, dict) or d.get("tool") not in ("read_file", "write_file", "done"):
             return None, "bad or unknown tool"
@@ -249,6 +261,7 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                   + "".join("<|im_start|>%s\n%s<|im_end|>\n" % (r, c) for r, c in keep)
                   + "<|im_start|>user\n" + instr + "<|im_end|>\n<|im_start|>assistant\n")
         txt, m = complete(prompt, max_new)
+        out_text = txt
         call, err = parse(txt)
         obs = ""
         if err:

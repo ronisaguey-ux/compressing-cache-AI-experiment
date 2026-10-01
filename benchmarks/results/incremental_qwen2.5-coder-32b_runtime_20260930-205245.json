@@ -1,0 +1,229 @@
+{
+  "model": "qwen2.5-coder-32b",
+  "arm": "runtime",
+  "features": 16,
+  "gpu": "A100-40GB",
+  "passed": 16,
+  "total": 17,
+  "per_feature": {
+    "feature_00": false,
+    "feature_01": true,
+    "feature_02": true,
+    "feature_03": true,
+    "feature_04": true,
+    "feature_05": true,
+    "feature_06": true,
+    "feature_07": true,
+    "feature_08": true,
+    "feature_09": true,
+    "feature_10": true,
+    "feature_11": true,
+    "feature_12": true,
+    "feature_13": true,
+    "feature_14": true,
+    "feature_15": true,
+    "interaction_99": true
+  },
+  "written": {
+    "0": 0,
+    "1": 9,
+    "2": 9,
+    "3": 9,
+    "4": 9,
+    "5": 9,
+    "6": 9,
+    "7": 9,
+    "8": 9,
+    "9": 9,
+    "10": 16,
+    "11": 16,
+    "12": 16,
+    "13": 16,
+    "14": 16,
+    "15": 16,
+    "99": 16
+  },
+  "ttft_first": 974.6893259999965,
+  "ttft_last": 430.46761799999445,
+  "ttft_mean": 381.8017655294099,
+  "kv_peak": 367525888,
+  "kv_last": 367525888,
+  "prompt_first": 228,
+  "prompt_last": 940,
+  "solution_chars": 1156,
+  "turns": [
+    {
+      "turn": 0,
+      "spec": "`fn_00_k` returns the integer 17",
+      "tool": "write_file",
+      "parse_error": null,
+      "ttft_ms": 974.6893259999965,
+      "kv_bytes": 66846720,
+      "prompt_tokens": 228,
+      "wall_ms": 3977.09609999999
+    },
+    {
+      "turn": 1,
+      "spec": "`fn_01_name` returns the string \"quokka\"",
+      "tool": null,
+      "parse_error": "invalid JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)",
+      "ttft_ms": 217.4478160000035,
+      "kv_bytes": 92536832,
+      "prompt_tokens": 308,
+      "wall_ms": 4955.891784000002
+    },
+    {
+      "turn": 2,
+      "spec": "`fn_02_double(n)` returns n * 2",
+      "tool": null,
+      "parse_error": "invalid JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)",
+      "ttft_ms": 224.01436399999852,
+      "kv_bytes": 110886912,
+      "prompt_tokens": 361,
+      "wall_ms": 6677.476334999994
+    },
+    {
+      "turn": 3,
+      "spec": "`fn_03_add(a, b)` returns the sum of a and b",
+      "tool": null,
+      "parse_error": "invalid JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)",
+      "ttft_ms": 247.00311400000885,
+      "kv_bytes": 130547712,
+      "prompt_tokens": 418,
+      "wall_ms": 8718.867567000003
+    },
+    {
+      "turn": 4,
+      "spec": "`fn_04_rev(s)` returns s reversed",
+      "tool": null,
+      "parse_error": "no JSON object",
+      "ttft_ms": 253.39366999999413,
+      "kv_bytes": 123207680,
+      "prompt_tokens": 469,
+      "wall_ms": 591.7591169999952
+    },
+    {
+      "turn": 5,
+      "spec": "`fn_05_len(xs)` returns the number of items in xs",
+      "tool": null,
+      "parse_error": "no JSON object",
+      "ttft_ms": 369.12024599999427,
+      "kv_bytes": 137625600,
+      "prompt_tokens": 524,
+      "wall_ms": 689.7506870000001
+    },
+    {
+      "turn": 6,
+      "spec": "`fn_06_up(s)` returns s upper-cased",
+      "tool": null,
+      "parse_error": "no JSON object",
+      "ttft_ms": 302.21286599999075,
+      "kv_bytes": 151519232,
+      "prompt_tokens": 577,
+      "wall_ms": 604.5178549999974
+    },
+    {
+      "turn": 7,
+      "spec": "`fn_07_max3(a,b,c)` returns the largest of three",
+      "tool": null,
+      "parse_error": "no JSON object",
+      "ttft_ms": 308.7577659999994,
+      "kv_bytes": 166199296,
+      "prompt_tokens": 633,
+      "wall_ms": 626.5707390000017
+    },
+    {
+      "turn": 8,
+      "spec": "`fn_08_evens(xs)` returns only the even numbers, in order",
+      "tool": null,
+      "parse_error": "no JSON object",
+      "ttft_ms": 341.5876119999979,
+      "kv_bytes": 181141504,
+      "prompt_tokens": 690,
+      "wall_ms": 655.5329050000012
+    },
+    {
+      "turn": 9,
+      "spec": "`fn_09_wordcount(s)` returns the number of whitespace-separated words",
+      "tool": "write_file",
+      "parse_error": null,
+      "ttft_ms": 350.01023199998826,
+      "kv_bytes": 223870976,
+      "prompt_tokens": 668,
+      "wall_ms": 19411.62856999999
+    },
+    {
+      "turn": 10,
+      "spec": "`fn_10_sign(n)` returns -1 for negative, 0 for zero, 1 for positive",
+      "tool": null,
+      "parse_error": "invalid JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)",
+      "ttft_ms": 384.9940190000041,
+      "kv_bytes": 286785536,
+      "prompt_tokens": 863,
+      "wall_ms": 24508.055947999994
+    },
+    {
+      "turn": 11,
+      "spec": "`fn_11_clamp(n, lo, hi)` clamps n into [lo, hi]",
+      "tool": null,
+      "parse_error": "no JSON object",
+      "ttft_ms": 393.745875999997,
+      "kv_bytes": 228851712,
+      "prompt_tokens": 872,
+      "wall_ms": 724.409071999986
+    },
+    {
+      "turn": 12,
+      "spec": "`fn_12_fact(n)` returns n factorial (n! ), and fn_12_fact(0) is 1",
+      "tool": null,
+      "parse_error": "no JSON object",
+      "ttft_ms": 392.77417700000683,
+      "kv_bytes": 231735296,
+      "prompt_tokens": 883,
+      "wall_ms": 711.2263520000113
+    },
+    {
+      "turn": 13,
+      "spec": "`fn_13_unique(xs)` returns the distinct items preserving first-seen or",
+      "tool": null,
+      "parse_error": "no JSON object",
+      "ttft_ms": 445.31912099998294,
+      "kv_bytes": 233570304,
+      "prompt_tokens": 890,
+      "wall_ms": 767.1891119999827
+    },
+    {
+      "turn": 14,
+      "spec": "`fn_14_strip_vowels(s)` removes a,e,i,o,u (lowercase only)",
+      "tool": null,
+      "parse_error": "no JSON object",
+      "ttft_ms": 430.4593350000232,
+      "kv_bytes": 235405312,
+      "prompt_tokens": 897,
+      "wall_ms": 752.2320420000028
+    },
+    {
+      "turn": 15,
+      "spec": "`fn_15_base_to_dec(s, base)` parses s as a number in the given base",
+      "tool": null,
+      "parse_error": "no JSON object",
+      "ttft_ms": 424.6328559999881,
+      "kv_bytes": 237764608,
+      "prompt_tokens": 906,
+      "wall_ms": 737.9683839999984
+    },
+    {
+      "turn": 16,
+      "spec": "`fn_99_pipeline(s)` must strip the vowels from s, then upper-case the ",
+      "tool": "write_file",
+      "parse_error": null,
+      "ttft_ms": 430.46761799999445,
+      "kv_bytes": 367525888,
+      "prompt_tokens": 940,
+      "wall_ms": 47360.844670000006
+    }
+  ],
+  "failed": [
+    "feature_00"
+  ]
+}
