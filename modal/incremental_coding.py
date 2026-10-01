@@ -306,7 +306,7 @@ Rules:
 @app.function(image=image, gpu=GPU, secrets=[modal.Secret.from_name("hf-token")],
               volumes={"/cache": hf_cache}, timeout=14400, memory=40960)
 def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int = 16,
-            keep_turns: int = 4, max_new: int = 768):
+            keep_turns: int = 4, max_new: int = 3072):
     # ★★ TWO HARD CEILINGS, AND BOTH WERE HIT. Modal kills a function at `timeout`, and the first
     # version used 7200 (2h) with max_new=3072 -- so a 200-turn run on a 32B died at exactly 2h
     # with `FunctionTimeoutError` and THREW AWAY every turn it had completed. The launcher retries
@@ -314,8 +314,11 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
     #
     # The fix is not only a bigger ceiling:
     #   1. `timeout=14400` (4h) gives real headroom.
-    #   2. `max_new=768` -- one function plus a json wrapper is ~150 tokens; 3072 was 20x the need
-    #      and, on a model that does not emit EOS promptly, is the entire cost of the run.
+    #   2. `max_new=3072` is a CEILING, not a target: the loop stops at EOS, and a one-function
+    #      reply is ~150 tokens. But it must be big enough for the WORST case, which is a full-file
+    #      rewrite of a 200-function module (~3000 tokens). Cutting it to 768 to save time is what
+    #      truncated turn 17 and started the cascade -- the ceiling has to accommodate the largest
+    #      legitimate reply, and only then does the EOS stop keep the average cheap.
     #   3. A WALL-CLOCK GUARD inside the loop that stops *before* the platform does and grades
     #      whatever completed. A partial result with "turns_completed=N" is evidence; a timeout
     #      exception is nothing. This is the difference between a job that can be interrupted and
@@ -411,7 +414,7 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
             try:
                 lit = _ast.literal_eval(body)
                 if isinstance(lit, dict) and lit.get("tool") in (
-                        "read_file", "write_file", "done"):
+                        "read_file", "write_file", "append", "done"):
                     return lit, None
             except Exception:
                 pass
@@ -556,11 +559,31 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
         print("[%s] turn %d/%d kept=%d prompt=%d tok ttft=%.0fms"
               % (arm, i + 1, len(specs), len(keep), m["prompt_tokens"], m["ttft_ms"]),
               flush=True)
-        ext = ("<|im_start|>user\n" + instr + "<|im_end|>\n<|im_start|>assistant\n"
-               + str(call)[:4000] + "<|im_end|>\n")
+        # ★★★ THE TRANSCRIPT MUST RECORD WHAT THE MODEL ACTUALLY SAID, AND MUST DELIVER THE
+        # CORRECTION. Both were wrong, and together they turned 4 failures into 184.
+        #
+        # MEASURED, on the first 200-turn run: turn 17's reply overran max_new and was truncated, so
+        # it failed to parse. Turns 17-20 failed the same way. Then from TURN 21 TO TURN 199 -- 179
+        # consecutive turns -- the model replied with the single word `error`, and the final file
+        # was 1732 chars. Two causes, both the harness lying to the model:
+        #
+        #   1. On failure this recorded the assistant turn as the literal string "error". The model
+        #      reads its own history, saw `assistant: error` repeated, and concluded that `error`
+        #      was the expected reply. It was imitating the transcript.
+        #   2. `obs` -- the correction ("could not parse your reply ... reply with exactly one json
+        #      object") -- was COMPUTED AND NEVER SENT. `grep -n obs` showed it assigned five times
+        #      and read zero. So the model was never told it had failed, let alone what shape was
+        #      wanted, and had no way to recover.
+        #
+        # ⇒ Record the real reply (bounded), then send the correction as a user turn. A harness that
+        # silently substitutes its own text for the model's is not measuring the model.
         if err:
-            ext = ("<|im_start|>user\n" + instr + "<|im_end|>\n<|im_start|>assistant\n"
-                   + "error<|im_end|>\n")
+            ext = ("<|im_start|>user\n" + instr + "<|im_end|>\n"
+                   + "<|im_start|>assistant\n" + str(txt)[:1200] + "<|im_end|>\n"
+                   + "<|im_start|>user\n" + obs + "<|im_end|>\n")
+        else:
+            ext = ("<|im_start|>user\n" + instr + "<|im_end|>\n"
+                   + "<|im_start|>assistant\n" + str(call)[:4000] + "<|im_end|>\n")
         transcript.append(("X", ext))   # pre-formatted block, role ignored on render
 
     # ── GRADE: one test per feature, plus the interaction, run in a fresh interpreter ─────────
