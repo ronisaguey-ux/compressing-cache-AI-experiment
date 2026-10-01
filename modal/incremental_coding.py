@@ -270,8 +270,21 @@ CONTRACT = (
     "repeated): solution.py must ALSO define a module-level dict named REGISTRY. Every function you "
     "implement, in this turn and in every later turn, must be registered in it: the key is the "
     "function's name as a string, the value is the function object. REGISTRY must always contain "
-    "every function defined so far."
+    "every function defined so far. "
+    # ★★ THE NONCE IS THE CHECK THAT CANNOT BE RE-DERIVED, and it is here because the REGISTRY rule
+    # alone turned out to be SELF-SUSTAINING. A model that writes `REGISTRY[...] = ...` in every
+    # append leaves that pattern in its recent turns, so a policy keeping only the last K turns can
+    # still infer the rule without ever seeing turn 1 -- the check would pass for BOTH arms and
+    # discriminate nothing (the same "both arms converge" failure the shared ceiling caused).
+    #
+    # A value that appears ONLY here, and is required ONLY in the FINAL append, cannot be inferred
+    # from recent turns: nothing else in the transcript ever contains it. So it fails exactly when
+    # turn 1 has been evicted, which is the property being measured.
+    "FINALLY: when you have implemented the last feature you are asked for, append one more line to "
+    "solution.py, as its last line, reading exactly: CONTRACT_STAMP = \"QX7-4420-BRAVO\"  "
+    "(that exact value; it is given here and nowhere else, and it must appear exactly once)."
 )
+CONTRACT_NONCE = "QX7-4420-BRAVO"
 
 # ★ THE FINAL TURN IS THE INTERACTION TEST, AND IT IS WHAT MAKES THIS A CONTEXT RETENTION TASK
 # RATHER THAN N INDEPENDENT TASKS. It requires functions written many turns earlier to still exist
@@ -636,6 +649,16 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
     lines.append("    RESULTS['contract'] = bool(ok and len(names) >= N)")
     lines.append("except Exception:")
     lines.append("    RESULTS['contract'] = False")
+    # ★★ THE NONCE CHECK -- the one that CANNOT be re-derived from recent turns. The value is stated
+    # once in turn 1 and required only in the final append, so it is recoverable exactly when turn 1
+    # survived. Purely additive: if a model wrote the stamp early it is present for BOTH arms and
+    # this check simply does not discriminate; it can never make a run look WORSE than it is.
+    lines.append("try:")
+    lines.append("    _src = open(%r).read()" % solution)
+    lines.append("    _n = _src.count(%r)" % CONTRACT_NONCE)
+    lines.append("    RESULTS['nonce'] = bool(_n == 1)")
+    lines.append("except Exception:")
+    lines.append("    RESULTS['nonce'] = False")
     lines.append("import json; print(json.dumps(RESULTS))")
     grader = _os.path.join(WORK, "grade.py")
     open(grader, "w").write("\n".join(lines))
