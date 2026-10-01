@@ -47,6 +47,12 @@ image = (
                  "bitsandbytes")
     .env({"HF_HOME": "/cache/hf", "HF_XET_HIGH_PERFORMANCE": "1",
           "TOKENIZERS_PARALLELISM": "false",
+          # ★★ WITHOUT THIS THE RUN IS INVISIBLE. Python block-buffers stdout when it is not a tty,
+          # so every per-turn print sat in an 8 KB buffer and `modal app logs` showed nothing past
+          # "Loading weights 100%" -- while the container was happily generating. Only tqdm leaked
+          # through, because it writes to stderr (unbuffered). A 35-minute run with a frozen log is
+          # indistinguishable from a wedged one, which is exactly the false alarm this prevents.
+          "PYTHONUNBUFFERED": "1",
           "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"})
     .add_local_dir("/tmp/opencode/ccai/src", "/root/ccai/src")
 )
