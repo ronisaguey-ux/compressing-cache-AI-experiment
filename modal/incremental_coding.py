@@ -44,14 +44,14 @@ app = modal.App("ccai-incremental-coding")
 # 24000 leaves ~8k of the 32k window for the system prompt, the new instruction
 # and the reply, so the comparison is about the context POLICY, not about which
 # arm happened to overflow the model first.
-MAX_PROMPT_TOKENS = 12000
+MAX_PROMPT_TOKENS = int(os.environ.get("CCAI_MAX_PROMPT_TOKENS", "12000"))
 
 # ★ THE RUNTIME'S OWN CONTEXT BUDGET -- deliberately SMALL, because a bounded context is the whole
 # claim being tested. Linear is capped only by the model window (MAX_PROMPT_TOKENS); the runtime is
 # capped here, so the two arms have genuinely different working sets rather than both converging on
 # whatever fits in the larger number. Sized to hold the anchored turn-1 contract plus the last few
 # appends.
-RUNTIME_TOKENS = 2048
+RUNTIME_TOKENS = int(os.environ.get("CCAI_RUNTIME_TOKENS", "2048"))
 GPU = os.environ.get("CCAI_GPU", "A100-40GB")
 
 image = (
@@ -72,9 +72,22 @@ image = (
 hf_cache = modal.Volume.from_name("ccai-hf-cache", create_if_missing=True)
 
 MODELS = {
+    # ★ GEMMA 4 IS THE COMPETITION MODEL (Kaggle "Gemma 4 Developer Agent Paper Track",
+    # closes 2026-11-12). Apache 2.0 and UNGATED -- unlike every other Gemma (all `gated=manual`,
+    # HTTP 403 on file access from this account). Verified by reading config.json, because a 200 on
+    # the metadata endpoint does NOT mean access (that cost us a cycle on Llama-3.1).
+    #   gemma-4-12B-it      23.9 GB bf16 -> ~7 GB at 4-bit; fits A100-40GB comfortably
+    #   gemma-4-E4B-it      16.0 GB bf16 -> runs on a cheap L4
+    #   gemma-4-26B-A4B-it  51.6 GB bf16 -> MoE, 3.8B active; needs A100-80GB at bf16
+    "gemma-4-12b": "google/gemma-4-12B-it",
+    "gemma-4-e4b": "google/gemma-4-E4B-it",
+    "gemma-4-26b-a4b": "google/gemma-4-26B-A4B-it",
+    # prior benchmark models, kept so old runs stay reproducible
     "qwen2.5-coder-32b": "Qwen/Qwen2.5-Coder-32B-Instruct",
     "qwen2.5-7b": "Qwen/Qwen2.5-7B",
     "llama-3.1-8b": "NousResearch/Meta-Llama-3.1-8B",
+    # tiny, for zero-GPU logic tests (resume/checkpoint) on CPU
+    "qwen2.5-0.5b": "Qwen/Qwen2.5-0.5B",
 }
 
 # ── THE FEATURE SET ──────────────────────────────────────────────────────────────────────────
@@ -348,19 +361,34 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
 
     mid = MODELS[model]
     tok = AutoTokenizer.from_pretrained(mid)
-    if "32b" in model.lower():
+    # ★ DEVICE AND QUANTISATION ARE CONFIGURABLE so the same file runs on a GPU host, on a smaller
+    # GPU, or on CPU for a zero-cost logic test. Bits are the caller's choice and the trade-off is
+    # NOT "more bits = cheaper": the 32B is ~19 GB at 4-bit and ~34 GB at 8-bit, so 8-bit needs a
+    # LARGER GPU and buys strictly less runway for the same wall-clock. 4-bit is the cheap option.
+    _dev = _os.environ.get("CCAI_DEVICE", "cuda")
+    _quant = _os.environ.get("CCAI_QUANT", "auto")      # auto | 4 | 8 | none
+    if _quant == "auto":
+        _quant = "4" if "32b" in model.lower() else "none"
+    if _quant in ("4", "8"):
         from transformers import BitsAndBytesConfig
+        if _quant == "4":
+            _qc = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
+                                     bnb_4bit_compute_dtype=torch.float16,
+                                     bnb_4bit_use_double_quant=True)
+        else:
+            _qc = BitsAndBytesConfig(load_in_8bit=True)
         mdl = AutoModelForCausalLM.from_pretrained(
-            mid, quantization_config=BitsAndBytesConfig(
-                load_in_4bit=True, bnb_4bit_quant_type="nf4",
-                bnb_4bit_compute_dtype=torch.float16, bnb_4bit_use_double_quant=True),
-            device_map="cuda", attn_implementation="sdpa").eval()
+            mid, quantization_config=_qc, device_map=_dev,
+            attn_implementation="sdpa").eval()
     else:
         mdl = AutoModelForCausalLM.from_pretrained(
-            mid, dtype=torch.float16, device_map="cuda",
+            mid, dtype=torch.float16,
+            device_map=(_dev if _dev != "cpu" else None),
             attn_implementation="sdpa").eval()
+        if _dev == "cpu":
+            mdl = mdl.to("cpu")
 
-    WORK = "/work/inc"
+    WORK = _os.environ.get("CCAI_WORK", "/work/inc")
     _os.makedirs(WORK, exist_ok=True)
     solution = _os.path.join(WORK, "solution.py")
 
@@ -368,16 +396,17 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
         ids = tok(prompt, add_special_tokens=False)["input_ids"]
         t0 = time.perf_counter()
         with torch.no_grad():
-            o = mdl(input_ids=torch.tensor([ids], dtype=torch.long, device="cuda"),
+            o = mdl(input_ids=torch.tensor([ids], dtype=torch.long, device=_dev),
                     use_cache=True)
-        torch.cuda.synchronize()
+        if _dev == "cuda":
+            torch.cuda.synchronize()
         ttft = (time.perf_counter() - t0) * 1000
         nxt = o.logits[:, -1, :].argmax(-1, keepdim=True)
         gen, c, p = [nxt], o.past_key_values, len(ids)
         for _ in range(mnew - 1):
             with torch.no_grad():
                 o = mdl(input_ids=nxt, past_key_values=c, use_cache=True,
-                        cache_position=torch.tensor([p], device="cuda"))
+                        cache_position=torch.tensor([p], device=_dev))
             c = o.past_key_values
             nxt = o.logits[:, -1, :].argmax(-1, keepdim=True)
             gen.append(nxt); p += 1
@@ -462,18 +491,105 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
     # "sequence longer than the model maximum (33516 > 32768)" warning on every turn even though
     # the prompt actually sent was correctly capped. One tokenization per block, then a greedy walk
     # from the end, removes both costs.
-    def _counts(blocks):
-        return [len(tok("<|im_start|>%s\n%s<|im_end|>\n" % (r, c),
-                        add_special_tokens=False)["input_ids"]) for r, c in blocks]
+    # ★★ THE PROMPT FORMAT IS MODEL-SPECIFIC AND THIS WAS HARDCODED TO QWEN.
+    #
+    # The benchmark rendered every turn as ChatML (`<|im_start|>user\n…<|im_end|>\n`), which is
+    # Qwen's format. Gemma 4 renders `<bos><|turn>user\nhi<turn|>\n<|turn>model\n<|channel>thought
+    # <channel|>` — it has NO `<|im_start|>` token at all, so a ChatML prompt reaches it as literal
+    # text and the instruction boundaries are invisible. Feeding one model another's chat format
+    # does not error; it just quietly degrades everything, which would have made the Gemma numbers
+    # meaningless. Verified by rendering a real message through each tokenizer before wiring this.
+    #
+    # Both have a chat_template, so use it. Per-message rendering (BOS stripped) keeps the block
+    # structure the eviction policies need, while staying faithful to what the model was trained on.
+    _HAS_TPL = bool(getattr(tok, "chat_template", None))
+    _BOS = getattr(tok, "bos_token", None) or ""
 
-    _SYS_TOKENS = len(tok("<|im_start|>system\n" + SYSTEM + "<|im_end|>\n",
+    def _render_block(role, content):
+        if not _HAS_TPL:
+            return "<|im_start|>%s\n%s<|im_end|>\n" % (role, content)
+        txt = tok.apply_chat_template([{"role": role, "content": content}],
+                                      tokenize=False, add_generation_prompt=False)
+        if _BOS and txt.startswith(_BOS):
+            txt = txt[len(_BOS):]
+        return txt
+
+    def _render_prompt(blocks, instr):
+        msgs = [{"role": "system", "content": SYSTEM}]
+        for r, c in blocks:
+            # transcript blocks carry role "user"/"assistant"; a pre-formatted legacy block keeps
+            # its own role marker, so map it back rather than guessing.
+            msgs.append({"role": r, "content": c})
+        msgs.append({"role": "user", "content": instr})
+        if _HAS_TPL:
+            return tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
+        return ("<|im_start|>system\n" + SYSTEM + "<|im_end|>\n"
+                + "".join("<|im_start|>%s\n%s<|im_end|>\n" % (r, c) for r, c in blocks)
+                + "<|im_start|>user\n" + instr + "<|im_end|>\n<|im_start|>assistant\n")
+
+    def _counts(blocks):
+        return [len(tok(_render_block(r, c), add_special_tokens=False)["input_ids"])
+                for r, c in blocks]
+
+    _SYS_TOKENS = len(tok(_render_block("system", SYSTEM),
                           add_special_tokens=False)["input_ids"])
 
     transcript = []
     _fail = 0
     _t_start = time.time()
     _stopped_early = None
+
+    # ★★★ CHECKPOINT / RESUME. A GPU run that dies must not cost the whole budget.
+    #
+    # WHY THIS EXISTS: the first 200-turn run was killed by the platform at turn 62/71 and NOTHING
+    # was recoverable -- the only thing persisted was a one-line progress marker, so 71 turns of
+    # real model work and every cent spent on them were thrown away. The model's own output (the
+    # transcript and solution.py) lived in container-local storage that is destroyed with it.
+    # MEASURED on the Modal volume afterwards: `prog_linear.txt` = "turn 62/201 ..." and nothing
+    # else. There was no checkpoint to resume from, which is why the run had to be paid for twice.
+    #
+    # What is saved each turn: the transcript (the model's context), solution.py as it stands, the
+    # per-feature attribution, and the metrics log. Resuming requires ALL of them -- restoring the
+    # transcript without the file (or the reverse) would silently grade a different run than the
+    # one that was interrupted.
+    _CKPT = _os.environ.get("CCAI_CKPT_DIR", "/cache")
+    _ckpt_path = _os.path.join(_CKPT, "ckpt_%s_%s_f%d.json" % (
+        model.replace("/", "-"), arm, features))
+
+    def _save_ckpt(turn_ix):
+        try:
+            _os.makedirs(_CKPT, exist_ok=True)
+            _json.dump({
+                "turn_ix": turn_ix, "model": model, "arm": arm, "features": features,
+                "transcript": transcript, "turns_log": turns_log,
+                "per_feature_written": per_feature_written,
+                "solution": (open(solution).read() if _os.path.exists(solution) else ""),
+            }, open(_ckpt_path, "w"))
+        except Exception as _e:
+            print("[%s] checkpoint write failed (%s) -- continuing" % (arm, _e), flush=True)
+
+    _start_i = 0
+    if _os.environ.get("CCAI_RESUME", "1") == "1" and _os.path.exists(_ckpt_path):
+        try:
+            _ck = _json.load(open(_ckpt_path))
+            # Only resume a checkpoint that describes THIS experiment. A stale file from a different
+            # feature count or model would silently grade the wrong run.
+            if (_ck.get("model") == model and _ck.get("arm") == arm
+                    and _ck.get("features") == features):
+                transcript = [tuple(b) for b in _ck["transcript"]]
+                turns_log = list(_ck.get("turns_log") or [])
+                per_feature_written = dict(_ck.get("per_feature_written") or {})
+                _start_i = int(_ck.get("turn_ix", 0)) + 1
+                if _ck.get("solution"):
+                    open(solution, "w").write(_ck["solution"])
+                print("[%s] RESUMED from checkpoint at turn %d/%d (transcript=%d blocks)"
+                      % (arm, _start_i, len(specs), len(transcript)), flush=True)
+        except Exception as _e:
+            print("[%s] checkpoint unreadable (%s) -- starting fresh" % (arm, _e), flush=True)
+
     for i, spec in enumerate(specs):
+        if i < _start_i:
+            continue                                    # already done in an earlier attempt
         # ★ STOP BEFORE THE PLATFORM DOES. A partial run that grades is evidence; a run killed by
         # the platform is an exception with nothing in it. Whatever completed is still a valid
         # measurement of the turns that ran.
@@ -529,9 +645,7 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
             while len(keep) > 1 and total > budget:
                 total -= costs.pop(1)
                 keep.pop(1)                                # drop the oldest MIDDLE turn
-        prompt = ("<|im_start|>system\n" + SYSTEM + "<|im_end|>\n"
-                  + "".join("<|im_start|>%s\n%s<|im_end|>\n" % (r, c) for r, c in keep)
-                  + "<|im_start|>user\n" + instr + "<|im_end|>\n<|im_start|>assistant\n")
+        prompt = _render_prompt(keep, instr)
         txt, m = complete(prompt, max_new)
         out_text = txt
         call, err = parse(txt)
@@ -608,14 +722,13 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
         # ⇒ Record the real reply (bounded), then send the correction as a user turn. A harness that
         # silently substitutes its own text for the model's is not measuring the model.
         if err:
-            ext = ("<|im_start|>user\n" + instr + "<|im_end|>\n"
-                   + "<|im_start|>assistant\n" + str(txt)[:1200] + "<|im_end|>\n"
-                   + "<|im_start|>user\n" + obs + "<|im_end|>\n")
+            transcript.append(("user", instr))
+            transcript.append(("assistant", str(txt)[:1200]))
+            transcript.append(("user", obs))
         else:
-            ext = ("<|im_start|>user\n" + instr + "<|im_end|>\n"
-                   + "<|im_start|>assistant\n" + str(call)[:4000] + "<|im_end|>\n")
-        transcript.append(("X", ext))   # pre-formatted block, role ignored on render
-
+            transcript.append(("user", instr))
+            transcript.append(("assistant", str(call)[:4000]))
+        _save_ckpt(i)                   # ★ persist the turn so a dead run is resumable, not lost
     # ── GRADE: one test per feature, plus the interaction, run in a fresh interpreter ─────────
     # ★ GRADE ONLY WHAT WAS ATTEMPTED. A run stopped early by the time budget has NOT attempted the
     # remaining features, so grading all 200 would report never-tried work as failures and make a
@@ -666,14 +779,29 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
     try:
         results = _json.loads(r.stdout.strip().splitlines()[-1])
     except Exception:
+        # ★★ A GRADER THAT CRASHES MUST NOT LOOK LIKE A MODEL THAT FAILED EVERYTHING.
+        # MEASURED: when solution.py was never written, `import solution` raised
+        # ModuleNotFoundError, the grader printed a traceback instead of JSON, this branch
+        # swallowed it, and the run reported `PASSED 0/0` with an EMPTY per_feature dict --
+        # identical to "ran fine, nothing passed". The run's stdout said `PASSED` and the
+        # launcher greps for that word, so a completely broken harness would have been read
+        # as a finished experiment. Surface the reason and mark the run as harness-failed.
         results = {}
+        _grader_error = (r.stderr or "").strip().splitlines()[-1:] or ["(no stderr)"]
+        print("[%s] GRADER FAILED -- results are NOT a model measurement: %s"
+              % (arm, _grader_error[0]), flush=True)
+        # A missing solution file is the common cause and deserves to be named explicitly.
+        if not _os.path.exists(solution):
+            print("[%s] cause: solution.py was never written (no valid tool call was ever parsed)"
+                  % arm, flush=True)
 
     passed = sum(1 for v in results.values() if v)
     total = len(results)
     ttfts = [t["ttft_ms"] for t in turns_log] or [0]
     kvs = [t["kv_bytes"] for t in turns_log] or [0]
     pts = [t["prompt_tokens"] for t in turns_log] or [0]
-    return dict(model=model, arm=arm, features=len(use),
+    _harness_failed = not results
+    return dict(model=model, arm=arm, harness_failed=_harness_failed, features=len(use),
                 features_completed=n_features_done,
                 stopped_early=_stopped_early,
                 seconds=round(time.time() - _t_start, 1),

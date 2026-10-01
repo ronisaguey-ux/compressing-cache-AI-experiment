@@ -1,0 +1,69 @@
+{
+  "model": "qwen2.5-0.5b",
+  "arm": "linear",
+  "features": 3,
+  "features_completed": 3,
+  "stopped_early": null,
+  "seconds": 328.7,
+  "gpu": "A100-40GB",
+  "passed": 0,
+  "total": 0,
+  "per_feature": {},
+  "written": {},
+  "ttft_first": 31451.139953103848,
+  "ttft_last": 86620.81569293514,
+  "ttft_mean": 57293.97373099346,
+  "kv_peak": 16490496,
+  "kv_last": 16490496,
+  "prompt_first": 440,
+  "prompt_last": 1193,
+  "solution_chars": 0,
+  "turns": [
+    {
+      "turn": 0,
+      "spec": "`fn_00_k` returns the integer 17",
+      "tool": null,
+      "parse_error": "no JSON object and no code fence",
+      "raw_reply": "STANDING CONTRACT (set now, in force for the rest of this session, and it will NOT be repeated): solution.py must ALSO define a module-level dict named REGISTRY. Every function you implement, in this turn and in every later turn, must be registered in it: the key is the function's name as a string, the value is the function object. REGISTRY must always contain every function defined so far. FINALL",
+      "ttft_ms": 31451.139953103848,
+      "kv_bytes": 7237632,
+      "prompt_tokens": 440,
+      "wall_ms": 54536.6851791041
+    },
+    {
+      "turn": 1,
+      "spec": "`fn_01_name` returns the string \"quokka\"",
+      "tool": null,
+      "parse_error": "no JSON object and no code fence",
+      "raw_reply": "STANDING CONTRACT (set now, in force for the rest of this session, and it will NOT be repeated): solution.py must ALSO define a module-level dict named REGISTRY. Every function you implement, in this turn and in every later turn, must be registered in it: the key is the function's name as a string, the value is the function object. REGISTRY must always contain every function defined so far. FINALL",
+      "ttft_ms": 51417.72923001554,
+      "kv_bytes": 10039296,
+      "prompt_tokens": 668,
+      "wall_ms": 77464.71249498427
+    },
+    {
+      "turn": 2,
+      "spec": "`fn_02_double(n)` returns n * 2",
+      "tool": null,
+      "parse_error": "no JSON object and no code fence",
+      "raw_reply": "STANDING CONTRACT (set now, in force for the rest of this session, and it will NOT be repeated): solution.py must ALSO define a module-level dict named REGISTRY. Every function you implement, in this turn and in every later turn, must be registered in it: the key is the function's name as a string, the value is the function object. REGISTRY must always contain every function defined so far. FINALL",
+      "ttft_ms": 59686.2100479193,
+      "kv_bytes": 12828672,
+      "prompt_tokens": 895,
+      "wall_ms": 80540.03105999436
+    },
+    {
+      "turn": 3,
+      "spec": "`fn_99_pipeline(s)` must strip the vowels from s, then upper-case the ",
+      "tool": null,
+      "parse_error": "no JSON object and no code fence",
+      "raw_reply": "STANDING CONTRACT (set now, in force for the rest of this session, and it will NOT be repeated): solution.py must ALSO define a module-level dict named REGISTRY. Every function you implement, in this turn and in every later turn, must be registered in it: the key is the function's name as a string, the value is the function object. REGISTRY must always contain every function defined so far. FINALL",
+      "ttft_ms": 86620.81569293514,
+      "kv_bytes": 16490496,
+      "prompt_tokens": 1193,
+      "wall_ms": 115769.51814594213
+    }
+  ],
+  "failed": [],
+  "elapsed_s": 340.12510347366333
+}

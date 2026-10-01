@@ -1,0 +1,59 @@
+{
+  "model": "qwen2.5-0.5b",
+  "arm": "linear",
+  "harness_failed": true,
+  "features": 2,
+  "features_completed": 2,
+  "stopped_early": null,
+  "seconds": 195.2,
+  "gpu": "A100-40GB",
+  "passed": 0,
+  "total": 0,
+  "per_feature": {},
+  "written": {},
+  "ttft_first": 28357.14310198091,
+  "ttft_last": 73025.48581000883,
+  "ttft_mean": 47316.252262331545,
+  "kv_peak": 12251136,
+  "kv_last": 12251136,
+  "prompt_first": 440,
+  "prompt_last": 878,
+  "solution_chars": 0,
+  "turns": [
+    {
+      "turn": 0,
+      "spec": "`fn_00_k` returns the integer 17",
+      "tool": null,
+      "parse_error": "no JSON object and no code fence",
+      "raw_reply": "STANDING CONTRACT (set now, in force for the rest of this session, and it will NOT be repeated): solution.py must ALSO define a module-level dict named REGISTRY. Every function you implement, in this turn and in every later turn, must be registered in it: the key is the function's name as a string, the value is the function object. REGISTRY must always contain every function defined so far. FINALL",
+      "ttft_ms": 28357.14310198091,
+      "kv_bytes": 6868992,
+      "prompt_tokens": 440,
+      "wall_ms": 43486.35483998805
+    },
+    {
+      "turn": 1,
+      "spec": "`fn_01_name` returns the string \"quokka\"",
+      "tool": null,
+      "parse_error": "no JSON object and no code fence",
+      "raw_reply": "STANDING CONTRACT (set now, in force for the rest of this session, and it will NOT be repeated): solution.py must ALSO define a module-level dict named REGISTRY. Every function you implement, in this turn and in every later turn, must be registered in it: the key is the function's name as a string, the value is the function object. REGISTRY must always contain every function defined so far. FINALL",
+      "ttft_ms": 40566.127875004895,
+      "kv_bytes": 9240576,
+      "prompt_tokens": 633,
+      "wall_ms": 57760.567178949714
+    },
+    {
+      "turn": 2,
+      "spec": "`fn_99_pipeline(s)` must strip the vowels from s, then upper-case the ",
+      "tool": null,
+      "parse_error": "no JSON object and no code fence",
+      "raw_reply": "STANDING CONTRACT (set now, in force for the rest of this session, and it will NOT be repeated): solution.py must ALSO define a module-level dict named REGISTRY. Every function you implement, in this turn and in every later turn, must be registered in it: the key is the function's name as a string, the value is the function object. REGISTRY must always contain every function defined so far. FINALL",
+      "ttft_ms": 73025.48581000883,
+      "kv_bytes": 12251136,
+      "prompt_tokens": 878,
+      "wall_ms": 93563.38290008716
+    }
+  ],
+  "failed": [],
+  "elapsed_s": 206.36543822288513
+}
