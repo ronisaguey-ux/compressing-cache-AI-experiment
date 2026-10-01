@@ -45,6 +45,13 @@ app = modal.App("ccai-incremental-coding")
 # and the reply, so the comparison is about the context POLICY, not about which
 # arm happened to overflow the model first.
 MAX_PROMPT_TOKENS = 12000
+
+# ★ THE RUNTIME'S OWN CONTEXT BUDGET -- deliberately SMALL, because a bounded context is the whole
+# claim being tested. Linear is capped only by the model window (MAX_PROMPT_TOKENS); the runtime is
+# capped here, so the two arms have genuinely different working sets rather than both converging on
+# whatever fits in the larger number. Sized to hold the anchored turn-1 contract plus the last few
+# appends.
+RUNTIME_TOKENS = 2048
 GPU = os.environ.get("CCAI_GPU", "A100-40GB")
 
 image = (
@@ -488,11 +495,22 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                 total -= costs.pop(0)
                 keep.pop(0)                                # drop oldest
         else:
-            # ANCHOR + WINDOW: turn 1 (the contract) plus the last K turns. The middle is the
-            # disposable part -- that is the eviction the runtime is built to do.
+            # ★★ THE RUNTIME IS BOUNDED BY TOKENS, NOT BY A BLOCK COUNT -- and this was WRONG in
+            # the first version in a way that made the two arms indistinguishable.
+            #
+            # The first version kept `transcript[:1] + transcript[-8:]` and only shrank that when it
+            # exceeded MAX_PROMPT_TOKENS (12k). Measured consequence: it grew to ~9.9k while linear
+            # reached ~11.2k, so at turn 62 the two arms had the SAME latency (4180 vs 4308 ms) and
+            # the experiment could not discriminate at all. **The ceiling was setting the working
+            # set, not the policy** -- both arms converged on "whatever fits in 12k".
+            #
+            # The runtime's entire claim is a context that stays SMALL and FLAT. So it gets its own
+            # modest budget (RUNTIME_TOKENS, default 2k) and is capped there regardless of how much
+            # room the model has. That is the eviction being tested: anchor + the most recent turns
+            # that fit, and the middle is dropped on every turn once the module outgrows the budget.
             keep = transcript[:1] + transcript[-(keep_turns * 2):]
             costs = _counts(keep)
-            budget = MAX_PROMPT_TOKENS - _SYS_TOKENS
+            budget = RUNTIME_TOKENS - _SYS_TOKENS
             total = sum(costs)
             # index 1 onwards is droppable; index 0 is the anchored contract and is never popped.
             while len(keep) > 1 and total > budget:
