@@ -63,6 +63,17 @@ the reason pinning an immutable front is mechanically sensible rather than merel
 convenience; note however that sinks stabilise a stream without acting as a memory channel [11],
 which is exactly why our retention probes test a *specific fact* rather than fluency.
 
+**Closest prior art, and the distinction that matters.** SinkTrack [21] is the nearest work in
+*intent*: it also keeps a model anchored to its initial context, and it also reports that context
+forgetting is a real failure of long generation. The mechanisms differ in kind. SinkTrack is a
+**model-level** intervention — it injects contextual features into the `<BOS>` representation so the
+attention sink carries them forward — and it is evaluated on single-generation QA benchmarks. Ours
+is a **policy-level** intervention that does not touch the model at all: it decides *which tokens the
+agent retains* and measures the serving-cost consequence of that choice over a long horizon. The two
+are complementary, and SinkTrack's mechanism is a reason to expect our pinned prefix to be effective:
+if the first token attracts attention, an agent that can afford to keep its brief at the front should
+keep it there. We cite it here specifically so the contribution is not read as a re-derivation.
+
 **Agent memory.** MemGPT [12] pages context in and out in an OS-like fashion, and the agent-memory
 survey [13] taxonomises memory sources, forms and operations. Both address what an agent should
 *store*; neither makes the *serving-cost* consequence of rewriting it measurable, which is the gap
@@ -85,35 +96,6 @@ literature documents systematic leakage and reporting error [17,18]; and work on
 bias [19] shows method comparisons are biased toward the newly proposed method, which is precisely
 the bias the shared-ceiling and re-derivable-probe failures produce. We adopt artifact-review
 expectations [20] rather than treating reproducibility as optional.
-
-## 2.1 References
-
-[1] Zhang et al. *H2O: Heavy-Hitter Oracle for Efficient Generative Inference of LLMs.* NeurIPS 2023. arXiv:2306.14048
-[2] Liu et al. *Scissorhands: Exploiting the Persistence of Importance Hypothesis.* NeurIPS 2023. arXiv:2305.17118
-[3] Oren et al. *Transformers are Multi-State RNNs.* arXiv:2401.06104
-[4] Li et al. *SnapKV: LLM Knows What You Are Looking For Before Generation.* NeurIPS 2024. arXiv:2404.14469
-[5] Yao et al. *CacheBlend: Fast LLM Serving for RAG with Cached Knowledge Fusion.* EuroSys 2025. arXiv:2405.16444
-[6] *CacheFocus: Dynamic Cache Re-Positioning for Efficient RAG.* arXiv:2502.11101
-[7] *DSCache: Decoupled Streaming Cache.* arXiv:2605.01858
-[8] Liu et al. *CacheGen: KV Cache Compression and Streaming for Fast LLM Serving.* ACM SIGCOMM 2024. arXiv:2310.07240
-[9] Xiao et al. *Efficient Streaming Language Models with Attention Sinks.* ICLR 2024. arXiv:2309.17453
-[10] Gu et al. *When Attention Sink Emerges in Language Models.* arXiv:2410.10781
-[11] *Separating Stream Stability from Long-Term Recall in LMs.* arXiv:2609.07282
-[12] Packer et al. *MemGPT: Towards LLMs as Operating Systems.* arXiv:2310.08560
-[13] Zhang et al. *A Survey on the Memory Mechanism of LLM-based Agents.* arXiv:2404.13501
-[14] Liu et al. *Lost in the Middle: How Language Models Use Long Contexts.* TACL 2024. arXiv:2307.03172
-[15] Han et al. *Found in the Middle: Calibrating Positional Attention Bias.* arXiv:2406.16008
-[16] Schaeffer et al. *Position: ML Conferences Should Establish a "Refutations and Critiques" Track.* NeurIPS 2025.
-[17] Kapoor & Narayanan. *Leakage and the reproducibility crisis in ML-based science.* Patterns 2023.
-[18] *Systematic research errors in thousands of machine learning papers.* ACL 2023.
-[19] Herrmann et al. *Why We Must Rethink Empirical Research in Machine Learning.* ICML 2024.
-[20] ACM. *Artifact Review and Badging, v1.1.*
-
-> ⚠️ Several of these entries came from research notes rather than a direct index lookup and are
-> marked UNVERIFIED in the source material. arXiv identifiers in the `26xx` range are valid for
-> 2026 (e.g. `2609.*` = September 2026). **Each citation's authors, venue and id must be confirmed
-> against the index before submission** — an unverifiable citation is a defect to fix, not a fact
-> to assert, and the [3],[6],[7],[11] entries in particular have unconfirmed author lists.
 
 ## 3. Method
 
@@ -247,3 +229,34 @@ python3 tools/run_compare.py results/fixres_*_*.json
 Environment, task generator, policies and graders are in this repository. The three policies are
 selected by `CCAI_ARM`; the retention gate is opt-in via `CCAI_GATE=1`; the compaction period by
 `CCAI_PRUNE_EVERY`.
+
+## References
+
+[1] Zhang et al. *H2O: Heavy-Hitter Oracle for Efficient Generative Inference of LLMs.* NeurIPS 2023. arXiv:2306.14048
+[2] Liu et al. *Scissorhands: Exploiting the Persistence of Importance Hypothesis.* NeurIPS 2023. arXiv:2305.17118
+[3] Oren et al. *Transformers are Multi-State RNNs.* arXiv:2401.06104
+[4] Li et al. *SnapKV: LLM Knows What You Are Looking For Before Generation.* NeurIPS 2024. arXiv:2404.14469
+[5] Yao et al. *CacheBlend: Fast LLM Serving for RAG with Cached Knowledge Fusion.* EuroSys 2025. arXiv:2405.16444
+[6] *CacheFocus: Dynamic Cache Re-Positioning for Efficient RAG.* arXiv:2502.11101
+[7] *DSCache: Decoupled Streaming Cache.* arXiv:2605.01858
+[8] Liu et al. *CacheGen: KV Cache Compression and Streaming for Fast LLM Serving.* ACM SIGCOMM 2024. arXiv:2310.07240
+[9] Xiao et al. *Efficient Streaming Language Models with Attention Sinks.* ICLR 2024. arXiv:2309.17453
+[10] Gu et al. *When Attention Sink Emerges in Language Models.* arXiv:2410.10781
+[11] *Separating Stream Stability from Long-Term Recall in LMs.* arXiv:2609.07282
+[12] Packer et al. *MemGPT: Towards LLMs as Operating Systems.* arXiv:2310.08560
+[13] Zhang et al. *A Survey on the Memory Mechanism of LLM-based Agents.* arXiv:2404.13501
+[14] Liu et al. *Lost in the Middle: How Language Models Use Long Contexts.* TACL 2024. arXiv:2307.03172
+[15] Han et al. *Found in the Middle: Calibrating Positional Attention Bias.* arXiv:2406.16008
+[21] Liu, Chen & Wang. *SinkTrack: Attention Sink based Context Anchoring for Large Language Models.* ICLR 2026. arXiv:2604.10027  ← **verified against the index (authors + venue confirmed)**
+[16] Schaeffer et al. *Position: ML Conferences Should Establish a "Refutations and Critiques" Track.* NeurIPS 2025.
+[17] Kapoor & Narayanan. *Leakage and the reproducibility crisis in ML-based science.* Patterns 2023.
+[18] *Systematic research errors in thousands of machine learning papers.* ACL 2023.
+[19] Herrmann et al. *Why We Must Rethink Empirical Research in Machine Learning.* ICML 2024.
+[20] ACM. *Artifact Review and Badging, v1.1.*
+
+> ⚠️ Several of these entries came from research notes rather than a direct index lookup and are
+> marked UNVERIFIED in the source material. arXiv identifiers in the `26xx` range are valid for
+> 2026 (e.g. `2609.*` = September 2026). **Each citation's authors, venue and id must be confirmed
+> against the index before submission** — an unverifiable citation is a defect to fix, not a fact
+> to assert, and the [3],[6],[7],[11] entries in particular have unconfirmed author lists.
+
