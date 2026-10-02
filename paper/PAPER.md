@@ -48,20 +48,72 @@ is retained and the large, superseded part is dropped.
 
 ## 2. Related work
 
-**Context compression and eviction.** Summarisation-based memory, attention-sink retention, and
-sliding-window attention all reduce context size. Sliding-window attention (as in Gemma-4, where 40
-of 48 layers use a 1024-token window) bounds the *model's* attention cost but says nothing about
-what the *agent* chooses to carry; the two are complementary and we treat the architectural window
-as a confound (§6, F4).
+**Key/value eviction and compression.** H2O [1], Scissorhands [2], TOVA [3] and SnapKV [4] all
+reduce cache size by scoring tokens and dropping the low-scoring ones. They assume the survivors
+remain valid after eviction — an assumption we do not share (§6, F4), and which is the subject of a
+parallel line of work on positional integrity: CacheBlend [5] selectively recomputes part of the KV
+and re-encodes positional indices, CacheFocus [6] re-positions the cache after pruning, and DSCache
+[7] stores pre-rotation keys and reintroduces position at use. CacheGen [8] uses recomputation as a
+correctness fallback under bandwidth pressure. **This work does not attempt any of that.** We do not
+repair a cache; we avoid needing to, by never rewriting the region the cache depends on.
 
-**Prefix caching.** Serving systems cache the shared prefix of successive requests. The value of
-that cache depends entirely on how much of the prefix survives between turns — a property of the
-agent's context policy, not of the engine.
+**Streaming and attention sinks.** StreamingLLM [9] keeps sink tokens and a sliding window to stream
+millions of tokens. The sink mechanism [10] — a learned, softmax-driven first-token attractor — is
+the reason pinning an immutable front is mechanically sensible rather than merely a bookkeeping
+convenience; note however that sinks stabilise a stream without acting as a memory channel [11],
+which is exactly why our retention probes test a *specific fact* rather than fluency.
 
-**Long-horizon evaluation.** SWE-bench-style tasks measure a single patch against hidden tests. They
-do not measure whether a policy can hold a requirement across many turns, and on small models they
-often floor at zero, which makes them unable to compare policies at all. We therefore adopt an
-iterative, graded task (§4).
+**Agent memory.** MemGPT [12] pages context in and out in an OS-like fashion, and the agent-memory
+survey [13] taxonomises memory sources, forms and operations. Both address what an agent should
+*store*; neither makes the *serving-cost* consequence of rewriting it measurable, which is the gap
+this paper fills.
+
+**Retention position.** *Lost in the Middle* [14] and *Found in the Middle* [15] establish that
+context use is position-dependent, which is why retention probes must be stated against the
+architectural window rather than assumed to be explained by the policy alone.
+
+**The architecture confound, stated up front.** Gemma-4 uses local attention in 40 of its 48 layers
+with a 1024-token window, so beyond 1024 tokens a turn-1 fact is unavailable to those layers
+regardless of the agent's policy. Every retention claim here is therefore a claim about **the tokens
+the agent chose to retain**, not about recovering a fact the architecture had already discarded (§6,
+F4).
+
+**On reporting negative and corrected results.** The measured result in §6 F3 is a defect in our own
+benchmark, and we report the corrected task rather than the number the broken task produced. A
+position paper argues that venues should have a formal refutations track [16]; the reproducibility
+literature documents systematic leakage and reporting error [17,18]; and work on empirical-method
+bias [19] shows method comparisons are biased toward the newly proposed method, which is precisely
+the bias the shared-ceiling and re-derivable-probe failures produce. We adopt artifact-review
+expectations [20] rather than treating reproducibility as optional.
+
+## 2.1 References
+
+[1] Zhang et al. *H2O: Heavy-Hitter Oracle for Efficient Generative Inference of LLMs.* NeurIPS 2023. arXiv:2306.14048
+[2] Liu et al. *Scissorhands: Exploiting the Persistence of Importance Hypothesis.* NeurIPS 2023. arXiv:2305.17118
+[3] Oren et al. *Transformers are Multi-State RNNs.* arXiv:2401.06104
+[4] Li et al. *SnapKV: LLM Knows What You Are Looking For Before Generation.* NeurIPS 2024. arXiv:2404.14469
+[5] Yao et al. *CacheBlend: Fast LLM Serving for RAG with Cached Knowledge Fusion.* EuroSys 2025. arXiv:2405.16444
+[6] *CacheFocus: Dynamic Cache Re-Positioning for Efficient RAG.* arXiv:2502.11101
+[7] *DSCache: Decoupled Streaming Cache.* arXiv:2605.01858
+[8] Liu et al. *CacheGen: KV Cache Compression and Streaming for Fast LLM Serving.* ACM SIGCOMM 2024. arXiv:2310.07240
+[9] Xiao et al. *Efficient Streaming Language Models with Attention Sinks.* ICLR 2024. arXiv:2309.17453
+[10] Gu et al. *When Attention Sink Emerges in Language Models.* arXiv:2410.10781
+[11] *Separating Stream Stability from Long-Term Recall in LMs.* arXiv:2609.07282
+[12] Packer et al. *MemGPT: Towards LLMs as Operating Systems.* arXiv:2310.08560
+[13] Zhang et al. *A Survey on the Memory Mechanism of LLM-based Agents.* arXiv:2404.13501
+[14] Liu et al. *Lost in the Middle: How Language Models Use Long Contexts.* TACL 2024. arXiv:2307.03172
+[15] Han et al. *Found in the Middle: Calibrating Positional Attention Bias.* arXiv:2406.16008
+[16] Schaeffer et al. *Position: ML Conferences Should Establish a "Refutations and Critiques" Track.* NeurIPS 2025.
+[17] Kapoor & Narayanan. *Leakage and the reproducibility crisis in ML-based science.* Patterns 2023.
+[18] *Systematic research errors in thousands of machine learning papers.* ACL 2023.
+[19] Herrmann et al. *Why We Must Rethink Empirical Research in Machine Learning.* ICML 2024.
+[20] ACM. *Artifact Review and Badging, v1.1.*
+
+> ⚠️ Several of these entries came from research notes rather than a direct index lookup and are
+> marked UNVERIFIED in the source material. arXiv identifiers in the `26xx` range are valid for
+> 2026 (e.g. `2609.*` = September 2026). **Each citation's authors, venue and id must be confirmed
+> against the index before submission** — an unverifiable citation is a defect to fix, not a fact
+> to assert, and the [3],[6],[7],[11] entries in particular have unconfirmed author lists.
 
 ## 3. Method
 

@@ -35,28 +35,41 @@ def _truncate_to(r, n):
     (per_turn_success, fixes_applied_then_lost, final_state_accuracy) are LEFT ALONE and flagged,
     because the file state at turn `n` is not something that can be reconstructed from a later
     snapshot -- inventing it would be worse than reporting it as unavailable for that arm.
+
+    ★ TWO FIELD-PLACEMENT FACTS, learned by reading the harness rather than assuming:
+      - `cache_rows` is a TOP-LEVEL key (`incremental_coding.py:1565`), NOT inside `metrics`. Reading
+        it from `metrics` returns nothing and silently drops the compaction analysis.
+      - `cache_hit_tokens` / `cache_total_tokens` / `cache_hit_rate` exist in BOTH places, so a
+        truncation must update both or the two disagree about the same run.
     """
     import copy
+    import os
+    mult = float(os.environ.get("CCAI_CACHE_HIT_MULT", "0.1"))  # must match the harness constant
     out = copy.deepcopy(r)
-    rows = sorted(out.get("metrics", {}).get("cache_rows") or [], key=lambda x: x.get("turn", 0))
+    rows = sorted(out.get("cache_rows") or [], key=lambda x: x.get("turn", 0))
     rows = [x for x in rows if x.get("turn", 0) < n]
     if rows:
         tot = sum(x.get("prompt", 0) for x in rows)
         hit = sum(x.get("hit", 0) for x in rows)
+        miss = max(0, tot - hit)
+        cu = miss * 1.0 + hit * mult
+        # top-level copies
+        out["cache_hit_tokens"] = hit
+        out["cache_total_tokens"] = tot
+        out["cache_hit_rate"] = round(hit / tot, 4) if tot else None
+        out["cache_rows"] = rows
+        # the 20-metric suite's own copies -- kept in step with the above
         m = out.setdefault("metrics", {})
-        m["cache_hit_tokens"] = hit
-        m["cache_total_tokens"] = tot
-        m["cache_hit_rate"] = round(hit / tot, 4) if tot else None
-        m["cache_miss_tokens"] = max(0, tot - hit)
-        m["cost_units"] = m["cache_miss_tokens"] * 1.0 + hit * 0.1
+        m["cache_hit_rate"] = out["cache_hit_rate"]
+        m["cache_miss_tokens"] = miss
+        m["cost_units"] = cu
         m["cost_units_no_cache"] = float(tot)
-        m["cost_saving_ratio"] = (m["cost_units_no_cache"] / m["cost_units"]) if m["cost_units"] else None
+        m["cost_saving_ratio"] = (float(tot) / cu) if cu else None
         m["total_prefill_tokens"] = tot
         m["prompt_last"] = rows[-1].get("prompt")
         m["prompt_peak"] = max(x.get("prompt", 0) for x in rows)
         m["prompt_first"] = rows[0].get("prompt")
         m["prompt_growth"] = (m["prompt_last"] / m["prompt_first"]) if m["prompt_first"] else None
-        m["cache_rows"] = rows
     if out.get("turn_ok"):
         out["turn_ok"] = out["turn_ok"][:n]
         out["turns_ok"] = sum(out["turn_ok"])

@@ -155,7 +155,9 @@ def main():
                  "difference appears in prefix reuse rather than only in context size.")
     L.append("")
     # ---- compaction events ----
-    pr = [r for r in (m.get("prune", {}).get("cache_rows") or [])]
+    # ★ `cache_rows` is TOP-LEVEL in the result (`incremental_coding.py:1565`), not inside `metrics`.
+    # Reading it from the metrics block returns nothing and silently skips this paragraph.
+    pr = list(runs.get("prune", {}).get("cache_rows") or [])
     if pr:
         drops = []
         for i in range(1, len(pr)):
