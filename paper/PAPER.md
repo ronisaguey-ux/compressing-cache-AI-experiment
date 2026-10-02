@@ -5,18 +5,16 @@
 
 ## Abstract
 
-Long-horizon autonomous agents are bounded by context economics, not by model capability. The
-standard remedy — periodically compacting the context — keeps the window small by *rewriting* it,
-and a rewrite invalidates the shared prefix that a serving engine's automatic prefix cache depends
-on, re-billing the entire prompt at full price. We describe a context policy that keeps the window
-small *without* rewriting the front: the system prompt and the turn-1 task brief are pinned, and the
-rolling window is advanced at the end. We evaluate three policies (bounded-anchor, grow-and-evict,
-grow-compact) on a long-horizon bug-fixing task of 60 turns using a single 12B model, and measure
-retention, cost in raw compute units, and prefix-cache reuse directly rather than inferring them.
-The bounded-anchor policy sustains a flat context while the alternatives grow to the ceiling or
-collapse on every compaction; we report the exact figures in §5. We also document four ways the
-benchmark itself can produce a clean-looking result that means nothing, and how each was detected —
-because a long-horizon evaluation that cannot discriminate will silently report a tie.
+Long-horizon autonomous agents are bounded by context economics, not model capability. The standard
+remedy — periodically compacting the context — keeps the window small by *rewriting* it, and a
+rewrite invalidates the shared prefix a serving engine's automatic prefix cache depends on, re-billing
+the whole prompt at full price. We describe a policy that keeps the window small *without* rewriting
+the front: the system prompt and the turn-1 brief are pinned, and the window advances at the end. We
+evaluate three policies (bounded-anchor, grow-and-evict, grow-compact) over 60 turns of a bug-fixing
+task on one 12B model, measuring retention, compute cost and prefix-cache reuse directly rather than
+inferring them. The bounded-anchor policy holds a flat context while the alternatives grow to the
+ceiling or collapse on each compaction; exact figures are in §5. We also document four ways such an
+evaluation can produce a clean-looking result that means nothing, and how each was detected.
 
 ## 1. Introduction
 
@@ -27,9 +25,7 @@ middle of the conversation to return under the window.
 
 Compaction reduces the size of the context but changes its *content*. Under a serving engine with
 automatic prefix caching, a cached token is billed at a fraction of a fresh one; when the prefix
-changes, the cache no longer applies and the full prompt is re-processed. A cache hit is roughly an
-order of magnitude cheaper than a miss on the re-processed span, so a policy that rewrites its
-context pays that multiple on every rewrite.
+changes, the cache no longer applies and the full prompt is re-processed. §4 quantifies this.
 
 We therefore ask a narrow, measurable question: **can an agent keep a small context without
 rewriting it?** Our policy pins an immutable front (system prompt and the turn-1 brief) and advances
@@ -39,63 +35,54 @@ is retained and the large, superseded part is dropped.
 **Contributions.**
 1. A context policy that bounds the working set while leaving the prefix shared with the previous
    turn intact (§3).
-2. A direct measurement of prefix-cache reuse — the longest common token prefix between consecutive
-   prompts — reported per turn, and a compute-cost model that prices a miss and a hit differently
-   (§4).
+2. A direct, per-turn measurement of prefix-cache reuse, and a compute-cost model that prices a miss
+   and a hit differently (§4).
 3. A long-horizon evaluation that discriminates, with per-turn grading and a retention probe that
    cannot be satisfied by recency alone (§4.2).
 4. A catalogue of four failure modes by which such an evaluation silently measures nothing (§6).
 
 ## 2. Related work
 
-**Key/value eviction and compression.** H2O [1], Scissorhands [2], TOVA [3] and SnapKV [4] all
-reduce cache size by scoring tokens and dropping the low-scoring ones. They assume the survivors
-remain valid after eviction — an assumption we do not share (§6, F4), and which is the subject of a
-parallel line of work on positional integrity: CacheBlend [5] selectively recomputes part of the KV
-and re-encodes positional indices, CacheFocus [6] re-positions the cache after pruning, and DSCache
-[7] stores pre-rotation keys and reintroduces position at use. CacheGen [8] uses recomputation as a
-correctness fallback under bandwidth pressure. **This work does not attempt any of that.** We do not
-repair a cache; we avoid needing to, by never rewriting the region the cache depends on.
+**Key/value eviction and compression.** H2O [1], Scissorhands [2], TOVA [3] and SnapKV [4] reduce
+cache size by scoring tokens and dropping the low-scoring ones. They assume survivors remain valid
+after eviction — an assumption we do not share (§6, F4). A parallel line works on that positional
+integrity directly: CacheBlend [5] selectively recomputes part of the KV and re-encodes positional
+indices, CacheFocus [6] re-positions the cache after pruning, DSCache [7] stores pre-rotation keys
+and reintroduces position at use, and CacheGen [8] recomputes as a correctness fallback. **We attempt
+none of that.** We do not repair a cache; we avoid needing to, by never rewriting the region it
+depends on.
 
 **Streaming and attention sinks.** StreamingLLM [9] keeps sink tokens and a sliding window to stream
-millions of tokens. The sink mechanism [10] — a learned, softmax-driven first-token attractor — is
-the reason pinning an immutable front is mechanically sensible rather than merely a bookkeeping
-convenience; note however that sinks stabilise a stream without acting as a memory channel [11],
-which is exactly why our retention probes test a *specific fact* rather than fluency.
+millions of tokens. The sink mechanism [10] — a learned, softmax-driven first-token attractor — makes
+pinning an immutable front mechanically sensible rather than merely a bookkeeping convenience. Sinks
+stabilise a stream without acting as a memory channel [11], which is why our probes test a *specific
+fact* rather than fluency.
 
 **Closest prior art, and the distinction that matters.** SinkTrack [21] is the nearest work in
-*intent*: it also keeps a model anchored to its initial context, and it also reports that context
-forgetting is a real failure of long generation. The mechanisms differ in kind. SinkTrack is a
-**model-level** intervention — it injects contextual features into the `<BOS>` representation so the
-attention sink carries them forward — and it is evaluated on single-generation QA benchmarks. Ours
-is a **policy-level** intervention that does not touch the model at all: it decides *which tokens the
-agent retains* and measures the serving-cost consequence of that choice over a long horizon. The two
-are complementary, and SinkTrack's mechanism is a reason to expect our pinned prefix to be effective:
-if the first token attracts attention, an agent that can afford to keep its brief at the front should
-keep it there. We cite it here specifically so the contribution is not read as a re-derivation.
+*intent*: it also keeps a model anchored to its initial context, and also reports context forgetting
+as a real failure of long generation. The mechanisms differ in kind. SinkTrack is a **model-level**
+intervention — it injects contextual features into the `<BOS>` representation so the attention sink
+carries them forward — evaluated on single-generation QA. Ours is **policy-level** and does not touch
+the model: it decides *which tokens the agent retains* and measures the serving-cost consequence over
+a long horizon. The two are complementary, and SinkTrack is a reason to expect a pinned prefix to
+work: if the first token attracts attention, an agent that can keep its brief at the front should.
 
-**Agent memory.** MemGPT [12] pages context in and out in an OS-like fashion, and the agent-memory
-survey [13] taxonomises memory sources, forms and operations. Both address what an agent should
-*store*; neither makes the *serving-cost* consequence of rewriting it measurable, which is the gap
-this paper fills.
+**Agent memory.** MemGPT [12] pages context in and out OS-style, and the agent-memory survey [13]
+taxonomises memory sources, forms and operations. Both address what an agent should *store*; neither
+makes the *serving-cost* consequence of rewriting it measurable — the gap this paper fills.
 
-**Retention position.** *Lost in the Middle* [14] and *Found in the Middle* [15] establish that
-context use is position-dependent, which is why retention probes must be stated against the
-architectural window rather than assumed to be explained by the policy alone.
+**Position and architecture.** *Lost in the Middle* [14] and *Found in the Middle* [15] establish
+that context use is position-dependent. Gemma-4 makes this concrete: 40 of its 48 layers use local
+attention with a 1024-token window, so beyond 1024 tokens a turn-1 fact is unavailable to those
+layers regardless of policy. Every retention claim here is therefore about **the tokens the agent
+chose to retain**, not about recovering a fact the architecture had already discarded (§6, F4).
 
-**The architecture confound, stated up front.** Gemma-4 uses local attention in 40 of its 48 layers
-with a 1024-token window, so beyond 1024 tokens a turn-1 fact is unavailable to those layers
-regardless of the agent's policy. Every retention claim here is therefore a claim about **the tokens
-the agent chose to retain**, not about recovering a fact the architecture had already discarded (§6,
-F4).
-
-**On reporting negative and corrected results.** The measured result in §6 F3 is a defect in our own
-benchmark, and we report the corrected task rather than the number the broken task produced. A
-position paper argues that venues should have a formal refutations track [16]; the reproducibility
-literature documents systematic leakage and reporting error [17,18]; and work on empirical-method
-bias [19] shows method comparisons are biased toward the newly proposed method, which is precisely
-the bias the shared-ceiling and re-derivable-probe failures produce. We adopt artifact-review
-expectations [20] rather than treating reproducibility as optional.
+**On reporting corrected results.** The §6 F3 result is a defect in our own benchmark, and we report
+the corrected task rather than the number the broken task produced. A position paper argues venues
+should have a formal refutations track [16]; the reproducibility literature documents systematic
+leakage and reporting error [17,18]; and work on empirical-method bias [19] shows comparisons are
+biased toward the newly proposed method — precisely the bias the F1 and F2 failures produce. We adopt
+artifact-review expectations [20].
 
 ## 3. Method
 

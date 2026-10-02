@@ -139,20 +139,20 @@ def main():
     best = max(hr, key=lambda a: hr[a])
     cheap = min(cu, key=lambda a: cu[a])
     worst = min(hr, key=lambda a: hr[a])
-    L.append("**What separates.** `%s` retains a reusable prefix for %.0f%% of its prefill against "
-             "%.0f%% for `%s`, and costs %s compute units against %s — a factor of %s. " % (
+    L.append("**Separation.** `%s` reuses a prefix for %.0f%% of its prefill against %.0f%% for "
+             "`%s`, at %s compute units against %s (%s less). " % (
                  best, 100 * hr[best], 100 * hr[worst], worst,
                  fmt(cu[cheap], "int"), fmt(cu[worst], "int"),
                  fmt((cu[worst] / cu[cheap]) if cu[cheap] else None, "x")))
     if hr[best] - hr[worst] < 0.15:
-        L.append("The separation in prefix reuse is SMALL (under 15 points) and the cost claim "
-                 "should not be stated as established by this run. Reporting it as a difference "
-                 "would be the artefact the fairness gate exists to prevent.")
+        L.append("The margin in prefix reuse is under 15 points, so **this run does not establish "
+                 "the cost claim**; stating otherwise would be the artefact the fairness gate "
+                 "exists to prevent.")
     else:
-        L.append("The separation is structural rather than incidental: a policy that evicts from "
-                 "the front changes its first block as soon as eviction begins, while a policy that "
-                 "pins the front and advances the window at the end keeps it. That is why the "
-                 "difference appears in prefix reuse rather than only in context size.")
+        L.append("The difference is structural, not incidental: a policy that evicts from the front "
+                 "changes its first block as soon as eviction begins, while one that pins the front "
+                 "and advances the window at the end keeps it. Hence reuse separates where context "
+                 "size alone might not.")
     L.append("")
     # ---- compaction events ----
     # ★ `cache_rows` is TOP-LEVEL in the result (`incremental_coding.py:1565`), not inside `metrics`.
@@ -188,7 +188,19 @@ def main():
         return 0
     new = src[:start] + body + "\n\n" + src[end:]
     open(PAPER, "w").write(new)
-    print("\n>> spliced into %s (§5 replaced, %d -> %d chars)" % (PAPER, len(src), len(new)))
+    # ★ WORD-BUDGET GUARD. The cap is 3,000 and §5 is generated, so an overrun could otherwise be
+    # introduced by a run with more compaction events than expected. Warn loudly rather than trim
+    # silently -- silently dropping a table row to fit would be a worse failure than being long.
+    import re as _re
+    flat = _re.sub(r"```.*?```", " ", new, flags=_re.S)
+    n_words = len(_re.findall(r"\S+", flat))
+    flag = "OK" if n_words <= 3000 else "OVER THE 3,000 LIMIT"
+    print(">> spliced into %s (§5 replaced, %d -> %d chars)  words=%d  [%s]"
+          % (PAPER, len(src), len(new), n_words, flag))
+    if n_words > 3000:
+        print("   ⚠️ OVER by %d words -- trim §2 or the abstract before submitting." % (n_words - 3000))
+    elif n_words > 2950:
+        print("   ⚠️ within 50 words of the cap -- leave no room for a late addition.")
     return 0
 
 
