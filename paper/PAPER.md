@@ -1,0 +1,197 @@
+# Bounded Context Without Context Rewrites
+## Flat context and an intact prefix cache for long-horizon agents
+
+---
+
+## Abstract
+
+Long-horizon autonomous agents are bounded by context economics, not by model capability. The
+standard remedy — periodically compacting the context — keeps the window small by *rewriting* it,
+and a rewrite invalidates the shared prefix that a serving engine's automatic prefix cache depends
+on, re-billing the entire prompt at full price. We describe a context policy that keeps the window
+small *without* rewriting the front: the system prompt and the turn-1 task brief are pinned, and the
+rolling window is advanced at the end. We evaluate three policies (bounded-anchor, grow-and-evict,
+grow-compact) on a long-horizon bug-fixing task of 60 turns using a single 12B model, and measure
+retention, cost in raw compute units, and prefix-cache reuse directly rather than inferring them.
+The bounded-anchor policy sustains a flat context while the alternatives grow to the ceiling or
+collapse on every compaction; we report the exact figures in §5. We also document four ways the
+benchmark itself can produce a clean-looking result that means nothing, and how each was detected —
+because a long-horizon evaluation that cannot discriminate will silently report a tie.
+
+## 1. Introduction
+
+An agent that must remain coherent across hundreds of turns accumulates history. Two costs grow
+with it: the memory footprint of the key/value cache, and the compute spent re-reading the context
+each turn. The dominant response is **compaction** — periodically summarising or discarding the
+middle of the conversation to return under the window.
+
+Compaction reduces the size of the context but changes its *content*. Under a serving engine with
+automatic prefix caching, a cached token is billed at a fraction of a fresh one; when the prefix
+changes, the cache no longer applies and the full prompt is re-processed. A cache hit is roughly an
+order of magnitude cheaper than a miss on the re-processed span, so a policy that rewrites its
+context pays that multiple on every rewrite.
+
+We therefore ask a narrow, measurable question: **can an agent keep a small context without
+rewriting it?** Our policy pins an immutable front (system prompt and the turn-1 brief) and advances
+a bounded window at the end. Nothing is summarised; the cheap, information-dense part of each turn
+is retained and the large, superseded part is dropped.
+
+**Contributions.**
+1. A context policy that bounds the working set while leaving the prefix shared with the previous
+   turn intact (§3).
+2. A direct measurement of prefix-cache reuse — the longest common token prefix between consecutive
+   prompts — reported per turn, and a compute-cost model that prices a miss and a hit differently
+   (§4).
+3. A long-horizon evaluation that discriminates, with per-turn grading and a retention probe that
+   cannot be satisfied by recency alone (§4.2).
+4. A catalogue of four failure modes by which such an evaluation silently measures nothing (§6).
+
+## 2. Related work
+
+**Context compression and eviction.** Summarisation-based memory, attention-sink retention, and
+sliding-window attention all reduce context size. Sliding-window attention (as in Gemma-4, where 40
+of 48 layers use a 1024-token window) bounds the *model's* attention cost but says nothing about
+what the *agent* chooses to carry; the two are complementary and we treat the architectural window
+as a confound (§6, F4).
+
+**Prefix caching.** Serving systems cache the shared prefix of successive requests. The value of
+that cache depends entirely on how much of the prefix survives between turns — a property of the
+agent's context policy, not of the engine.
+
+**Long-horizon evaluation.** SWE-bench-style tasks measure a single patch against hidden tests. They
+do not measure whether a policy can hold a requirement across many turns, and on small models they
+often floor at zero, which makes them unable to compare policies at all. We therefore adopt an
+iterative, graded task (§4).
+
+## 3. Method
+
+### 3.1 The three policies
+
+Let the transcript be a sequence of turn blocks. Each turn appends the instruction and the reply.
+The policies differ *only* in which blocks are retained when assembling the prompt.
+
+- **`runtime` (bounded anchor).** Retains the turn-1 block and every *instruction* seen so far,
+  verbatim, plus the single most recent *reply*. The instructions are small; a reply in our task is
+  a full-file rewrite and is therefore redundant with the newest one. Oldest instructions are
+  dropped first if the budget is exceeded. Growth is therefore one instruction per turn, and the
+  front is never rewritten.
+- **`linear` (grow and evict).** Retains the turn-1 block and as many recent instruction/reply pairs
+  as fit the model's ceiling, dropping the **oldest** block when it overflows. This is the naive
+  baseline: a fixed window with no organisation.
+- **`prune` (grow, evict, compact).** Identical to `linear`, plus a compaction every 30 turns that
+  keeps the anchor and the most recent turns and discards everything between. This is the status quo
+  for long-running agents.
+
+The three share the model, prompts, tools, turn budget and the turn-1 anchor, so a difference is
+attributable to the retention policy. `prune` is anchored deliberately: without that it would differ
+from `linear` by two things at once and a collapse could not be attributed to either.
+
+### 3.2 The task
+
+`solution.py` is seeded with *n* faulty functions, and **turn 1 carries the complete bug report** —
+for each bug, the exact wrong and required constant. Every later turn says only "Fix bug *k*." No
+list is repeated and no reminder is given.
+
+1. Every bug family is the **same shape**: a one-line body containing a single wrong constant. An
+   earlier version used a keyword default and a table lookup; both invited the model to *rewrite*
+   the shape, and those rewrites failed with the brief one turn back. A periodic, deterministic
+   failure is a task defect, not a retention result (§6, F3).
+2. The required constants are **arbitrary and appear nowhere else**, so they cannot be re-derived.
+3. Grading is **per-turn**: bug *k* is tested immediately after turn *k*, in a subprocess. A fix
+   applied and later clobbered by a rewrite is distinguishable from one never applied.
+
+### 3.3 Two independent retention probes
+
+- **Accumulated codes.** One fresh unguessable code is handed over in each turn and may not be
+  written to the file until the final turn, when it must be returned as an ordered list. Scored
+  0..*n*, so partial retention appears as a prefix gap.
+- **Release gate.** On the final turn, one extra function must return a **separate** secret handed
+  over at turn *n*/2. This value is deliberately *not* one of the codes, so it is independent of the
+  first probe: a policy can recite the list and still ship a broken artifact. Verified independent:
+  two simulated agents with identical bug and code scores receive opposite gate verdicts.
+
+## 4. Measurement
+
+### 4.1 Prefix-cache reuse
+
+Per turn we record the longest common **token** prefix between the current prompt and the previous
+one — exactly what an automatic prefix cache would reuse. Cost is reported in **raw compute units,
+not currency**: a fresh token costs 1.0 and a cache-reused token costs an assumed multiplier (0.1),
+so
+
+```
+cost_units = miss_tokens · 1.0 + hit_tokens · HIT_MULT
+```
+
+and the no-cache baseline is `total_tokens · 1.0`. The multiplier is one named constant so the
+assumption is visible and re-runnable. This makes the cache claim falsifiable: if the policies do
+not separate on hit rate, the argument does not hold.
+
+### 4.2 Metrics collected
+
+Retention (per-turn success, final accuracy, fixes applied then lost, code recall and ordering, gate
+verdict); cost (hit rate, miss tokens, cost units, no-cache baseline, saving ratio); context (first,
+last, peak, growth); latency (TTFT first/last/growth, wall per turn, decode throughput); memory (KV
+peak, total prefill). All are derived from data the loop already collects, so one run yields the
+full table rather than one run per question.
+
+### 4.3 Fairness gate
+
+The comparison script **refuses** to report a result when the arms did not complete the same number
+of turns, or when either carries a harness failure. A policy that keeps a smaller context is faster
+per turn, so a wall-clock stop would let it complete more turns and win on volume rather than on
+policy. The stopping rule is the turn count; time is only an emergency break.
+
+## 5. Results
+
+*(to be completed from the run in flight; every arm reports the full §4.2 table, and no number is
+quoted until the final-turn probes have been checked on both arms)*
+
+## 6. Failure modes of long-horizon benchmarks
+
+Each of the following produced, or would have produced, a clean-looking table that measured nothing.
+
+**F1 — shared ceiling.** Capping two policies at the same token limit makes them both converge on
+"whatever fits". Measured: the bounded policy grew to 9.9k against a limit of 12k and the two arms
+had identical latency (4180 vs 4308 ms). Each policy needs a budget sized to its own claim.
+
+**F2 — re-derivable probes.** A rule the model re-applies every turn can be inferred from recent
+turns without the original ever being seen; both arms pass and the probe is vacuous. Only a value
+stated once and never repeated can discriminate.
+
+**F3 — periodic failures are task defects.** Two of six bug families failed on *every* instance
+from turn 2 and turn 5. Since turn 2 is one turn after the brief, memory was not in question: the
+families had unusual shapes that the model rewrote, and the rewrites failed. Fixing the shapes
+uniformised the task. A turn-indexed task must be checked for periodic failure before its losses are
+interpreted.
+
+**F4 — architectural confound.** Gemma-4 uses local attention in 40 of 48 layers with a 1024-token
+window, so beyond 1024 tokens a turn-1 fact is invisible to those layers regardless of the agent's
+policy. Any claim about retaining an early fact must be stated against that background.
+
+## 7. Limitations
+
+The evaluation uses one model and one task family; the task is synthetic by design, to make retention
+measurable. The cost model uses an assumed hit multiplier rather than a billing measurement — it is a
+compute model, and is stated as such. The gate probe is a single value; a single probe establishes
+that a mid-session fact survived, not a rate.
+
+## 8. Conclusion
+
+Keeping a context small and keeping it *stable* are different problems, and the usual solution to the
+first destroys the second. A policy that pins an immutable front and rolls the window at the end
+bounds the working set without invalidating the prefix the previous turn already paid for. We have
+made the corresponding claim measurable rather than asserted, and we have documented the ways such a
+measurement can silently fail.
+
+---
+
+## Reproduction
+
+```
+python3 tools/run_compare.py results/fixres_*_*.json
+```
+
+Environment, task generator, policies and graders are in this repository. The three policies are
+selected by `CCAI_ARM`; the retention gate is opt-in via `CCAI_GATE=1`; the compaction period by
+`CCAI_PRUNE_EVERY`.
