@@ -2,3 +2,6 @@ __pycache__/
 *.pyc
 locks/
 data/_7b_*
+vast_setup/session_key
+vast_setup/api_key
+vast_setup/last_instance

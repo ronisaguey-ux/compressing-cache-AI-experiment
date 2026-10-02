@@ -75,14 +75,22 @@ def _bug(i: int):
         test = "assert _fns[%d](100) == %d" % (i, 100 + right)
 
     elif fam == 2:
-        # wrong default in a keyword argument
-        wrong = (s % 300) + 1
+        # wrong subtraction constant.
+        # ★ WAS A KEYWORD DEFAULT (`def f(x, k=13)`) AND THAT FAMILY MEASURED NOTHING. MEASURED on
+        # the live run: EVERY instance of family 2 failed from turn 2 onward -- including turn 2,
+        # where the bug report is ONE turn back and therefore unambiguously in context. The model
+        # rewrote `def f(x, k=13)` into `def f(k=13)` (dropping the positional arg entirely), so
+        # the failure was the model's reading of an odd SHAPE, not its memory. 0/13 on a family that
+        # fails when the brief is in-context is a task defect, not a retention result.
+        # ⇒ All six families now share ONE SHAPE -- a one-line body containing a single wrong
+        # constant -- so the only thing under test is whether the constant stated in turn 1 survived.
+        wrong = (s % 300) + 3
         right = ((s // 13) % 400) + 5
-        broken = ("def %s(x, k=%d):\n"
-                  "    return x - k\n" % (fn, wrong))
-        correct = ("def %s(x, k=%d):\n"
-                   "    return x - k\n" % (fn, right))
-        fix = ("%s: the default for `k` must be %d, it is currently %d" % (fn, right, wrong))
+        broken = ("def %s(x):\n"
+                  "    return x - %d\n" % (fn, wrong))
+        correct = ("def %s(x):\n"
+                   "    return x - %d\n" % (fn, right))
+        fix = "%s: the subtracted constant must be %d, it is currently %d" % (fn, right, wrong)
         test = "assert _fns[%d](1000) == %d" % (i, 1000 - right)
 
     elif fam == 3:
@@ -108,25 +116,25 @@ def _bug(i: int):
         test = "assert _fns[%d]('abcdefghijkl') == %r" % (i, "abcdefghijkl"[:right])
 
     else:
-        # wrong key / symbol name in a lookup.
-        # ★ THE BROKEN AND FIXED VERSIONS MUST RETURN DIFFERENT VALUES or the test cannot tell them
-        # apart. The first version mapped both keys to the SAME value, so `m.fn(0) >= 1` passed on
-        # the broken module too -- a test that is satisfied by the bug measures nothing.
-        opts = ["alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel"]
-        wrong = opts[s % len(opts)]
-        right = opts[(s // 5 + 3) % len(opts)]
+        # wrong floor-division constant.
+        # ★ WAS A MODULE-LEVEL TABLE LOOKUP AND THAT FAMILY ALSO MEASURED NOTHING. MEASURED on the
+        # live run: family 5 is the only family with a SECOND module-level definition (the
+        # `<fn>_TABLE` dict), and every instance failed from turn 5 onward -- the model rewrote the
+        # table lookup into a parameter lookup (`def f(d): return d.get('charlie', 1459)`), keeping
+        # the WRONG key and value. Same defect class as family 2: an unusual SHAPE invites a
+        # rewrite, and a rewrite failure is not a memory failure.
+        # ★ THE BROKEN AND FIXED CONSTANTS MUST DIFFER, or the test cannot tell them apart -- the
+        # first table version mapped both keys to the same value and passed on the broken module.
+        wrong = (s % 9) + 2
+        right = ((s // 7) % 8) + 2
         if right == wrong:
-            right = opts[(opts.index(wrong) + 1) % len(opts)]
-        wv = (s % 90) + 1                  # value under the wrong key
-        rv = wv + 1000 + (s % 500)         # DIFFERENT value under the right key
-        broken = ("%s_TABLE = {%r: %d}\n"
-                  "def %s(x):\n"
-                  "    return %s_TABLE[%r]\n" % (fn, wrong, wv, fn, fn, wrong))
-        correct = ("%s_TABLE = {%r: %d}\n"
-                   "def %s(x):\n"
-                   "    return %s_TABLE[%r]\n" % (fn, right, rv, fn, fn, right))
-        fix = "%s: the key must be %r (value %d), not %r" % (fn, right, rv, wrong)
-        test = "assert _fns[%d](0) == %d" % (i, rv)
+            right = wrong + 1
+        broken = ("def %s(x):\n"
+                  "    return x // %d\n" % (fn, wrong))
+        correct = ("def %s(x):\n"
+                   "    return x // %d\n" % (fn, right))
+        fix = "%s: the divisor must be %d, not %d" % (fn, right, wrong)
+        test = "assert _fns[%d](1000) == %d" % (i, 1000 // right)
 
     return fn, broken, fix, test, correct
 

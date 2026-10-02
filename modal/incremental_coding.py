@@ -62,6 +62,19 @@ MAX_PROMPT_TOKENS = int(os.environ.get("CCAI_MAX_PROMPT_TOKENS", "12000"))
 # turn.  6144 holds the anchor (~2.6k) plus roughly two recent turns (~3.4k) and stays FLAT.
 # Verified by simulation with the real per-turn sizes before the arm was allowed to run.
 RUNTIME_TOKENS = int(os.environ.get("CCAI_RUNTIME_TOKENS", "6144"))
+
+# ★ THE STATUS-QUO ARM'S COMPACTION PERIOD. 0 disables the arm's prune (it then behaves as linear).
+# Owner, verbatim: *"also prove this works by having every 30 turns, a manual context editing to
+# remove bloat, this will showcase the true efficiency"*.
+PRUNE_EVERY = int(os.environ.get("CCAI_PRUNE_EVERY", "30"))
+
+# ★ THE ASSUMED PREFIX-CACHE HIT DISCOUNT, as a RAW COMPUTE MULTIPLIER -- not a currency.
+# Owner's rule is that cost is measured as compute, never vendor dollars. A serving engine's
+# automatic prefix cache bills a reused (cached) prefill token at a fraction of a fresh one; 0.1x is
+# the commonly published ratio, i.e. losing the prefix costs 10x on the re-processed span -- the
+# "900% more expensive" figure the owner quoted. Kept as one named constant so the assumption is
+# visible and can be re-run at a different ratio rather than buried in a number.
+CACHE_HIT_MULT = float(os.environ.get("CCAI_CACHE_HIT_MULT", "0.1"))
 GPU = os.environ.get("CCAI_GPU", "A100-40GB")
 
 image = (
@@ -659,6 +672,8 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
         return d, None
 
     turns_log, per_feature_written = [], {}
+    # ★ PREFIX-CACHE ACCOUNTING accumulators (see the measurement site in the turn loop).
+    _prev_ids, _cache_hit, _cache_total, _cache_rows = [], 0, 0, []
     turn_ok = {}   # fix mode: did turn i apply bug i correctly (graded immediately)
     use = [f for f in FEATURES_ALL[:max(1, min(features, len(FEATURES_ALL)))]]
     specs = [f[0] for f in use] + [INTERACTION_SPEC]
@@ -1005,6 +1020,38 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
             while keep and total > budget:
                 total -= costs.pop(0)
                 keep.pop(0)                                # drop oldest
+        elif arm == "prune":
+            # ★★★ THE STATUS-QUO ARM (owner, 2026-10-02, verbatim): *"also prove this works by
+            # having every 30 turns, a manual context editing to remove bloat, this will showcase
+            # the true efficiency"*.
+            #
+            # This is what every long-running agent does today: let the context grow, then
+            # periodically COMPACT it -- summarise or drop the middle to get back under the window.
+            # It is the correct comparison for the cost argument because compaction is exactly what
+            # destroys a prefix cache: the moment the retained blocks are rewritten, the shared
+            # prefix with the previous turn goes to zero and the WHOLE prompt is re-billed as a
+            # miss (CACHE_HIT_MULT 0.1 -> 1.0, i.e. 10x = the 900% the owner quoted, on the
+            # re-processed span).
+            #
+            # ★ IT ALSO ANCHORS TURN 1, so that against `linear` the ONLY variable is the periodic
+            # compaction. Without the anchor this arm would differ from linear by two things at
+            # once (the anchor and the prune), and a collapse could not be attributed to either.
+            keep = [transcript[0]] if transcript else []
+            total = _counts(keep)[0] if keep else 0
+            for _blk in reversed(transcript[1:]):
+                _c = _counts([_blk])[0]
+                if total + _c > (MAX_PROMPT_TOKENS - _SYS_TOKENS):
+                    break
+                keep.insert(1, _blk)
+                total += _c
+            if PRUNE_EVERY and i > 0 and i % PRUNE_EVERY == 0:
+                # The "manual context editing" the owner asked for: keep the anchored brief and
+                # the most recent turns, discard the bloat in between. This is the operation whose
+                # cost is being measured, applied at a FIXED turn interval so the collapse is
+                # attributable rather than incidental.
+                keep = (keep[:1] + keep[-4:]) if len(keep) > 5 else keep
+                print("[%s] turn %d CONTEXT PRUNED -> %d block(s) retained"
+                      % (arm, i, len(keep)), flush=True)
         else:
             # ★★ THE RUNTIME IS BOUNDED BY TOKENS, NOT BY A BLOCK COUNT -- and this was WRONG in
             # the first version in a way that made the two arms indistinguishable.
@@ -1028,6 +1075,45 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                 total -= costs.pop(1)
                 keep.pop(1)                                # drop the oldest MIDDLE turn
         prompt = _render_prompt(keep, instr)
+        # ══════════════════════════════════════════════════════════════════════════════════════
+        # ★★★ PREFIX-CACHE ACCOUNTING (owner's AGI/cost argument, 2026-10-02)
+        #
+        # Owner, verbatim: *"the current solution to that is constant context rewrites, but thats
+        # not feasible cuz the constant cache misses makes it 900% more expensive, so what my
+        # research does is make AGI [feasible]"*.
+        #
+        # He is right about the mechanism and about the arithmetic. A serving engine with automatic
+        # prefix caching bills a HIT at roughly 0.1x the input price and a MISS at 1.0x, so losing
+        # the shared prefix costs **10x = 900% more** on the re-processed span. Compaction -- the
+        # status quo for long-running agents -- rewrites the context, so the shared prefix goes to
+        # ZERO and the WHOLE prompt is re-billed as a miss, every time it fires.
+        #
+        # So the claim being tested is not accuracy. It is: *does the eviction preserve the prefix
+        # the previous turn already paid for?* Measured here directly as the longest common TOKEN
+        # prefix between consecutive prompts. That is exactly what a prefix cache would reuse, and
+        # it is the number the cost argument needs instead of an assertion.
+        #
+        # ★ WHY THE TWO ARMS DIFFER, structurally, and it is not a tuning artefact:
+        #   linear  -- evicts from the FRONT (`keep.pop(0)`), so the first block changes the moment
+        #              eviction begins and the shared prefix collapses toward zero.
+        #   runtime -- keeps the anchor at index 0 forever and rolls the window at the END, so the
+        #              shared prefix is the anchor and survives every eviction.
+        # That is the entire practical difference between "small context by rewriting" and "small
+        # context without a rewrite", and it is now a measured fraction rather than a claim.
+        # ══════════════════════════════════════════════════════════════════════════════════════
+        try:
+            _pids = tok(prompt, add_special_tokens=False)["input_ids"]
+            _h = 0
+            for _a, _b in zip(_prev_ids, _pids):
+                if _a != _b:
+                    break
+                _h += 1
+            _cache_total += len(_pids)
+            _cache_hit += _h
+            _cache_rows.append(dict(turn=i, prompt=len(_pids), hit=_h))
+            _prev_ids = _pids
+        except Exception as _ce:
+            print("[%s] cache accounting failed at turn %d: %s" % (arm, i, _ce), flush=True)
         # ★ DUMP THE EXACT FIRST PROMPT ONCE. A prompt rendered for the wrong model family does not
         # error -- it reaches the model as literal text with invisible turn boundaries, and every
         # number after that is about the wrong thing. This is the only way to prove what was sent.
@@ -1140,10 +1226,20 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                 obs = open(solution).read() if _os.path.exists(solution) else "(empty)"
             else:
                 obs = "acknowledged"
+        # ★ DECODE TIMING, for the throughput metric. `wall_ms` minus `ttft_ms` is decode time;
+        # the generated token count comes from the tokenizer over the reply. Measured once per
+        # turn -- the tokenizer call is negligible against a multi-minute turn, and without it the
+        # suite can only report latency, not throughput.
+        try:
+            _n_out = len(tok(out_text, add_special_tokens=False)["input_ids"])
+        except Exception:
+            _n_out = 0
         turns_log.append(dict(turn=i, spec=spec[:70], tool=(call or {}).get("tool"),
                               parse_error=err, raw_reply=txt[:400],
                               ttft_ms=m["ttft_ms"], kv_bytes=m["kv_bytes"],
-                              prompt_tokens=m["prompt_tokens"], wall_ms=m["wall_ms"]))
+                              prompt_tokens=m["prompt_tokens"], wall_ms=m["wall_ms"],
+                              decode_tokens=_n_out,
+                              decode_ms=max(0, m["wall_ms"] - m["ttft_ms"])))
         # ★★ PROGRESS MUST BE OBSERVABLE FROM OUTSIDE THE CONTAINER. The script printed nothing
         # until the very end, so a 1.5-hour run looked identical to a wedged one and the only way
         # to answer "is it progressing?" was to guess. /cache is a mounted Modal volume, so a line
@@ -1370,6 +1466,39 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
     ttfts = [t["ttft_ms"] for t in turns_log] or [0]
     kvs = [t["kv_bytes"] for t in turns_log] or [0]
     pts = [t["prompt_tokens"] for t in turns_log] or [0]
+    # ══════════════════════════════════════════════════════════════════════════════════════════
+    # ★★★ THE 20-METRIC SUITE (owner, 2026-10-02, verbatim): *"research the top 20 metrics to
+    # measure and measure them all, ion want u wasting cloud usage without extracting all the data
+    # possible"*.
+    #
+    # Every number below is derived from data the loop ALREADY collects, so one GPU-hour yields
+    # the whole table instead of forcing a second run per question. Grouped by the claim each one
+    # is evidence for, because a metric with no claim attached is just noise.
+    # ══════════════════════════════════════════════════════════════════════════════════════════
+    _n = len(turns_log) or 1
+    _miss = max(0, _cache_total - _cache_hit)
+    # (1) RETENTION
+    m_per_turn = (sum(1 for i in range(len(use)) if turn_ok.get(i)) / len(use)) if use and _fix_mode else None
+    m_final = (passed / total) if total else None
+    m_lost = (sum(1 for i in range(len(use)) if turn_ok.get(i)) - passed) if _fix_mode else None
+    m_codes = (results.get("codes_n") / results.get("codes_total")) if results.get("codes_total") else None
+    m_gate = results.get("gate_ok")
+    # (2) COST -- raw compute units. A fresh prefill token costs 1.0, a cache-reused one
+    # CACHE_HIT_MULT. `cost_units` is therefore the compute-equivalent of the whole run's prefill,
+    # normalised so that a no-cache run (every token a miss) equals `cache_total`.
+    m_hit_rate = (_cache_hit / _cache_total) if _cache_total else None
+    m_cost_units = _miss * 1.0 + _cache_hit * CACHE_HIT_MULT
+    m_cost_nocache = float(_cache_total)
+    # (3) LATENCY
+    m_ttft_first = ttfts[0]
+    m_ttft_last = ttfts[-1]
+    m_ttft_growth = (ttfts[-1] / ttfts[0]) if ttfts and ttfts[0] else None
+    m_wall_per_turn = (sum(t.get("wall_ms", 0) for t in turns_log) / _n / 1000.0) if turns_log else None
+    m_tpot = None
+    _dt = [t.get("decode_ms") for t in turns_log if t.get("decode_ms")]
+    _dk = [t.get("decode_tokens") for t in turns_log if t.get("decode_tokens")]
+    if _dt and _dk and sum(_dt) > 0:
+        m_tpot = sum(_dk) / (sum(_dt) / 1000.0)
     _harness_failed = not results
     return dict(model=model, arm=arm, harness_failed=_harness_failed, features=len(use),
                 features_completed=n_features_done,
@@ -1390,6 +1519,55 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                 codes_total=results.get("codes_total"),
                 codes_ordered=results.get("codes_ordered"),
                 codes_dup=results.get("codes_dup"),
+                # ★★ THE RELEASE GATE -- the stronger, independent retention metric (CCAI_GATE=1).
+                # Its value is a SEPARATE mid-session secret, never part of the code list, so
+                # `gate_ok` and `codes_n` measure two different things: "can you recite what you
+                # were told" vs "is the artifact you shipped actually correct".
+                gate_ok=results.get("gate_ok"),
+                # ★★★ PREFIX-CACHE ACCOUNTING -- the owner's cost argument, measured.
+                # `cache_hit_rate` is the fraction of prefill tokens that a serving engine's
+                # automatic prefix cache would have reused, i.e. billed at ~0.1x instead of 1.0x.
+                # A policy that rewrites (or front-evicts) scores near zero and pays a 10x miss on
+                # the whole prompt every turn; a policy that preserves an immutable prefix keeps it.
+                cache_hit_tokens=_cache_hit,
+                cache_total_tokens=_cache_total,
+                cache_hit_rate=round(_cache_hit / _cache_total, 4) if _cache_total else None,
+                cache_rows=_cache_rows,
+                # ══════════════════════════════════════════════════════════════════════════════
+                # THE 20-METRIC SUITE -- one flat block, so a downstream comparator reads a named
+                # metric rather than re-deriving it (and re-deriving it differently each time).
+                # ══════════════════════════════════════════════════════════════════════════════
+                metrics=dict(
+                    # -- 1-5 : RETENTION OF THE TURN-1 BRIEF
+                    per_turn_success=m_per_turn,              # 1 owner's primary metric
+                    final_state_accuracy=m_final,             # 2
+                    fixes_applied_then_lost=m_lost,           # 3 never-applied vs clobbered
+                    # -- 6-8 : RETENTION OF THE MIDDLE
+                    codes_recall=m_codes,                     # 6 accumulated codes, in order
+                    codes_ordered=results.get("codes_ordered"),      # 7
+                    codes_duplicated=results.get("codes_dup"),       # 8 instruction adherence
+                    # -- 9 : INDEPENDENT RELEASE GATE
+                    release_gate=m_gate,                      # 9 separate mid-session secret
+                    # -- 10-14 : COST, AS RAW COMPUTE (no currency)
+                    cache_hit_rate=m_hit_rate,                # 10 fraction a prefix cache reuses
+                    cache_miss_tokens=_miss,                  # 11 tokens paid at full price
+                    cost_units=m_cost_units,                  # 12 miss*1.0 + hit*CACHE_HIT_MULT
+                    cost_units_no_cache=m_cost_nocache,       # 13 baseline: every token a miss
+                    cost_saving_ratio=(m_cost_nocache / m_cost_units) if m_cost_units else None,  # 14
+                    # -- 15-18 : CONTEXT SIZE
+                    prompt_first=pts[0],                      # 15
+                    prompt_last=pts[-1],                      # 16
+                    prompt_peak=max(pts),                     # 17
+                    prompt_growth=(pts[-1] / pts[0]) if pts and pts[0] else None,   # 18
+                    # -- 19-22 : LATENCY + MEMORY
+                    ttft_first_ms=m_ttft_first,               # 19
+                    ttft_last_ms=m_ttft_last,                 # 20
+                    ttft_growth=m_ttft_growth,                # 21
+                    kv_peak_bytes=max(kvs),                   # 22
+                    wall_per_turn_s=m_wall_per_turn,          # 23
+                    decode_tokens_per_s=m_tpot,               # 24
+                    total_prefill_tokens=_cache_total,        # 25
+                ),
                 # contract clauses pulled out of per_feature so the comparator can report WHICH
                 # requirement survived rather than an undifferentiated pass/fail
                 clauses={k.replace("clause_", ""): v for k, v in results.items()
