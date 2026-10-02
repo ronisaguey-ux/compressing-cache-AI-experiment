@@ -909,6 +909,19 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                 "transcript": transcript, "turns_log": turns_log,
                 "per_feature_written": per_feature_written,
                 "solution": (open(solution).read() if _os.path.exists(solution) else ""),
+                # ★★★ THE PREFIX-CACHE LEDGER MUST SURVIVE A RESUME, OR THE COST METRIC IS WRONG.
+                # `_cache_rows` / `_cache_hit` / `_cache_total` are accumulated in-memory across the
+                # whole run and were NOT checkpointed. A run interrupted at turn 40 and resumed would
+                # therefore reach the grader with the ledger holding only turns 41..60, and
+                # `cache_hit_rate = hit/total` would be computed over that tail -- a headline cost
+                # number describing a third of the experiment, with nothing on the artifact to say
+                # so. The same defect class as the non-atomic checkpoint: the failure is invisible
+                # in the output, which is the only place it would have shown up.
+                "cache_rows": _cache_rows,
+                "cache_hit": _cache_hit,
+                "cache_total": _cache_total,
+                "prev_ids": _prev_ids,
+                "arch_instr": [list(b) if isinstance(b, tuple) else b for b in _arch_instr],
             })
         except Exception as _e:
             print("[%s] checkpoint write failed (%s) -- continuing" % (arm, _e), flush=True)
@@ -924,11 +937,21 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                 transcript = [tuple(b) for b in _ck["transcript"]]
                 turns_log = list(_ck.get("turns_log") or [])
                 per_feature_written = dict(_ck.get("per_feature_written") or {})
+                # ★ restore the prefix-cache ledger and the instruction archive, or the cost metric
+                # and the runtime arm's archive both describe only the post-resume tail.
+                _cache_rows = list(_ck.get("cache_rows") or [])
+                _cache_hit = int(_ck.get("cache_hit") or 0)
+                _cache_total = int(_ck.get("cache_total") or 0)
+                _prev_ids = list(_ck.get("prev_ids") or [])
+                _arch_instr = [tuple(b) if isinstance(b, list) else b
+                               for b in (_ck.get("arch_instr") or [])]
                 _start_i = int(_ck.get("turn_ix", 0)) + 1
                 if _ck.get("solution"):
                     open(solution, "w").write(_ck["solution"])
-                print("[%s] RESUMED from checkpoint at turn %d/%d (transcript=%d blocks)"
-                      % (arm, _start_i, len(specs), len(transcript)), flush=True)
+                print("[%s] RESUMED from checkpoint at turn %d/%d (transcript=%d blocks, "
+                      "cache_ledger=%d rows, arch_instr=%d)"
+                      % (arm, _start_i, features, len(transcript), len(_cache_rows),
+                         len(_arch_instr)), flush=True)
         except Exception as _e:
             print("[%s] checkpoint unreadable (%s) -- starting fresh" % (arm, _e), flush=True)
 
