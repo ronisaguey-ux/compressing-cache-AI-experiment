@@ -68,12 +68,32 @@ and a guess is visible as a wrong number.
 This separates a fix that was never applied from one that was applied and then clobbered by a
 later full-file rewrite.
 
-**Baseline arm, measured mid-run** (n = 34 turns):
+### The controlled-experiment correction
 
-| turns | report in context? | correct |
-|---|---|---|
-| 0–6 | yes | **5/7 (71%)** |
-| 7+ | no — evicted | **5/27 (19%)** |
+An earlier version of this task gave the anchored policy a **protected turn-1 slot** and the
+baseline none. That is not a controlled experiment — it tests *"who was handed the brief"*, which is
+a tautology. Measured on that version: turns 0–6 (brief present) **5/7 correct (71%)**, turns 7+
+(brief evicted) **5/27 (19%)**. A clean split that proved only that the arm given the brief kept it.
+
+**Both arms now anchor turn 1**, so both can apply every fix. But that alone would guarantee a
+**tie**: measured, the file is 2,934 chars / 80 functions and **every turn rewrites it in full**, so
+each reply subsumes the previous one and the middle turns hold nothing that exists nowhere else.
+
+So the middle turns had to carry something unique. **One fresh unguessable code is handed over
+per turn** (`TURN CODE: 9974-0`), forbidden from the file until the final turn, then required back
+as a `TURN_CODES` list. Graded `0..n`, in order, no duplicates, so partial retention shows as a
+prefix gap. Same brief, same task; the only variable left is **how each policy handles accumulated
+junk**:
+
+| policy | keeps | codes recovered | prompt at turn 80 |
+|---|---|---|---|
+| **linear** (raw chronology) | recent user+assistant pairs — the assistant half is a redundant full-file rewrite | **5/80** | 11,600 tok |
+| **organized** | every turn's *instruction* (~40 tok, the only home of its code) + the single most recent reply | **80/80** | **7,337 tok** |
+
+The mechanism is not a bigger budget — a bigger budget would just make the organized policy linear
+with extra steps. It is that the two keep **different things**: 80 instructions cost ~3.2k tokens
+against ~136k for 80 replies. Keep the small thing that is uniquely informative; drop the large
+thing that is superseded.
 
 The file itself stays structurally perfect throughout (all 80 functions present, parses clean) —
 the failures are **value-level**, i.e. genuinely lost memory rather than a broken harness.

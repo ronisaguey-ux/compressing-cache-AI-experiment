@@ -1,3 +1,4 @@
+import ast
 """INCREMENTAL SPEC CODING — a long-horizon coding benchmark that can actually discriminate.
 
     modal run modal/incremental_coding.py --model qwen2.5-coder-32b --arm linear  --features 16
@@ -51,7 +52,16 @@ MAX_PROMPT_TOKENS = int(os.environ.get("CCAI_MAX_PROMPT_TOKENS", "12000"))
 # capped here, so the two arms have genuinely different working sets rather than both converging on
 # whatever fits in the larger number. Sized to hold the anchored turn-1 contract plus the last few
 # appends.
-RUNTIME_TOKENS = int(os.environ.get("CCAI_RUNTIME_TOKENS", "2048"))
+# ★★ THE RUNTIME BUDGET MUST FIT THE ANCHOR PLUS ENOUGH RECENT CONTEXT TO DO THE WORK.
+# It was 2048 for the FEATURE task, where each turn `append`s one function and the file
+# accumulates on disk, so the model never needed to see it again. MEASURED CONSEQUENCE for the
+# FIX task: the turn-1 bug report is ~2637 tokens on its own, so a 2048 budget popped EVERY
+# recent turn to get back under, leaving the runtime arm with the bug list and NO file state --
+# it would have had to rewrite the whole file from memory and failed mechanically, for a reason
+# that has nothing to do with memory and everything to do with a budget too small to hold one
+# turn.  6144 holds the anchor (~2.6k) plus roughly two recent turns (~3.4k) and stays FLAT.
+# Verified by simulation with the real per-turn sizes before the arm was allowed to run.
+RUNTIME_TOKENS = int(os.environ.get("CCAI_RUNTIME_TOKENS", "6144"))
 GPU = os.environ.get("CCAI_GPU", "A100-40GB")
 
 image = (
@@ -82,6 +92,19 @@ MODELS = {
     "gemma-4-12b": "google/gemma-4-12B-it",
     "gemma-4-e4b": "google/gemma-4-E4B-it",
     "gemma-4-26b-a4b": "google/gemma-4-26B-A4B-it",
+    # ★★ PRE-QUANTISED 8-BIT -- THE ONE THAT ACTUALLY QUANTISES THE MoE EXPERTS.
+    #
+    # MEASURED, and this is why the entry exists: loading the bf16 checkpoint with
+    # BitsAndBytesConfig(load_in_8bit=True) does NOT give an 8-bit model on this architecture.
+    # It produced 426 Linear8bitLt modules and left the rest in bf16 -- 189 Gemma4ClippableLinear
+    # plus the MoE expert weights, which are stored as RAW PARAMETERS rather than as nn.Linear, so
+    # bitsandbytes cannot see them. Result: bytes/param measured at 1.94 (i.e. bf16, not int8),
+    # 48.8 GB allocated on a 48 GB card, and an OOM on the first forward pass.
+    #   bf16 checkpoint + bnb int8 : 48.8 GB   <- does NOT fit
+    #   this AWQ-8bit checkpoint   : ~29 GB    <- genuine int8 on every linear, fits with headroom
+    # The quantisation here is done at CONVERSION time (compressed-tensors w8a8, group_size 32),
+    # so it covers the experts too. Load it with CCAI_QUANT=pre.
+    "gemma-4-26b-a4b-awq8": "cyankiwi/gemma-4-26B-A4B-it-AWQ-8bit",
     # prior benchmark models, kept so old runs stay reproducible
     "qwen2.5-coder-32b": "Qwen/Qwen2.5-Coder-32B-Instruct",
     "qwen2.5-7b": "Qwen/Qwen2.5-7B",
@@ -280,24 +303,75 @@ FEATURES_ALL = list(FEATURES) + [_one_feature(i) for i in range(len(FEATURES), 2
 # difference rather than a cost difference -- which is what makes this worth running.
 CONTRACT = (
     "STANDING CONTRACT (set now, in force for the rest of this session, and it will NOT be "
-    "repeated): solution.py must ALSO define a module-level dict named REGISTRY. Every function you "
+    "repeated). solution.py must satisfy ALL of the following, in this turn and in every later "
+    "turn, no matter what else you are asked to do:\n"
+    "  C1. A module-level string constant `SPEC_ID` whose value is exactly \"ISB-7741\".\n"
+    "  C2. A module-level dict `ERROR_CODES` with EXACTLY the three keys \"E1\", \"E2\", \"E3\", "
+    "mapping to the integers 101, 202 and 303 respectively, and no other keys.\n"
+    "  C3. A module-level integer constant `MAX_SPAN` whose value is exactly 44.\n"
+    "  C4. EVERY function you define must take its first positional parameter named exactly `x`.\n"
+    "  C5. EVERY function you define must have a docstring whose FIRST line begins with the exact "
+    "text `IMPL:`.\n"
+    "  C6. solution.py must ALSO define a module-level dict named REGISTRY. Every function you "
     "implement, in this turn and in every later turn, must be registered in it: the key is the "
     "function's name as a string, the value is the function object. REGISTRY must always contain "
-    "every function defined so far. "
-    # ★★ THE NONCE IS THE CHECK THAT CANNOT BE RE-DERIVED, and it is here because the REGISTRY rule
-    # alone turned out to be SELF-SUSTAINING. A model that writes `REGISTRY[...] = ...` in every
-    # append leaves that pattern in its recent turns, so a policy keeping only the last K turns can
-    # still infer the rule without ever seeing turn 1 -- the check would pass for BOTH arms and
-    # discriminate nothing (the same "both arms converge" failure the shared ceiling caused).
+    "every function defined so far.\n"
+    # ★★ WHY THIS IS A MULTI-CLAUSE CONTRACT AND NOT THE ONE-LINE REGISTRY RULE IT REPLACED.
     #
-    # A value that appears ONLY here, and is required ONLY in the FINAL append, cannot be inferred
-    # from recent turns: nothing else in the transcript ever contains it. So it fails exactly when
-    # turn 1 has been evicted, which is the property being measured.
-    "FINALLY: when you have implemented the last feature you are asked for, append one more line to "
-    "solution.py, as its last line, reading exactly: CONTRACT_STAMP = \"QX7-4420-BRAVO\"  "
-    "(that exact value; it is given here and nowhere else, and it must appear exactly once)."
+    # MEASURED on the 120-turn run: the REGISTRY rule alone passed in BOTH arms, because the model
+    # writes `REGISTRY[...] = ...` on every append, leaves that pattern in its recent turns, and a
+    # policy keeping only the last K turns can still INFER the rule without ever seeing turn 1.
+    # A rule the model re-applies and re-writes is SELF-SUSTAINING and cannot test retention.
+    #
+    # C1-C3 are exact strings, integers and key names. Nothing in the task gives any reason for them
+    # to be those particular values, so they cannot be inferred, guessed or reconstructed from the
+    # model's own recent output -- they are recoverable EXACTLY when turn 1 survived. C4/C5 are
+    # shape rules the model applies as it writes, so they are expected to be more self-sustaining;
+    # they are included deliberately so the result shows WHICH KIND of requirement survives, rather
+    # than reporting one undifferentiated pass/fail.
+    #
+    # ★ AND THE NONCE IS HERE FOR THE SAME REASON AS BEFORE: it appears nowhere else and is required
+    # only in the FINAL append, so it fails exactly when turn 1 has been evicted.
+    # ★★ THE MANIFEST IS THE UNCONDITIONAL DISCRIMINATOR -- AND IT FIXES A REAL HOLE IN C1-C3.
+    #
+    # C1-C3 are exact values, but they are WRITTEN INTO THE FILE almost immediately, and a file that
+    # accumulates preserves them no matter what the context policy does. So they only test knowledge
+    # when the model REWRITES the file; under `append` they can survive on disk alone. That is a real
+    # limit of the clause design, and it is why the manifest exists.
+    #
+    # The manifest codes are stated ONCE, here, and are FORBIDDEN from appearing before the final
+    # turn. So they cannot be recovered from the accumulated file, cannot be inferred from the
+    # model's own recent output, and cannot be guessed. They are recoverable EXACTLY when turn 1
+    # survived -- and there are eight of them, so partial retention scores partially rather than
+    # collapsing to a single coin-flip bit.
+    #
+    # ⚠️ `MANIFEST_ORDER_SENSITIVE = True`: the grader checks order as well as presence, so a model
+    # that half-remembers the codes still fails, and one that genuinely retained them passes exactly.
+    "FINALLY: when you have implemented the last feature you are asked for, append these two lines "
+    "to solution.py, as its LAST lines, exactly:\n"
+    "  MANIFEST = [\"RT4-88\", \"LP9-31\", \"ZW2-67\", \"HK5-14\", \"QB8-73\", \"NV1-46\", \"DX6-29\", "
+    "\"MJ3-95\"]\n"
+    "  CONTRACT_STAMP = \"QX7-4420-BRAVO\"\n"
+    "Those eight manifest codes and that stamp are given here and NOWHERE else. They must not appear "
+    "in solution.py before this final step, and each must appear exactly once. Do not invent codes "
+    "and do not reorder them."
 )
 CONTRACT_NONCE = "QX7-4420-BRAVO"
+# ★ Eight codes, order-sensitive. Presence AND order are graded, and the grader counts how many
+# matched so a partially-retaining policy scores 0..8 instead of a single bit.
+CONTRACT_MANIFEST = ["RT4-88", "LP9-31", "ZW2-67", "HK5-14",
+                     "QB8-73", "NV1-46", "DX6-29", "MJ3-95"]
+
+# The clauses the grader checks individually, so the result says WHICH requirement was lost rather
+# than only whether the contract as a whole survived. (id, human label)
+CONTRACT_CLAUSES = [
+    ("C1", "SPEC_ID == 'ISB-7741'"),
+    ("C2", "ERROR_CODES == {'E1':101,'E2':202,'E3':303}"),
+    ("C3", "MAX_SPAN == 44"),
+    ("C4", "every fn_* first param is `x`"),
+    ("C5", "every fn_* docstring starts 'IMPL:'"),
+    ("C6", "REGISTRY has every function"),
+]
 
 # ★ THE FINAL TURN IS THE INTERACTION TEST, AND IT IS WHAT MAKES THIS A CONTEXT RETENTION TASK
 # RATHER THAN N INDEPENDENT TASKS. It requires functions written many turns earlier to still exist
@@ -355,21 +429,45 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
     #      whatever completed. A partial result with "turns_completed=N" is evidence; a timeout
     #      exception is nothing. This is the difference between a job that can be interrupted and
     #      one that can only be wasted.
-    TIME_BUDGET_S = 12000          # 3h20m, comfortably inside the 4h platform kill
     import ast as _ast, gc, json as _json, os as _os, re, subprocess as sp, time, torch
+    # ★★ FAIRNESS: this is an EMERGENCY break, NOT the stop condition. The stop condition is the
+    # TURN COUNT -- the loop runs every feature turn, and both arms have to complete the SAME
+    # number or the comparison is meaningless.
+    #
+    # A wall-clock stop is arm-dependent BY CONSTRUCTION. The runtime arm holds a small bounded
+    # context, so it is faster per turn; a time cap therefore lets it complete MORE features than
+    # linear and hands it a win it did not earn. On Modal the guard had to sit inside the 4h
+    # platform kill; on a rented VM there is no platform kill at all, so the default is set far
+    # above the expected runtime, and `run_compare.py` ASSERTS the two arms ran equal turns
+    # before reporting any difference.
+    TIME_BUDGET_S = int(_os.environ.get("CCAI_TIME_BUDGET_S", "21600"))
     from transformers import AutoTokenizer, AutoModelForCausalLM
 
     mid = MODELS[model]
     tok = AutoTokenizer.from_pretrained(mid)
     # ★ DEVICE AND QUANTISATION ARE CONFIGURABLE so the same file runs on a GPU host, on a smaller
-    # GPU, or on CPU for a zero-cost logic test. Bits are the caller's choice and the trade-off is
-    # NOT "more bits = cheaper": the 32B is ~19 GB at 4-bit and ~34 GB at 8-bit, so 8-bit needs a
-    # LARGER GPU and buys strictly less runway for the same wall-clock. 4-bit is the cheap option.
+    # GPU, or on CPU for a zero-cost logic test.
+    # ⚠️ THE OLD NOTE HERE SAID "4-bit is the cheap option" -- that was T4-ONLY reasoning and is
+    # WRONG on a rented card. On a chosen GPU the arithmetic is different: 8-bit of the 26B-A4B
+    # peaks at ~32 GB and fits a 48 GB card, and it is the DEFAULT FOR THIS BENCHMARK because
+    # this experiment measures INSTRUCTION-FOLLOWING over 200 turns (the turn-1 REGISTRY contract
+    # and the QX7-4420-BRAVO nonce). 4-bit quantisation degrades exactly that capability, so
+    # running 4-bit risks measuring QUANTISATION DAMAGE and reporting it as CONTEXT-MANAGEMENT
+    # FAILURE -- which is what a reviewer would use to throw the paper out. 8-bit costs ~$3 more
+    # per run and removes that objection.
     _dev = _os.environ.get("CCAI_DEVICE", "cuda")
-    _quant = _os.environ.get("CCAI_QUANT", "auto")      # auto | 4 | 8 | none
+    _quant = _os.environ.get("CCAI_QUANT", "auto")      # auto | 4 | 8 | pre | none
     if _quant == "auto":
         _quant = "4" if "32b" in model.lower() else "none"
-    if _quant in ("4", "8"):
+    if _quant == "pre":
+        # ★ THE CHECKPOINT CARRIES ITS OWN quantization_config (compressed-tensors w8a8), so the
+        # loader must NOT be handed a BitsAndBytesConfig and must NOT be handed a dtype -- either
+        # one fights the stored quantisation and the model silently loads unquantised, which is
+        # exactly the failure this whole entry exists to avoid. Just load it and let the config
+        # do the work. Requires `pip install compressed-tensors`.
+        mdl = AutoModelForCausalLM.from_pretrained(
+            mid, device_map=_dev, attn_implementation="sdpa").eval()
+    elif _quant in ("4", "8"):
         from transformers import BitsAndBytesConfig
         if _quant == "4":
             _qc = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
@@ -381,16 +479,61 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
             mid, quantization_config=_qc, device_map=_dev,
             attn_implementation="sdpa").eval()
     else:
+        # ★ FULL PRECISION WITH CPU OFFLOAD -- THE FALLBACK THAT ACTUALLY WORKS ON A 48 GB CARD.
+        #
+        # MEASURED on the RTX A6000 (50.9 GB): the 26B in bf16 is 51.6 GB of weights, so a plain
+        # `device_map="cuda"` cannot hold it. With `device_map="auto"` and an explicit memory
+        # budget, transformers offloads the tail of the layers to CPU RAM (125 GB here) and the
+        # model RUNS -- verified generating coherent text, 9 s load, 45.1 GB resident on a 50.9 GB
+        # card. Two things make this the least-assumption option:
+        #   * `dtype=torch.bfloat16` -- the checkpoint's native dtype, so NO quantisation library
+        #     is in the path at all and none of the confounds above apply.
+        #   * it needs no download: the bf16 checkpoint is already in the HF cache.
+        # The cost is speed -- an offloaded layer does CPU compute plus a transfer on every token,
+        # measured ~0.8 s/token. So the GPU budget is a KNOB: push it up until the offloaded
+        # remainder is as small as it can be while still fitting, because every layer moved back
+        # onto the card is a direct speedup.
+        _gpu_mem = _os.environ.get("CCAI_MAX_GPU_MEMORY", "44GiB")
+        _cpu_mem = _os.environ.get("CCAI_MAX_CPU_MEMORY", "100GiB")
         mdl = AutoModelForCausalLM.from_pretrained(
-            mid, dtype=torch.float16,
-            device_map=(_dev if _dev != "cpu" else None),
+            mid, dtype=torch.bfloat16,
+            device_map=("auto" if _dev != "cpu" else None),
+            max_memory={0: _gpu_mem, "cpu": _cpu_mem} if _dev != "cpu" else None,
             attn_implementation="sdpa").eval()
         if _dev == "cpu":
             mdl = mdl.to("cpu")
+        else:
+            _on_gpu = sum(1 for p in mdl.parameters() if str(getattr(p, "device", "")) == "cuda:0")
+            _on_cpu = sum(1 for p in mdl.parameters() if str(getattr(p, "device", "")) == "cpu")
+            print("[load] bf16+offload: %d params on gpu, %d on cpu, %.1f GB resident, budget %s"
+                  % (_on_gpu, _on_cpu, torch.cuda.memory_allocated() / 1e9, _gpu_mem), flush=True)
 
     WORK = _os.environ.get("CCAI_WORK", "/work/inc")
     _os.makedirs(WORK, exist_ok=True)
     solution = _os.path.join(WORK, "solution.py")
+
+    def _json_complete(s):
+        """True once `s` contains a complete top-level {...} object."""
+        depth, instr, esc = 0, False, False
+        for ch in s:
+            if esc:
+                esc = False
+                continue
+            if ch == "\\":
+                esc = True
+                continue
+            if ch == '"':
+                instr = not instr
+                continue
+            if instr:
+                continue
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    return True
+        return False
 
     def complete(prompt, mnew):
         ids = tok(prompt, add_special_tokens=False)["input_ids"]
@@ -440,6 +583,16 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
             gen.append(nxt); p += 1
             if int(nxt.item()) == tok.eos_token_id:
                 break
+            # STOP AS SOON AS THE TOOL CALL IS COMPLETE. MEASURED: the model emits its JSON and
+            # then keeps generating, never hitting EOS, consuming the full max_new -- ~6 min/turn
+            # on a T4, ~3 h for one 30-turn arm. The call needs ~50 tokens, not 3072.
+            if len(gen) >= 8 and len(gen) % 4 == 0:
+                try:
+                    _so_far = tok.decode(torch.cat(gen, dim=1)[0], skip_special_tokens=True)
+                    if _json_complete(_so_far):
+                        break
+                except Exception:
+                    pass
         txt = tok.decode(torch.cat(gen, dim=1)[0], skip_special_tokens=True)
         kv = sum(c.layers[i].keys.numel() * c.layers[i].keys.element_size()
                  + c.layers[i].values.numel() * c.layers[i].values.element_size()
@@ -506,8 +659,72 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
         return d, None
 
     turns_log, per_feature_written = [], {}
+    turn_ok = {}   # fix mode: did turn i apply bug i correctly (graded immediately)
     use = [f for f in FEATURES_ALL[:max(1, min(features, len(FEATURES_ALL)))]]
     specs = [f[0] for f in use] + [INTERACTION_SPEC]
+
+    # ══════════════════════════════════════════════════════════════════════════════════════════
+    # ★★★ FIX MODE (CCAI_TASK=fix) — THE BROKEN-REPO TASK (owner's spec, 2026-10-02)
+    #
+    # Owner, verbatim: *"give it a broken repo and a task to fix specific issues, but with exact
+    # like numbers and code snippets, only read once at the beginning of the prompt, with no
+    # guidance, or reminders, only sent on the first message that takes roughly 200 turns, and
+    # grade it based off that, that's where mine should shine"*
+    #
+    # The previous task was TOO EASY to discriminate: 122/123 vs 123/123, because adding an
+    # INDEPENDENT function per turn needs no memory of earlier turns. This mode makes the turn-1
+    # detail load-bearing:
+    #   * solution.py is SEEDED with N broken functions, so the work is CORRECTION, not creation.
+    #   * TURN 1 carries the whole bug report ONCE: for each bug, the exact wrong value and the
+    #     exact required value. The constants are arbitrary and appear nowhere else.
+    #   * EVERY LATER TURN says only `Fix bug N.` -- no detail, no reminder, no restatement.
+    #   * The grader tests the EXACT required value of each function.
+    # A model that has lost turn 1 cannot reason its way to an arbitrary constant; it can only
+    # guess, and a guess is visibly wrong. That is the property that discriminates.
+    # ══════════════════════════════════════════════════════════════════════════════════════════
+    _TASK = _os.environ.get("CCAI_TASK", "feature").strip().lower()
+    _fix_mode = (_TASK == "fix")
+    if _fix_mode:
+        import bug_task as _bt                      # same directory as this module
+        _seed_src, _fixes, _ftests, _ref_src = _bt.build(features)
+        # seed the broken repo BEFORE the loop starts -- the model edits an existing file
+        if not (_os.path.exists(solution) and _os.environ.get("CCAI_RESUME") == "1"):
+            open(solution, "w").write(_seed_src)
+        specs = ["Fix bug %d." % i for i in range(features)]
+        # TURN 1 IS THE WHOLE BUG REPORT. It is long on purpose: that is the content that must
+        # survive N turns with no reminder. Kept out of `specs` so it is never re-sent.
+        _BUG_REPORT = (
+            "This repository is broken. `solution.py` contains exactly %d faulty functions. "
+            "Each one is listed below with the EXACT correction required. This is the ONLY time "
+            "this list will be given to you -- it will NOT be repeated, and no later message will "
+            "restate any of it. Read it carefully and keep it in mind for the whole session.\n\n"
+            "%s\n\n"
+            "RULES THAT APPLY TO EVERY TURN:\n"
+            "  * Fix ONLY the function named in the current turn. Change nothing else.\n"
+            "  * Do NOT rename, delete, reorder or restructure any function. Every function must "
+            "keep its exact existing name and signature -- the graders import them by name.\n"
+            "  * Do not add new functions.\n"
+            "  * Do NOT write any comment, and do NOT copy this bug list (or any part of it, or "
+            "any reminder of the corrections) into solution.py. The file must contain ONLY the "
+            "function definitions and their code -- no comments, no notes, no docstrings added.\n\n"
+            "In each of the following turns you will be told which single bug to fix, by number, "
+            "and nothing else. You must apply the correction you were given here for that number."
+            % (features, "\n".join(_fixes))
+        )
+    else:
+        _BUG_REPORT = None
+
+    # ★ ONE LIST DRIVES GRADING IN BOTH MODES. In fix mode the tests come from the generator (one
+    # exact-value assertion per bug); otherwise they are the feature specs. Keeping it as one
+    # variable is deliberate -- a second grader path is how the fix task would silently grade the
+    # feature set and report a number that means nothing.
+    _grade_tests = ([t for (_fn, t) in _ftests] if _fix_mode else [t for (_s, t) in use])
+    # ★ ONE FRESH CODE PER TURN, none of which may be written to the file until the final turn.
+    # This is what makes the middle turns carry information that exists NOWHERE ELSE -- without
+    # it, "every turn rewrites the whole file" means each write subsumes the last and a tie is
+    # guaranteed once both arms anchor the brief.
+    _turn_codes = _bt.turn_codes(features) if _fix_mode else []
+
 
     # ★ THE MODEL'S OWN WINDOW IS THE BUDGET, with headroom for the system prompt, the new
     # instruction and the reply. Qwen2.5-Coder-32B is 32k; leaving ~8k for output and the system
@@ -580,26 +797,85 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
     # per-feature attribution, and the metrics log. Resuming requires ALL of them -- restoring the
     # transcript without the file (or the reverse) would silently grade a different run than the
     # one that was interrupted.
-    _CKPT = _os.environ.get("CCAI_CKPT_DIR", "/cache")
+    def _ckpt_dir():
+        """A checkpoint dir that EXISTS. /cache is Modal-only; a Vast/Colab box has none,
+        and a failed makedirs there is swallowed -- so the run would silently never
+        checkpoint at all, which looks identical to checkpointing until you lose a run.
+
+        ★ AN EXPLICIT CCAI_CKPT_DIR IS CREATED, NOT SILENTLY IGNORED. The first version only
+        accepted a dir that already existed, so a runner that named `.../ckpt_smoke` without
+        creating it fell through to the CWD -- and a later run resumed from a checkpoint the
+        caller did not know existed. MEASURED: a 4-turn smoke resumed at turn 4/4 from
+        /root/ccai/ckpt_gemma-4-12b_linear_f4.json instead of starting fresh, so the per-turn
+        data was empty and the run reported 0/4. A named path must mean that path, or the
+        difference has to be loud."""
+        _named = _os.environ.get("CCAI_CKPT_DIR")
+        if _named:
+            try:
+                _os.makedirs(_named, exist_ok=True)
+                return _named
+            except Exception as _e:
+                print("[ckpt] WARNING: CCAI_CKPT_DIR=%r unusable (%s) -- falling back"
+                      % (_named, _e), flush=True)
+        for _c in ("/cache", "/content", _os.getcwd()):
+            if _c and _os.path.isdir(_c):
+                return _c
+        return _os.getcwd()
+
+    def _atomic_write_json(path, obj):
+        """Write so a kill mid-write cannot destroy the previous good copy.
+
+        A single open(path,"w") truncates first: die in that window and the file is
+        half-written JSON, the loader raises, and the resume path silently falls back to
+        "starting fresh". That is a whole paid-for run lost to a 10 ms window.
+        tmp -> fsync -> rotate old to .bak -> os.replace is atomic on POSIX and leaves a
+        usable file at every instant."""
+        tmp = path + ".tmp"
+        with open(tmp, "w") as _f:
+            _json.dump(obj, _f)
+            _f.flush()
+            _os.fsync(_f.fileno())
+        if _os.path.exists(path):
+            try:
+                _os.replace(path, path + ".bak")   # keep the last good one
+            except OSError:
+                pass
+        _os.replace(tmp, path)
+
+    def _load_ckpt(path):
+        """Primary, then .bak. Returns the dict or None. A corrupt file is never fatal."""
+        for _p in (path, path + ".bak"):
+            if not _os.path.exists(_p):
+                continue
+            try:
+                _d = _json.load(open(_p))
+                if _p.endswith(".bak"):
+                    print("   (recovered checkpoint from .bak -- primary was unreadable)", flush=True)
+                return _d
+            except Exception as _e:
+                print("   checkpoint %s unreadable (%s)" % (_os.path.basename(_p), _e), flush=True)
+        return None
+
+    _CKPT = _ckpt_dir()
     _ckpt_path = _os.path.join(_CKPT, "ckpt_%s_%s_f%d.json" % (
         model.replace("/", "-"), arm, features))
 
     def _save_ckpt(turn_ix):
         try:
             _os.makedirs(_CKPT, exist_ok=True)
-            _json.dump({
+            _atomic_write_json(_ckpt_path, {
                 "turn_ix": turn_ix, "model": model, "arm": arm, "features": features,
                 "transcript": transcript, "turns_log": turns_log,
                 "per_feature_written": per_feature_written,
                 "solution": (open(solution).read() if _os.path.exists(solution) else ""),
-            }, open(_ckpt_path, "w"))
+            })
         except Exception as _e:
             print("[%s] checkpoint write failed (%s) -- continuing" % (arm, _e), flush=True)
 
     _start_i = 0
     if _os.environ.get("CCAI_RESUME", "1") == "1" and _os.path.exists(_ckpt_path):
         try:
-            _ck = _json.load(open(_ckpt_path))
+            _ck = _load_ckpt(_ckpt_path) or {}
             # Only resume a checkpoint that describes THIS experiment. A stale file from a different
             # feature count or model would silently grade the wrong run.
             if (_ck.get("model") == model and _ck.get("arm") == arm
@@ -627,14 +903,63 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                   % (arm, i, len(specs)), flush=True)
             break
         instr = ("INSTRUCTION %d of %d: implement %s\n"
-                 "Write the FULL solution.py including every function from every previous "
-                 "instruction." % (i + 1, len(specs), spec))
-        if i == 0:
+                 "If this instruction only ADDS a new function, use `append` with just that "
+                 "function. If it CHANGES something already in solution.py, use `write_file` "
+                 "with the full file." % (i + 1, len(specs), spec))
+        if _fix_mode:
+            # ★ IN FIX MODE EVERY TURN IS A BARE NUMBER. The instruction carries the bug's
+            # identity and NOTHING about what the fix is -- that was given once, in turn 1, and is
+            # deliberately never repeated. This is the whole experiment.
+            #
+            # The tool line is the ONLY thing restated, and it is restated because it is not part
+            # of the memory test: a model that guesses the wrong tool measures the harness, not
+            # retention. It carries no information about any bug.
+            _tool_line = ("Apply it with `write_file` and the full updated file. Keep every "
+                          "function's exact name. Change nothing else.")
+            # ★ THE PER-TURN CODE. Handed over here and required back only at the end, so it is
+            # recoverable exactly when THIS turn survives in the policy's context. It is what
+            # makes the middle turns carry information that exists nowhere else -- without it,
+            # since every turn rewrites the whole file, a newer write subsumes an older one and
+            # the two arms would tie no matter how well either handled the junk.
+            _code_line = ("TURN CODE: %s -- remember it. It must NOT appear anywhere in "
+                          "solution.py until the final turn." % _turn_codes[i])
+            if i == len(specs) - 1:
+                _code_line = ("FINAL TURN. Fix bug %d, and also add to the TOP of solution.py a "
+                              "list named TURN_CODES containing every turn code you were given "
+                              "in this session, in the order you received them. %s"
+                              % (i, _code_line))
+            if i == 0:
+                instr = _BUG_REPORT + "\n\n%s\nFix bug 0 now. %s" % (_code_line, _tool_line)
+            else:
+                instr = ("Fix bug %d. Apply exactly the correction given for bug %d in the bug "
+                         "report. %s\n%s" % (i, i, _tool_line, _code_line))
+        if i == 0 and not _fix_mode:
             # ★ THE CONTRACT IS STATED EXACTLY ONCE, IN TURN 1, and never repeated. That is the
             # whole point: at turn 120 it is ~120 turns away from the model, and a policy that
             # carries everything has to find it while a policy that anchors it does not.
             instr = CONTRACT + "\n\n" + instr
-        if arm == "linear":
+        if arm == "linear" and _fix_mode:
+            # ★★ BOTH ARMS ANCHOR TURN 1 (owner's controlled-experiment requirement, verbatim):
+            # *"u need to have it so both models keep the OG task from turn 1, but how they deal
+            # with junk is dependent on how their built (linear mess vs organized beauty)"*.
+            #
+            # Without this the comparison tested "who was handed the brief", which is a tautology.
+            # Linear is still the MESSY one: it keeps the brief plus as much raw recent history as
+            # the model's full window allows. Runtime keeps the brief plus a small BOUNDED set.
+            # Same brief, same task; only the junk policy differs.
+            # ★ TURN 1 HAS NO HISTORY YET -- `transcript` is empty, so an unguarded transcript[0]
+            # raised IndexError before the first turn ever ran. MEASURED, and it is the kind of
+            # crash that only shows up on the very first turn of a fresh run.
+            budget = MAX_PROMPT_TOKENS - _SYS_TOKENS
+            keep = [transcript[0]] if transcript else []
+            total = _counts(keep)[0] if keep else 0
+            for _blk in reversed(transcript[1:]):
+                _c = _counts([_blk])[0]
+                if total + _c > budget:
+                    break
+                keep.insert(1, _blk)
+                total += _c
+        elif arm == "linear":
             # ★ FULL TRANSCRIPT, TRUNCATED ONLY WHEN THE MODEL'S WINDOW FORCES IT -- oldest first.
             # This is what "linear prefill" MEANS and the benchmark was WRONG about it until now:
             # it kept only transcript[-20:], which is a WINDOW, so "linear" was already evicting
@@ -696,8 +1021,45 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                 obs += '\nReply with EXACTLY: {"tool": "write_file", "content": "..."}'
         else:
             _fail = 0
+            # ★★ CONTROL FOR THE WRITE STRATEGY (CCAI_FORCE_TOOL=write_file|append).
+            #
+            # Why this exists: measured in the first clean run, the two arms DIVERGED in how they
+            # wrote -- linear used write_file throughout, runtime used append -- even though both
+            # received the IDENTICAL instruction ("prefer append"). The divergence is downstream of
+            # losing context, not a rule difference, but a reviewer can still ask whether append
+            # ALONE caused the win. Forcing ONE tool in BOTH arms removes that question and leaves
+            # the context policy as the only variable.
+            #
+            # The rejection deliberately costs a round rather than silently rewriting the call: the
+            # model gets told what to use and retries, exactly as it would for any other bad call.
+            _forced = _os.environ.get("CCAI_FORCE_TOOL", "").strip()
+            if _forced in ("write_file", "append") and call["tool"] != _forced:
+                _fail += 1
+                obs = ('REJECTED: in this run you MUST use "%s" and no other write tool. '
+                       'Reply with exactly one json object: {"tool": "%s", "content": "..."}'
+                       % (_forced, _forced))
+                print("[%s] turn %d REJECTED (forced tool=%s, got %s)"
+                      % (arm, i, _forced, call["tool"]), flush=True)
+                continue
             if call["tool"] in ("write_file", "append"):
                 content = str(call.get("content", ""))
+                # ★ VALIDATE BEFORE WRITING. The model over-escapes quotes (s.split(\" \"))
+                # which decodes to literal backslashes; written straight to disk it makes the
+                # file unparseable and ONE bad turn then poisons every later turn -- the grader
+                # dies with SyntaxError and the whole run grades as nothing. Writing broken code
+                # is strictly worse than writing nothing: nothing is recoverable, corruption is
+                # not. So build the candidate in memory, ast.parse it, and only then touch disk.
+                _cand = (content if call["tool"] == "write_file"
+                         else (open(solution).read() if _os.path.exists(solution) else "") + "\n" + content)
+                try:
+                    ast.parse(_cand)
+                except SyntaxError as _se:
+                    _fail += 1
+                    obs = ("REJECTED: your code does not parse as Python (%s, line %s). "
+                           "solution.py was left UNCHANGED. Re-send it as valid Python."
+                           % (_se.msg, _se.lineno))
+                    print("[%s] turn %d REJECTED (unparseable): %s" % (arm, i, _se.msg), flush=True)
+                    continue
                 if call["tool"] == "write_file":
                     open(solution, "w").write(content)
                 else:
@@ -710,6 +1072,33 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                 # the point it was lost rather than only reported as absent. Read the WHOLE file:
                 # on an append the file is the source of truth, not the reply.
                 full = open(solution).read()
+                if _fix_mode:
+                    # ══════════════════════════════════════════════════════════════════════════
+                    # ★★ PER-TURN GRADING (owner, 2026-10-02, verbatim): *"No it should just grade
+                    # whether each turn was a success or not"*.
+                    #
+                    # Grading only the FINAL state cannot tell a fix that was never applied from one
+                    # that was applied and then CLOBBERED by a later full-file rewrite -- and with
+                    # `write_file` rewrites that distinction is the whole story. This checks bug i
+                    # immediately after turn i, which is precisely what that turn was asked to do.
+                    #
+                    # It is also the sharpest memory probe available: the required value for bug i
+                    # appeared exactly once, in turn 1. A turn that applies the right constant has
+                    # access to turn 1; a turn that guesses does not, and the guess is visibly wrong.
+                    # ══════════════════════════════════════════════════════════════════════════
+                    _tcheck = _grade_tests[i] if i < len(_grade_tests) else None
+                    if _tcheck:
+                        try:
+                            _code = ("import sys; sys.path.insert(0, %r)\n"
+                                     "import solution as m\n%s\n%s\n"
+                                     % (WORK, _bt.FIX_PRELUDE, _tcheck))
+                            _rr = sp.run(["python3", "-c", _code],
+                                         capture_output=True, text=True, timeout=60)
+                            turn_ok[i] = (_rr.returncode == 0)
+                        except Exception:
+                            turn_ok[i] = False
+                        print("[%s]   turn %d %s" % (arm, i, "OK" if turn_ok.get(i) else "FAIL"),
+                              flush=True)
                 for fi, (fspec, _t) in enumerate(use):
                     fx = "fn_%02d_" % fi
                     if "def %s" % fx in full:
@@ -775,9 +1164,28 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
     # completed; the interaction ran only if every feature turn did.
     n_features_done = (len(use) if _stopped_early is None
                        else max(0, min(_stopped_early, len(use))))
-    ran_interaction = _stopped_early is None
+    # ★ THE INTERACTION TEST BELONGS TO THE FEATURE TASK ONLY. It composes fn_* helpers that fix
+    # mode never creates, so grading it there reports a guaranteed False for work that was never
+    # asked for -- and would count as one more "failure" against both arms equally, diluting the
+    # signal this run exists to measure.
+    ran_interaction = (_stopped_early is None) and not _fix_mode
     lines = ["import sys", "sys.path.insert(0, %r)" % WORK, "import solution as m", "RESULTS = {}"]
-    for fi, (_s, tbody) in enumerate(use[:n_features_done]):
+    lines.append("RESULTS['task'] = %r" % ("fix" if _fix_mode else "feature"))
+    if _fix_mode:
+        # resolve functions by DEFINITION ORDER, not by name -- see bug_task.FIX_PRELUDE
+        lines.append(_bt.FIX_PRELUDE)
+    # ★ IN FIX MODE THE CONTRACT/NONCE/MANIFEST WERE NEVER SENT, so grading them would report a
+    # confident False for a requirement the model was never given. `_emit` drops those blocks and
+    # writes the keys as explicit nulls instead, so a consumer cannot mistake "not asked" for
+    # "asked and failed". The per-bug fixes are the metric in fix mode.
+    _emit = (lambda s: None) if _fix_mode else lines.append
+    if _fix_mode:
+        for _k in ("contract", "nonce", "manifest_n", "manifest_ordered", "manifest_dup"):
+            lines.append("RESULTS[%r] = None" % _k)
+        lines.append("RESULTS['manifest_total'] = None")
+        for _cid, _lbl in CONTRACT_CLAUSES:
+            lines.append("RESULTS['clause_%s'] = None" % _cid)
+    for fi, tbody in enumerate(_grade_tests[:n_features_done]):
         lines.append("try:")
         lines.append("    %s" % tbody)
         lines.append("    RESULTS['feature_%02d'] = True" % fi)
@@ -792,25 +1200,100 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
     # ★ THE CONTRACT CHECK, graded separately from the feature tests. A model can pass every
     # feature and still fail this, because the contract was stated once at turn 1 and never
     # repeated -- so this isolates RETENTION OF AN EARLY INSTRUCTION from coding ability.
-    lines.append("try:")
-    lines.append("    names = set(m.REGISTRY) if hasattr(m, 'REGISTRY') else set()")
-    lines.append("    N = %d" % n_features_done)
-    lines.append("    ok = hasattr(m, 'REGISTRY') and all(")
-    lines.append("        any(str(n).startswith('fn_%02d_' % i) for n in names) "
-                 "for i in range(N))")
-    lines.append("    RESULTS['contract'] = bool(ok and len(names) >= N)")
-    lines.append("except Exception:")
-    lines.append("    RESULTS['contract'] = False")
+    # ★★ THE ACCUMULATED-CODES GRADE -- the controlled-experiment discriminator. Both arms hold
+    # the turn-1 brief, so both can do the fixes; only the policy that keeps a USEFUL middle can
+    # also reproduce the codes handed over one per turn. Scored 0..N, in order, no duplicates, so
+    # partial retention is visible rather than collapsed to a bit.
+    if _fix_mode:
+        lines.append("_codes = %r" % (_turn_codes,))
+        lines.append("try:")
+        lines.append("    _src3 = open(%r).read()" % solution)
+        lines.append("    RESULTS['codes_n'] = sum(1 for c in _codes if _src3.count(c) == 1)")
+        lines.append("    RESULTS['codes_total'] = len(_codes)")
+        lines.append("    RESULTS['codes_ordered'] = bool([c for c in _codes if c in _src3] == list(_codes))")
+        lines.append("    RESULTS['codes_dup'] = any(_src3.count(c) > 1 for c in _codes)")
+        lines.append("except Exception:")
+        lines.append("    RESULTS['codes_n'] = 0")
+        lines.append("    RESULTS['codes_total'] = len(_codes)")
+        lines.append("    RESULTS['codes_ordered'] = False")
+        lines.append("    RESULTS['codes_dup'] = False")
+    _emit("try:")
+    _emit("    names = set(m.REGISTRY) if hasattr(m, 'REGISTRY') else set()")
+    _emit("    N = %d" % n_features_done)
+    _emit("    ok = hasattr(m, 'REGISTRY') and all(")
+    _emit("        any(str(n).startswith('fn_%02d_' % i) for n in names) "
+          "for i in range(N))")
+    _emit("    RESULTS['contract'] = bool(ok and len(names) >= N)")
+    _emit("except Exception:")
+    _emit("    RESULTS['contract'] = False")
+    # ★★ PER-CLAUSE GRADING. The contract is now six requirements, and they are NOT equivalent:
+    # C1-C3 are exact values that appear nowhere else, so they can only be satisfied from turn 1;
+    # C4/C5 are shape rules the model re-applies as it writes, so they may survive on their own.
+    # Grading them individually is what turns the result from "contract: pass/fail" into "WHICH
+    # KIND of requirement a bounded context keeps and a sliding window loses".
+    _emit("import ast as _ast2, inspect as _insp")
+    _emit("_fn_names = [n for n in dir(m) if n.startswith('fn_') and callable(getattr(m, n))]")
+    _emit("def _clause(cid):")
+    _emit("    try:")
+    _emit("        if cid == 'C1':")
+    _emit("            return getattr(m, 'SPEC_ID', None) == 'ISB-7741'")
+    _emit("        if cid == 'C2':")
+    _emit("            return getattr(m, 'ERROR_CODES', None) == {'E1': 101, 'E2': 202, 'E3': 303}")
+    _emit("        if cid == 'C3':")
+    _emit("            return getattr(m, 'MAX_SPAN', None) == 44")
+    _emit("        if cid == 'C4':")
+    _emit("            if not _fn_names:")
+    _emit("                return False")
+    _emit("            for _n in _fn_names:")
+    _emit("                _p = list(_insp.signature(getattr(m, _n)).parameters)")
+    _emit("                if not _p or _p[0] != 'x':")
+    _emit("                    return False")
+    _emit("            return True")
+    _emit("        if cid == 'C5':")
+    _emit("            if not _fn_names:")
+    _emit("                return False")
+    _emit("            for _n in _fn_names:")
+    _emit("                _d = _insp.getdoc(getattr(m, _n)) or ''")
+    _emit("                if not _d.splitlines() or not _d.splitlines()[0].startswith('IMPL:'):")
+    _emit("                    return False")
+    _emit("            return True")
+    _emit("        if cid == 'C6':")
+    _emit("            _names = set(m.REGISTRY) if hasattr(m, 'REGISTRY') else set()")
+    _emit("            return bool(_names and all(_n in _names for _n in _fn_names))")
+    _emit("    except Exception:")
+    _emit("        return False")
+    _emit("    return False")
+    _emit("for _cid, _lbl in %r:" % (CONTRACT_CLAUSES,))
+    _emit("    RESULTS['clause_' + _cid] = bool(_clause(_cid))")
     # ★★ THE NONCE CHECK -- the one that CANNOT be re-derived from recent turns. The value is stated
     # once in turn 1 and required only in the final append, so it is recoverable exactly when turn 1
     # survived. Purely additive: if a model wrote the stamp early it is present for BOTH arms and
     # this check simply does not discriminate; it can never make a run look WORSE than it is.
-    lines.append("try:")
-    lines.append("    _src = open(%r).read()" % solution)
-    lines.append("    _n = _src.count(%r)" % CONTRACT_NONCE)
-    lines.append("    RESULTS['nonce'] = bool(_n == 1)")
-    lines.append("except Exception:")
-    lines.append("    RESULTS['nonce'] = False")
+    _emit("try:")
+    _emit("    _src = open(%r).read()" % solution)
+    _emit("    _n = _src.count(%r)" % CONTRACT_NONCE)
+    _emit("    RESULTS['nonce'] = bool(_n == 1)")
+    _emit("except Exception:")
+    _emit("    RESULTS['nonce'] = False")
+    # ★★ THE MANIFEST: how many of the eight turn-1 codes were recovered, and in order.
+    # Scored 0..8 rather than as a bit, so a policy that retains PART of turn 1 is visible as partial
+    # rather than indistinguishable from one that retained none. Order is graded because the codes
+    # were given in a fixed order; a model that half-remembers will mis-order as well as omit.
+    _emit("try:")
+    _emit("    _want = %r" % (CONTRACT_MANIFEST,))
+    _emit("    _src2 = open(%r).read()" % solution)
+    _emit("    _found = [c for c in _want if _src2.count(c) == 1]")
+    _emit("    _ordered = [c for c in _want if c in _src2]")
+    _emit("    RESULTS['manifest_n'] = len(_found)")
+    _emit("    RESULTS['manifest_total'] = len(_want)")
+    _emit("    RESULTS['manifest_ordered'] = bool(_ordered == _want)")
+    # any code appearing more than once is a fail for that code (duplicated = invented/padded)
+    _emit("    RESULTS['manifest_dup'] = any(_src2.count(c) > 1 for c in _want)")
+    _emit("except Exception:")
+    _emit("    RESULTS['manifest_n'] = 0")
+    _emit("    RESULTS['manifest_total'] = 8")
+    _emit("    RESULTS['manifest_ordered'] = False")
+    _emit("    RESULTS['manifest_dup'] = False")
     lines.append("import json; print(json.dumps(RESULTS))")
     grader = _os.path.join(WORK, "grade.py")
     open(grader, "w").write("\n".join(lines))
@@ -834,8 +1317,19 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
             print("[%s] cause: solution.py was never written (no valid tool call was ever parsed)"
                   % arm, flush=True)
 
-    passed = sum(1 for v in results.values() if v)
-    total = len(results)
+    # ★ A `None` MEANS "NOT ASKED", NOT "FAILED". In fix mode the contract/nonce/manifest clauses
+    # are emitted as nulls because they were never sent; counting them as failures would report a
+    # model that answered 0/17 when it was only ever asked 3 things. None is excluded from both
+    # the numerator and the denominator, so `passed/total` describes what was actually graded.
+    # In fix mode the graded set is the PER-BUG results only. The codes_* entries are counts and
+    # flags, not pass/fail -- mixing them in made a 3/4 run report 6/8, which reads like a better
+    # score than it is and hides which metric moved.
+    if _fix_mode:
+        _graded = {k: v for k, v in results.items() if k.startswith("feature_") and v is not None}
+    else:
+        _graded = {k: v for k, v in results.items() if v is not None and k != "task"}
+    passed = sum(1 for v in _graded.values() if v)
+    total = len(_graded)
     ttfts = [t["ttft_ms"] for t in turns_log] or [0]
     kvs = [t["kv_bytes"] for t in turns_log] or [0]
     pts = [t["prompt_tokens"] for t in turns_log] or [0]
@@ -847,13 +1341,37 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                 gpu=GPU,
                 passed=passed, total=total,
                 per_feature=results, written=per_feature_written,
+                # ★ PER-TURN SUCCESS -- the owner's metric. List of 0/1 in turn order, plus
+                # the count. The final-state grade cannot distinguish 'never applied' from
+                # 'applied then clobbered by a later rewrite'; this can.
+                turn_ok=[1 if turn_ok.get(i) else 0 for i in range(len(use))] if _fix_mode else None,
+                turns_ok=sum(1 for i in range(len(use)) if turn_ok.get(i)) if _fix_mode else None,
+                # ★★ THE CONTROLLED-EXPERIMENT METRIC: how many of the per-turn codes survived.
+                # Both arms anchor turn 1, so the fixes are available to both; this is what
+                # separates a policy that keeps a USEFUL middle from one that keeps raw noise.
+                codes_n=results.get("codes_n"),
+                codes_total=results.get("codes_total"),
+                codes_ordered=results.get("codes_ordered"),
+                codes_dup=results.get("codes_dup"),
+                # contract clauses pulled out of per_feature so the comparator can report WHICH
+                # requirement survived rather than an undifferentiated pass/fail
+                clauses={k.replace("clause_", ""): v for k, v in results.items()
+                         if k.startswith("clause_")},
+                # ★ THE HEADLINE RETENTION NUMBER: how many of the eight turn-1 manifest codes were
+                # recovered, in order, with no duplicates. 0..8, so partial retention is visible.
+                manifest_n=results.get("manifest_n", 0),
+                manifest_total=results.get("manifest_total", len(CONTRACT_MANIFEST)),
+                manifest_ordered=results.get("manifest_ordered", False),
+                manifest_dup=results.get("manifest_dup", False),
                 ttft_first=ttfts[0], ttft_last=ttfts[-1],
                 ttft_mean=sum(ttfts) / len(ttfts),
                 kv_peak=max(kvs), kv_last=kvs[-1],
                 prompt_first=pts[0], prompt_last=pts[-1],
                 solution_chars=len(open(solution).read()) if _os.path.exists(solution) else 0,
                 turns=turns_log,
-                failed=[k for k, v in results.items() if not v])
+                # `None` is "never asked", not "failed" -- listing the contract keys as failures in
+                # a fix-mode run would report twelve failures for requirements never sent.
+                failed=[k for k, v in results.items() if v is False])
 
 
 @app.local_entrypoint()
