@@ -34,7 +34,7 @@ for ARM in runtime linear prune; do
   mkdir -p /root/ccai/ckpt_$ARM
   say "--- arm=$ARM starting ---"
   CCAI_TASK=fix CCAI_MODEL=gemma-4-12b CCAI_QUANT=none CCAI_MAX_GPU_MEMORY=44GiB \
-  CCAI_ARM=$ARM CCAI_FEATURES=$N CCAI_GATE=1 CCAI_PRUNE_EVERY=30 \
+  CCAI_ARM=$ARM CCAI_FEATURES=$N CCAI_GATE=1 CCAI_PRUNE_EVERY=30 CCAI_RUNTIME_TOKENS=10240 \
   CCAI_TIME_BUDGET_S="${CCAI_TIME_BUDGET_S:-10800}" CCAI_CKPT_DIR=/root/ccai/ckpt_$ARM \
     /venv/main/bin/python -u /root/ccai/vast_entry.py > /root/arm3_$ARM.log 2>&1
   rc=$?

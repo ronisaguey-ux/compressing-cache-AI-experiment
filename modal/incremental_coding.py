@@ -61,7 +61,7 @@ MAX_PROMPT_TOKENS = int(os.environ.get("CCAI_MAX_PROMPT_TOKENS", "12000"))
 # that has nothing to do with memory and everything to do with a budget too small to hold one
 # turn.  6144 holds the anchor (~2.6k) plus roughly two recent turns (~3.4k) and stays FLAT.
 # Verified by simulation with the real per-turn sizes before the arm was allowed to run.
-RUNTIME_TOKENS = int(os.environ.get("CCAI_RUNTIME_TOKENS", "6144"))
+RUNTIME_TOKENS = int(os.environ.get("CCAI_RUNTIME_TOKENS", "10240"))
 
 # ★ THE STATUS-QUO ARM'S COMPACTION PERIOD. 0 disables the arm's prune (it then behaves as linear).
 # Owner, verbatim: *"also prove this works by having every 30 turns, a manual context editing to
@@ -674,6 +674,10 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
     turns_log, per_feature_written = [], {}
     # ★ PREFIX-CACHE ACCOUNTING accumulators (see the measurement site in the turn loop).
     _prev_ids, _cache_hit, _cache_total, _cache_rows = [], 0, 0, []
+    # ★ every PAST turn's instruction, verbatim -- the runtime policy's cheap, information-dense
+    # memory. The assistant replies are deliberately NOT archived: each is a full-file rewrite
+    # that the newest one supersedes.
+    _arch_instr = []
     turn_ok = {}   # fix mode: did turn i apply bug i correctly (graded immediately)
     use = [f for f in FEATURES_ALL[:max(1, min(features, len(FEATURES_ALL)))]]
     specs = [f[0] for f in use] + [INTERACTION_SPEC]
@@ -1066,14 +1070,39 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
             # modest budget (RUNTIME_TOKENS, default 2k) and is capped there regardless of how much
             # room the model has. That is the eviction being tested: anchor + the most recent turns
             # that fit, and the middle is dropped on every turn once the module outgrows the budget.
-            keep = transcript[:1] + transcript[-(keep_turns * 2):]
+            # ★★★ THE INSTRUCTION ARCHIVE -- WHAT MAKES THE RUNTIME POLICY ACTUALLY "ORGANIZED".
+            #
+            # MEASURED DEFECT, caught before it wasted the run: this branch was
+            # `anchor + transcript[-(keep_turns*2):]` -- it kept the anchor and recent PAIRS and
+            # NOTHING ELSE. In fix mode the assistant half of every pair is a FULL-FILE REWRITE
+            # (~1800 tok), so at a 6k budget it held the anchor plus about one turn, and the
+            # turn-30 mid-session secret was evicted at the same point linear evicts it. Both arms
+            # would then lose the gate and the codes for the SAME reason and the experiment would
+            # have measured nothing -- the third time this project has hit that trap.
+            #
+            # The whole claim of this arm is that it keeps the SMALL thing that is uniquely
+            # informative and drops the LARGE thing that is superseded:
+            #   * the per-turn INSTRUCTION (~75 tok) is the ONLY home of that turn's code and of
+            #     the mid-session gate secret, and it is never repeated;
+            #   * the assistant REPLY (~1800 tok) is a full-file rewrite, so the newest one already
+            #     supersedes every earlier one -- keeping more than one is pure redundancy.
+            # Measured cost of those two kinds over 60 turns: instructions ~4500 tok total against
+            # ~108000 for the replies. That asymmetry IS the method.
+            keep = [transcript[0]] if transcript else []
+            for _a in _arch_instr:
+                keep.append(("user", _a))              # every past instruction, verbatim
+            _last_asst = next((b for b in reversed(transcript) if b[0] == "assistant"), None)
+            if _last_asst is not None:
+                keep.append(_last_asst)                # the current file state, once
             costs = _counts(keep)
             budget = RUNTIME_TOKENS - _SYS_TOKENS
             total = sum(costs)
-            # index 1 onwards is droppable; index 0 is the anchored contract and is never popped.
+            # index 1 onwards is droppable; index 0 is the anchored bug report and is never popped.
+            # Oldest instructions fall out first if the budget is genuinely exceeded, which is the
+            # honest failure mode for a bounded context.
             while len(keep) > 1 and total > budget:
                 total -= costs.pop(1)
-                keep.pop(1)                                # drop the oldest MIDDLE turn
+                keep.pop(1)
         prompt = _render_prompt(keep, instr)
         # ══════════════════════════════════════════════════════════════════════════════════════
         # ★★★ PREFIX-CACHE ACCOUNTING (owner's AGI/cost argument, 2026-10-02)
@@ -1281,6 +1310,7 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
         else:
             transcript.append(("user", instr))
             transcript.append(("assistant", str(call)[:4000]))
+        _arch_instr.append(instr)
         _save_ckpt(i)                   # ★ persist the turn so a dead run is resumable, not lost
     # ── GRADE: one test per feature, plus the interaction, run in a fresh interpreter ─────────
     # ★ GRADE ONLY WHAT WAS ATTEMPTED. A run stopped early by the time budget has NOT attempted the

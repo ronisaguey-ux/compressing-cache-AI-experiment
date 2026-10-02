@@ -189,6 +189,76 @@ def main(argv):
                 lost = t_ok - ok
                 if lost > 0:
                     print("  %-26s %d fix(es) applied then LOST to a later rewrite" % ("", lost))
+
+    # ══════════════════════════════════════════════════════════════════════════════════════════
+    # ★★★ THE METRIC SUITE, SIDE BY SIDE (owner: "measure them all, ion want u wasting cloud
+    # usage without extracting all the data possible").
+    #
+    # Printed as one column per arm so a difference is visible at a glance and a METRIC THAT IS
+    # MISSING FOR ONE ARM IS OBVIOUS. Grouped by the claim each number is evidence for, because a
+    # metric with no claim attached cannot be interpreted -- and the two groups that carry the
+    # owner's argument (cost and context) are printed FIRST, above the retention breakdown.
+    # ══════════════════════════════════════════════════════════════════════════════════════════
+    _arms = sorted(runs)
+    def _m(a, key):
+        return (runs[a].get("metrics") or {}).get(key)
+    def _row(label, key, fmt="%s", ratio=False):
+        vals = [_m(a, key) for a in _arms]
+        if all(v is None for v in vals):
+            return
+        cells = []
+        for v in vals:
+            if v is None:
+                cells.append("n/a")
+            elif ratio and isinstance(v, (int, float)):
+                cells.append("%.2fx" % v)
+            else:
+                try: cells.append(fmt % v)
+                except Exception: cells.append(str(v))
+        print("  %-24s : %s" % (label, "  ".join("%-14s" % c for c in cells)))
+
+    print()
+    print("  ARM COLUMNS: %s" % "  ".join("%-14s" % a for a in _arms))
+    print("  ── COST (raw compute units; no currency) " + "─" * 30)
+    _row("cache_hit_rate", "cache_hit_rate", "%.3f")
+    _row("cache_miss_tokens", "cache_miss_tokens", "%d")
+    _row("cost_units", "cost_units", "%.0f")
+    _row("cost_units_no_cache", "cost_units_no_cache", "%.0f")
+    _row("cost_saving_ratio", "cost_saving_ratio", ratio=True)
+    print("  ── CONTEXT SIZE " + "─" * 45)
+    _row("prompt_first", "prompt_first", "%d")
+    _row("prompt_last", "prompt_last", "%d")
+    _row("prompt_peak", "prompt_peak", "%d")
+    _row("prompt_growth", "prompt_growth", ratio=True)
+    print("  ── LATENCY + MEMORY " + "─" * 41)
+    _row("ttft_first_ms", "ttft_first_ms", "%.0f")
+    _row("ttft_last_ms", "ttft_last_ms", "%.0f")
+    _row("ttft_growth", "ttft_growth", ratio=True)
+    _row("kv_peak_bytes", "kv_peak_bytes", "%.0f")
+    _row("wall_per_turn_s", "wall_per_turn_s", "%.1f")
+    _row("decode_tokens_per_s", "decode_tokens_per_s", "%.1f")
+    _row("total_prefill_tokens", "total_prefill_tokens", "%d")
+    print("  ── RETENTION " + "─" * 48)
+    _row("per_turn_success", "per_turn_success", "%.3f")
+    _row("final_state_accuracy", "final_state_accuracy", "%.3f")
+    _row("fixes_applied_then_lost", "fixes_applied_then_lost", "%d")
+    _row("codes_recall", "codes_recall", "%.3f")
+    _row("release_gate", "release_gate", "%s")
+
+    # ★ THE ONE-LINE VERDICT the owner actually reads. It states the CLAIM, not the numbers: if
+    # the cache hit rate does not separate, say so rather than dressing up a difference that is
+    # not there.
+    try:
+        _h = {a: (_m(a, "cache_hit_rate") or 0) for a in _arms}
+        _best = max(_h, key=lambda a: _h[a])
+        _cost = {a: (_m(a, "cost_units") or 0) for a in _arms}
+        _cheap = min(_cost, key=lambda a: _cost[a])
+        print()
+        print("  VERDICT: %s keeps the most prefix cache (%.1f%% of prefill reusable) and costs "
+              "the least compute (%.0f units)." % (_best, _h[_best] * 100, _cost[_cheap]))
+    except Exception:
+        pass
+
     if any(r.get("per_feature", {}).get("task") == "fix" for r in runs.values()):
         return 0
     for a in sorted(runs):
