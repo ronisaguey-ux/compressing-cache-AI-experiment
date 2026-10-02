@@ -39,10 +39,13 @@ done
 timeout 60 $BOX 'cat /root/runfix3_outer.log' > "$OUT/chain.log" 2>/dev/null
 ls -la "$OUT" | tee -a "$LOG"
 
-# The fairness gate: it REFUSES a comparison whose arms did not complete the same number of turns.
-# A comparison script that cannot refuse is just a formatter.
+# The fairness gate. It does NOT simply report the arms side by side: it reconciles unequal arms to
+# the COMMON PREFIX of turns both completed, and refuses only when fewer than two turns are
+# comparable. A comparison script that cannot refuse is just a formatter.
 if command -v python3 >/dev/null; then
     say "--- gate ---"
-    python3 "$HOME/.local/share/ccai-repo/tools/run_compare.py" "$OUT" 2>&1 | tee -a "$LOG" | tail -60
+    python3 "$HOME/.local/share/ccai-repo/tools/run_compare.py" "$OUT"/incremental_*.json 2>&1 | tee -a "$LOG" | tail -80
+    say "--- results section (generated, never hand-typed) ---"
+    python3 "$HOME/.local/share/ccai-repo/tools/make_results_section.py" 2>&1 | tee -a "$LOG" | tail -30
 fi
 say "DONE"
