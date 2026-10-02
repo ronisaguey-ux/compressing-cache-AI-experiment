@@ -171,10 +171,23 @@ full table rather than one run per question.
 
 ### 4.3 Fairness gate
 
-The comparison script **refuses** to report a result when the arms did not complete the same number
-of turns, or when either carries a harness failure. A policy that keeps a smaller context is faster
-per turn, so a wall-clock stop would let it complete more turns and win on volume rather than on
-policy. The stopping rule is the turn count; time is only an emergency break.
+The stopping rule is the **turn count**, not wall-clock time. This is load-bearing: a policy that
+keeps a smaller context is faster per turn *by construction*, so a time-based stop would let it
+complete more turns and win on volume rather than on policy. Time is retained only as an emergency
+break, so that an interrupted run grades what it finished instead of being discarded.
+
+Because that break can fire at different turn counts per arm, the comparison script does **not**
+report unequal arms as a difference and does **not** discard the run. It reconciles to the
+**common prefix** — the turns both arms actually completed — re-summing the cost, context and
+latency figures over that prefix. The measurements are per-turn and indexed by turn, so the turns
+captured on both sides are the same turns, which is what comparability requires. It refuses only
+when fewer than two turns are comparable.
+
+One asymmetry is deliberate. The **retention** counts are not reconstructed under reconciliation:
+the state of the artifact at turn *n* cannot be recovered from a later snapshot, and manufacturing
+it would be worse than reporting it unavailable for that arm. A run that stops early is therefore
+compared on cost and context over the shared prefix, and its retention numbers carry the caveat
+that they describe the turns it reached.
 
 ## 5. Results
 
