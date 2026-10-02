@@ -219,6 +219,14 @@ measurable. The cost model uses an assumed hit multiplier rather than a billing 
 compute model, and is stated as such. The gate probe is a single value; a single probe establishes
 that a mid-session fact survived, not a rate.
 
+**Model choice.** The reported run uses Gemma-4-12B in bf16, which loads entirely on one accelerator
+with no quantization and therefore carries no quantization confound. The competition's main track
+mandates a specific quantized 31B checkpoint for the agent core. Nothing in the policy depends on the
+model: it is a decision about which token blocks are retained when assembling a prompt, and it is
+implemented outside the model. Re-running it on a different checkpoint changes the numbers, not the
+mechanism, and any submission must state the checkpoint it measured on rather than imply the mandate
+was met.
+
 ## 8. Conclusion
 
 Keeping a context small and keeping it *stable* are different problems, and the usual solution to the
