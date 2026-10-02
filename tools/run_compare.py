@@ -169,6 +169,14 @@ def main(argv):
             if ct:
                 print("  accumulated codes %-10s : %s/%s recovered, in order=%s, dup=%s"
                       % (a, cn, ct, r.get("codes_ordered"), r.get("codes_dup")))
+            # ★★ THE RELEASE GATE -- the stronger, INDEPENDENT metric (CCAI_GATE=1). A model can
+            # reproduce the whole code list and still fail this, because the required value is a
+            # SEPARATE mid-session secret never included in that list. So a disagreement between
+            # these two lines is not noise: it says the artifact is wrong even though the model
+            # could recite what it was told.
+            if r.get("gate_ok") is not None:
+                print("  release gate      %-10s : %s  (mid-session secret reproduced in the "
+                      "shipped artifact)" % (a, "PASS" if r.get("gate_ok") else "FAIL"))
             # ★ THE OWNER'S METRIC IS PER-TURN: did turn i succeed. The final-state count is kept
             # alongside it because the GAP between them is itself a finding -- a large gap means
             # fixes were applied and then clobbered by later full-file rewrites.

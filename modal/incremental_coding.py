@@ -684,9 +684,30 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
     # ══════════════════════════════════════════════════════════════════════════════════════════
     _TASK = _os.environ.get("CCAI_TASK", "feature").strip().lower()
     _fix_mode = (_TASK == "fix")
+    # ★ THE RELEASE GATE IS OPT-IN. The turn-code baseline run measured a task WITHOUT this
+    # function; enabling it by default would silently change what that run measured.
+    _GATE_ON = _os.environ.get("CCAI_GATE", "0").strip() == "1"
+    _gate_test = None
+    _gate_line = None
+    _gate_final = None
+    _turn_codes = []
     if _fix_mode:
         import bug_task as _bt                      # same directory as this module
         _seed_src, _fixes, _ftests, _ref_src = _bt.build(features)
+        _turn_codes = _bt.turn_codes(features)
+        if _GATE_ON:
+            # ★★★ THE STRONGER VERSION. One extra function whose CORRECT VALUE is a SEPARATE
+            # secret handed over at turn `features // 2`, never part of the code list, so this
+            # metric is informationally INDEPENDENT of `codes_*` rather than a second reading of
+            # the same fact. It is delivered on the final turn, so a model that lost the middle of
+            # the session cannot ship a correct artifact -- the retention cost shows up as a
+            # broken function, not as a failed quiz. See bug_task.gate().
+            _gsrc, _gate_line, _gate_test, _gidx, _gint = _bt.gate(features)
+            _seed_src = _seed_src + "\n" + _gsrc
+            _gate_turn = features // 2
+            _gate_final = ("Also fix `%s`: it must return the integer %d, which was the SECRET "
+                           "SHIPPED GATE value given at turn %d."
+                           % (_bt.GATE_FN, _gint, _gate_turn))
         # seed the broken repo BEFORE the loop starts -- the model edits an existing file
         if not (_os.path.exists(solution) and _os.environ.get("CCAI_RESUME") == "1"):
             open(solution, "w").write(_seed_src)
@@ -709,7 +730,7 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
             "function definitions and their code -- no comments, no notes, no docstrings added.\n\n"
             "In each of the following turns you will be told which single bug to fix, by number, "
             "and nothing else. You must apply the correction you were given here for that number."
-            % (features, "\n".join(_fixes))
+            % (features, "\n".join(_fixes) + (("\n  * %s" % _gate_line) if _gate_line else ""))
         )
     else:
         _BUG_REPORT = None
@@ -722,8 +743,9 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
     # ★ ONE FRESH CODE PER TURN, none of which may be written to the file until the final turn.
     # This is what makes the middle turns carry information that exists NOWHERE ELSE -- without
     # it, "every turn rewrites the whole file" means each write subsumes the last and a tie is
-    # guaranteed once both arms anchor the brief.
-    _turn_codes = _bt.turn_codes(features) if _fix_mode else []
+    # guaranteed once both arms anchor the brief. Computed in the fix block above (the release
+    # gate needs the middle code at build time); empty in feature mode.
+    # _turn_codes is already set.
 
 
     # ★ THE MODEL'S OWN WINDOW IS THE BUDGET, with headroom for the system prompt, the new
@@ -923,11 +945,18 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
             # the two arms would tie no matter how well either handled the junk.
             _code_line = ("TURN CODE: %s -- remember it. It must NOT appear anywhere in "
                           "solution.py until the final turn." % _turn_codes[i])
+            # ★ THE RELEASE GATE'S SECRET IS HANDED OVER HERE, exactly once, mid-session, and is
+            # NEVER repeated. It is deliberately not one of the turn codes -- see bug_task.gate()
+            # -- so `gate_ok` and `codes_n` measure two independent things.
+            if _GATE_ON and i == features // 2:
+                _code_line += ("\nSECRET SHIPPED GATE value for turn %d: %d -- this is NOT a turn "
+                               "code; do not add it to TURN_CODES." % (i, _gint))
             if i == len(specs) - 1:
                 _code_line = ("FINAL TURN. Fix bug %d, and also add to the TOP of solution.py a "
                               "list named TURN_CODES containing every turn code you were given "
-                              "in this session, in the order you received them. %s"
-                              % (i, _code_line))
+                              "in this session, in the order you received them. %s%s"
+                              % (i, _code_line,
+                                 (" " + _gate_final) if _gate_final else ""))
             if i == 0:
                 instr = _BUG_REPORT + "\n\n%s\nFix bug 0 now. %s" % (_code_line, _tool_line)
             else:
@@ -1217,6 +1246,14 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
         lines.append("    RESULTS['codes_total'] = len(_codes)")
         lines.append("    RESULTS['codes_ordered'] = False")
         lines.append("    RESULTS['codes_dup'] = False")
+        if _gate_test:
+            # ★ THE RELEASE GATE: the artifact is WRONG if the middle of the session was lost.
+            # `_fns` comes from FIX_PRELUDE, emitted above for every fix run.
+            lines.append("try:")
+            lines.append("    %s" % _gate_test)
+            lines.append("    RESULTS['gate_ok'] = True")
+            lines.append("except Exception:")
+            lines.append("    RESULTS['gate_ok'] = False")
     _emit("try:")
     _emit("    names = set(m.REGISTRY) if hasattr(m, 'REGISTRY') else set()")
     _emit("    N = %d" % n_features_done)

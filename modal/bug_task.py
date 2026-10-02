@@ -220,3 +220,65 @@ def grade_codes(src, codes):
     return dict(codes_n=len(found), codes_total=len(codes),
                 codes_ordered=(ordered == codes), codes_dup=dup)
 
+
+# ══════════════════════════════════════════════════════════════════════════════════════════════
+# ★★★ THE STRONGER VERSION — THE RELEASE GATE (owner-approved, 2026-10-02)
+#
+# Owner, verbatim: *"make the final fix depend on an early code (behaviour, not a list)"*.
+#
+# WHY THE LIST FORM IS WEAKER. `grade_codes` asks the model to REPEAT a list. A reviewer can
+# dismiss that as a memory game bolted onto the side of the task: nothing in the code depends on
+# it, so a model could pass every fix and still score zero codes, and the number would be read as
+# "the harness asked an extra question", not "the agent lost the thread of its own work".
+#
+# The gate makes the retention LOAD-BEARING BEHAVIOUR. One extra function, `bug_gate`, must be
+# corrected on the FINAL turn, and its correct body is derived from the code handed over at turn
+# `n // 2` -- the exact middle of the session. That code is stated once, never repeated, and is
+# not recoverable by reasoning: it is a hash fragment.
+#
+#   * A model that kept the middle can compute the fix and the function returns the right value.
+#   * A model that lost it CANNOT fix the function at all -- it can only guess a number, and the
+#     test asserts the exact integer.
+#
+# So the final delivery of the task is damaged by forgetting the middle, in the same way a real
+# long-horizon agent is damaged: not "you failed a quiz" but "the artifact you shipped is wrong".
+#
+# ⚠️ OPT-IN (`CCAI_GATE=1`). The turn-code run that established the baseline does not emit this
+# function, and turning it on by default would silently change the task that run measured.
+# ══════════════════════════════════════════════════════════════════════════════════════════════
+
+GATE_FN = "bug_gate"
+
+
+def gate_secret(n: int):
+    """The value the release gate must return, and the turn it is handed over on.
+
+    ★ IT IS DELIBERATELY **NOT** ONE OF THE TURN CODES. If the gate value were `codes[n // 2]`,
+    then a model that reproduced the TURN_CODES list could read the gate value straight out of its
+    own list -- the two metrics would be informationally identical and the gate would be the codes
+    check wearing a different hat (measured: a simulated model with a complete list passed both).
+    A separate secret, never part of the list, makes them INDEPENDENT: one asks "can you reproduce
+    an accumulated list", the other asks "did you retain one specific mid-session fact and act on
+    it in the artifact you shipped".
+    """
+    h = hashlib.sha256(("gatesecret:%d" % n).encode()).hexdigest()
+    val = int(h[:6], 16) % 9000 + 1000        # always 4 digits, never zero
+    return val, n // 2
+
+
+def gate(n: int, codes=None):
+    """Return (gate_source, gate_fix_line, gate_test, gate_index, gate_value) for the release gate.
+
+    `gate_index` is `n` -- the gate is appended AFTER the n bugs, so under definition-order
+    grading it is `_fns[n]` regardless of what the model renames it to. `codes` is accepted and
+    ignored so callers written against the earlier signature keep working.
+    """
+    val, mid = gate_secret(n)
+    src = ("def %s(x):\n"
+           "    return x\n" % GATE_FN)
+    fix = ("%s: currently `return x`. On the FINAL turn it must instead return the integer "
+           "%%d -- the SECRET SHIPPED GATE value given at turn %d. Do not touch it until the "
+           "final turn." % (GATE_FN, mid)) % val
+    test = "assert _fns[%d](0) == %d" % (n, val)
+    return src, fix, test, n, val
+
