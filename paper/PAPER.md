@@ -131,6 +131,15 @@ list is repeated and no reminder is given.
   first probe: a policy can recite the list and still ship a broken artifact. Verified independent:
   two simulated agents with identical bug and code scores receive opposite gate verdicts.
 
+**Why the gate discriminates, checked before the run rather than after.** The mid-session secret is
+handed over at turn *n*/2 and is only required at the end, so it is recoverable exactly when the
+turn *n*/2 instruction is still in the prompt. Both policies anchor the turn-1 brief, so the brief's
+survival is not the discriminator. The discriminator is the **window depth**: at ~1,879 tokens per
+turn block against an 11.3k budget, `linear` retains only the most recent ~4 turn blocks, so by turn
+40 it reaches back to turn 36 and the turn-30 secret is gone; `runtime` retains every instruction
+verbatim. A run in which both arms happened to hold the secret would not discriminate, so this was
+computed against the real tokenizer and the real per-turn sizes before the run started.
+
 ## 4. Measurement
 
 ### 4.1 Prefix-cache reuse
