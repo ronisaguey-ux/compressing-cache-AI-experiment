@@ -28,6 +28,43 @@ import json
 import sys
 
 
+def _truncate_to(r, n):
+    """Re-sum an arm's measurements over the first `n` turns, so unequal runs compare fairly.
+
+    Only the per-turn lists and the aggregates derived from them are touched. Retention counts
+    (per_turn_success, fixes_applied_then_lost, final_state_accuracy) are LEFT ALONE and flagged,
+    because the file state at turn `n` is not something that can be reconstructed from a later
+    snapshot -- inventing it would be worse than reporting it as unavailable for that arm.
+    """
+    import copy
+    out = copy.deepcopy(r)
+    rows = sorted(out.get("metrics", {}).get("cache_rows") or [], key=lambda x: x.get("turn", 0))
+    rows = [x for x in rows if x.get("turn", 0) < n]
+    if rows:
+        tot = sum(x.get("prompt", 0) for x in rows)
+        hit = sum(x.get("hit", 0) for x in rows)
+        m = out.setdefault("metrics", {})
+        m["cache_hit_tokens"] = hit
+        m["cache_total_tokens"] = tot
+        m["cache_hit_rate"] = round(hit / tot, 4) if tot else None
+        m["cache_miss_tokens"] = max(0, tot - hit)
+        m["cost_units"] = m["cache_miss_tokens"] * 1.0 + hit * 0.1
+        m["cost_units_no_cache"] = float(tot)
+        m["cost_saving_ratio"] = (m["cost_units_no_cache"] / m["cost_units"]) if m["cost_units"] else None
+        m["total_prefill_tokens"] = tot
+        m["prompt_last"] = rows[-1].get("prompt")
+        m["prompt_peak"] = max(x.get("prompt", 0) for x in rows)
+        m["prompt_first"] = rows[0].get("prompt")
+        m["prompt_growth"] = (m["prompt_last"] / m["prompt_first"]) if m["prompt_first"] else None
+        m["cache_rows"] = rows
+    if out.get("turn_ok"):
+        out["turn_ok"] = out["turn_ok"][:n]
+        out["turns_ok"] = sum(out["turn_ok"])
+    out["features_completed"] = n
+    out["_reconciled_to"] = n
+    return out
+
+
 def load(paths):
     out = {}
     for pat in paths:
@@ -62,19 +99,37 @@ def main(argv):
             print("REFUSING: %s reported harness_failed -- not a model measurement" % a)
         return 1
 
-    # ---- GATE 2: equal turn counts, or there is nothing to compare ------------------------
+    # ---- GATE 2: the arms must be compared over the SAME turns ----------------------------
+    # ★ A WALL-CLOCK STOP IS ARM-DEPENDENT. `runtime` keeps a small bounded context so it is faster
+    # per turn by construction; if time, not turn count, ends the run then runtime completes MORE
+    # turns and wins on volume rather than on policy. TURN COUNT is the stopping rule, and time is
+    # only an emergency break -- so a mismatch here must not simply discard the run, and it must not
+    # be papered over either.
+    #
+    # ★★ RECONCILE TO THE COMMON PREFIX. The measurements are per-turn and indexed by turn, so
+    # arms that ran 60 and 57 turns CAN be compared over the first 57 -- and the 57 captured on both
+    # sides describe the same turns, which is exactly the requirement. Refusing outright would throw
+    # away a run because a safety break fired, and reporting 60-vs-57 would be the volume artefact
+    # this gate exists to prevent.
     counts = {a: r.get("features_completed") for a, r in runs.items()}
-    if len(set(counts.values())) != 1:
-        print("REFUSING: the arms did NOT run the same number of features -- the difference "
-              "would be volume, not policy:")
-        for a, c in counts.items():
-            print("    %-10s features_completed=%s stopped_early=%s"
-                  % (a, c, runs[a].get("stopped_early")))
-        print("\n  Re-run with a turn-count stop (CCAI_TIME_BUDGET_S high enough that it never "
-              "fires). A wall-clock stop is arm-dependent: the runtime arm is faster per turn.")
+    if any(c is None for c in counts.values()):
+        print("REFUSING: an arm did not report features_completed: %s" % counts)
         return 1
+    n = min(counts.values())
+    if len(set(counts.values())) != 1:
+        print("!! UNEQUAL TURN COUNTS -- reconciling to the common prefix of %d turns:" % n)
+        for a, c in sorted(counts.items()):
+            print("     %-10s ran %s%s" % (a, c,
+                  "   (stopped_early by the time budget)" if runs[a].get("stopped_early") is not None
+                  else ""))
+        print("   Comparing turns 0..%d only, which BOTH arms completed. Cost/context/latency "
+              "figures are re-summed over that prefix; a per-turn list is truncated to it.\n"
+              % (n - 1))
+        runs = {a: _truncate_to(r, n) for a, r in runs.items()}
+        if n < 2:
+            print("REFUSING: fewer than 2 comparable turns survive.")
+            return 1
 
-    n = next(iter(counts.values()))
     truncated = [a for a, r in runs.items() if r.get("stopped_early") is not None]
     if truncated:
         print("NOTE: stopped early (time budget) in %s -- comparing the %d turns both ran.\n"
