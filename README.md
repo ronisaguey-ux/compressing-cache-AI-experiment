@@ -876,6 +876,12 @@ now has its **own** budget sized to its own claim.
 and refuses any run carrying `harness_failed`. Proven in four cases: fair pair → exit 0; unequal
 turns → exit 1; `harness_failed` → exit 1; explicit paths → exit 0.
 
+**★ And the caller must read the gate's exit code, not a pipe's.** `collect_fixrun.sh` originally
+did `... | tee COMPARE.txt` followed by `GATE=$?` — and `$?` after a pipeline is the **last**
+command's status, i.e. `tee`'s, which is always 0. The gate could refuse an unfair comparison and
+the collector would still report success. It now uses `${PIPESTATUS[0]}`. **A safety gate whose
+verdict is read through a pipe is not a gate.**
+
 ## The sliding-window confound — must be stated
 
 Gemma 4 is not dense attention. Read from the real `config.json`:
