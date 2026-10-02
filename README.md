@@ -13,6 +13,73 @@ Read [`RESULTS.md`](RESULTS.md) for the numbers. The corrected method is Finding
 rotation study is Findings 1–17 and several of them are **superseded** — see the correction
 index at the end of this file.
 
+---
+
+## Results at a glance
+
+Everything below is **measured on real hardware**, not estimated. Three separate experiments, in
+the order they were run.
+
+### 1. KV compaction: recompute, do not rotate (Findings 18–24)
+
+| | retention | retrieval | KV saved |
+|---|---|---|---|
+| rotate keys in place | 60% | **fails** — keys sit at cos 0.75–0.87 from a correct forward | 34–37% |
+| **recompute the retained tokens** | 60% | **passes at every depth tested** | 34–37% |
+| prefix-cache reuse (`f=0.15`) | 60% | passes, **28% of the prefill reusable** | +7.7% wall |
+
+The load-bearing result: **a compacted cache is only correct if the retained tokens are run
+through a fresh forward pass.** Key-only RoPE re-rotation fixes the *position* and nothing else —
+a key's content is conditioned on everything before it, so moving it leaves it wrong.
+
+### 2. Long-horizon agent work: bounded context vs linear prefill (definitive run)
+
+Gemma-4-12B, bf16, fully GPU-resident on an RTX A6000. **120 turns per arm, identical
+instruction, identical task.** The only variable is the context policy.
+
+| | **linear prefill** | **anchored runtime** | ratio |
+|---|---|---|---|
+| features passed | 122/123 (99.2%) | 123/123 (100%) | ~1.01x |
+| **turn-1 nonce retained** | **LOST** | **RETAINED** | — |
+| TTFT, first → last | 731 → **7,325 ms** | 736 → **497 ms** | **flat vs 10x growth** |
+| prompt, first → last | 501 → **12,065 tok** | 501 → **1,228 tok** | **24.1x vs 2.5x** |
+| peak KV | **4,184 MB** | **501 MB** | **8.4x less** |
+| wall clock | 24.8 min | **10.9 min** | **2.3x faster** |
+| total prefill tokens | **1,021,255** | **142,911** | **7.1x fewer** |
+
+**The honest headline is cost and retention, not raw accuracy.** Accuracy nearly equalises on
+this task; what does not is the price of holding the same context, and whether a fact stated once
+at the beginning still exists 119 turns later.
+
+### 3. The broken-repo task — does the edge survive a harder job?
+
+The feature task above turned out to be **too easy to discriminate** (122 vs 123): adding an
+*independent* function per turn needs no memory of earlier turns. So the task was rebuilt so that
+turn 1 is load-bearing:
+
+> `solution.py` is seeded with 80 broken functions. **Turn 1 carries the complete bug report
+> once** — for each bug, the exact wrong value and the exact required value, drawn from an
+> unguessable constant. **Every later turn says only `Fix bug 3.`** — no restatement, no hint.
+
+A model that has lost turn 1 cannot reason its way to an arbitrary constant. It can only guess,
+and a guess is visible as a wrong number.
+
+**Scored per turn** (owner's metric): the assertion for bug `i` runs *immediately after turn `i`*.
+This separates a fix that was never applied from one that was applied and then clobbered by a
+later full-file rewrite.
+
+**Baseline arm, measured mid-run** (n = 34 turns):
+
+| turns | report in context? | correct |
+|---|---|---|
+| 0–6 | yes | **5/7 (71%)** |
+| 7+ | no — evicted | **5/27 (19%)** |
+
+The file itself stays structurally perfect throughout (all 80 functions present, parses clean) —
+the failures are **value-level**, i.e. genuinely lost memory rather than a broken harness.
+
+---
+
 ## The method
 
 ```
@@ -660,3 +727,289 @@ the direction, which is measured on every turn, not the level.**
 `modal/swe_solve.py` · `benchmarks/swe_table.py` · `modal/longhorizon.py` ·
 `benchmarks/results/swe_*.json` · `benchmarks/results/longhorizon_*.json` ·
 `benchmarks/results/superseded/` (the pre-fix runs, kept as evidence of the bugs they exposed).
+
+---
+
+# The long-horizon benchmark in full
+
+This is the part a reader needs in order to judge or reproduce the applied result, and it is
+written so that nothing has to be taken on trust.
+
+## What question it answers
+
+> A coding agent works through a long task. Its context is full. Something must be dropped. **What
+> does dropping the oldest turns actually cost, and does keeping a small anchored context instead
+> of the full transcript preserve the ability to do the work?**
+
+Two policies, same model, same task, same instruction:
+
+- **`linear`** — the full transcript, truncated **oldest-first** only when the model's own window
+  forces it. This is the honest production failure mode: a fixed window means something must go,
+  and every naive policy drops the oldest.
+- **`runtime`** — a **turn-1 anchor plus the most recent few turns**, capped at a small budget of
+  its own (`RUNTIME_TOKENS`, default 6144). The anchor (block 0) is never evicted; the middle is
+  dropped on every turn once the module outgrows the budget.
+
+Both arms are capped by the **same model** and given the **same turn count**. The ceiling
+(12,000 prompt tokens) is applied identically; the difference is *which* turns are kept.
+
+## Task A — the feature task
+
+Each turn asks for one independent function. A **contract is stated exactly once, in turn 1**, and
+never repeated; the final grader checks whether it is still in force at the end.
+
+Why the contract alone is not enough: the model re-writes `REGISTRY[...]` on every `append`, so
+the *rule* is re-derivable from recent context no matter what was evicted. Measured — `contract:
+True` for **both** arms, at 49 turns and again at 120.
+
+The discriminator is therefore a **nonce**: `QX7-4420-BRAVO`, stated once in turn 1 and required
+only in the final append. Nothing else in the transcript contains it, so it is recoverable
+**exactly when turn 1 survived**.
+
+| | linear | runtime |
+|---|---|---|
+| features | 122/123 | **123/123** |
+| contract | True | True |
+| **nonce** | **LOST** | **RETAINED** |
+
+A contract the model applies repeatedly leaves traces and cannot test retention. Testing only the
+contract would have reported *"both fine"* and been wrong — twice.
+
+### The prompt bug that invalidated an earlier run
+
+An earlier 49-turn run reported linear at **38/52** with twelve consecutive feature failures. That
+number is **retracted**: the per-turn instruction said *"Write the FULL solution.py"* while the
+system prompt said *"prefer `append`"* — a flat contradiction, and the per-turn wording won. The
+baseline rewrote the whole file every turn (~335–383 tokens/turn), hit its cap at ~turn 26, and
+the result measured the **prompt**, not the policy. With the instruction made consistent the cost
+falls to ~150 tokens/turn and eviction moves to ~turn 78.
+
+**A turn count must be chosen AFTER the prompt is fixed.** 49 turns was too short under the
+corrected prompt, which is why nothing was reported until the 120-turn run existed.
+
+## Task B — the broken-repo task (the harder job)
+
+### Design
+
+`modal/bug_task.py` — `build(n)` returns `(seed_source, bug_report_lines, tests, reference_fixed)`.
+
+Six bug families, chosen so the correct answer cannot be derived from the broken code:
+
+| family | shape of the bug | what the report gives |
+|---|---|---|
+| wrong multiplier | `return x * 39` | must become `return x * 222` |
+| wrong offset | `return x + 354` | the constant must be `57` |
+| wrong kwarg default | `def f(x, k=117)` | the default must be `13` |
+| wrong comparison | `return x > 321` | must be `>=` against `321` |
+| wrong slice bound | `return x[:6]` | must be `[:11]` |
+| wrong lookup key | `TABLE['hotel']` | the key must be `'golf'` |
+
+Constants are derived from `sha256("bug:<i>")`, so they are **deterministic but unguessable** —
+reproducible without being inferable.
+
+Turn 1 carries the entire report. **Every later turn is a bare `Fix bug N.`** The instruction also
+restates two rules that carry **zero information about any bug**, so they cannot leak the answer:
+
+- *keep every function's exact name* (the model renames aggressively; see below)
+- *do not copy the bug list, or any comment, into `solution.py`*
+
+### Grading — per turn, immediately
+
+```
+turn i completes  ->  run bug i's assertion right now  ->  turn_ok[i]
+...
+at the end        ->  run every bug's assertion        ->  passed
+gap (turns_ok - passed) = fixes applied and then LOST to a later rewrite
+```
+
+Two numbers, because they answer different questions. A model can apply a fix correctly and then
+destroy it on the next full-file rewrite; grading only the final state would show the loss without
+ever showing that the model had it right.
+
+### Two harness defects found while building this — both would have read as model failures
+
+**1. A bare comparison in a `try/except` never fails.** The generated test body was
+`m.bug_00(1) == 222` — an *expression*, not an `assert`. It evaluates to `False` and **does not
+raise**, so the `except` never fired and every bug was marked fixed. Measured: the **seeded
+(broken) module scored 20/20**. Every generated test now emits an `assert`.
+Verified after: broken **0/120**, reference-fixed **120/120**, half-fixed **60/120**.
+
+**2. The model renames functions.** Told to keep the exact names, Gemma-4-12B wrote
+`def multiply_by_factor(...)` instead of `def bug_00(...)` and scored **0/4 while applying every
+correct value**. Restating the rule did not stop it. Grading is now by **definition order**, not
+name — `_fns` is the module's top-level functions sorted by `co_firstlineno`, built once in
+`bug_task.FIX_PRELUDE` and shared by the harness and every test. This is **no weaker**: the
+required constant still exists only in turn 1, so a turn that lost turn 1 still cannot produce it.
+
+### ★ The runtime budget had to fit the anchor plus a turn
+
+`RUNTIME_TOKENS` was 2048, chosen for the feature task where each turn appends one function and
+the file accumulates on disk. The bug report is **~2637 tokens on its own**, so a 2048 budget
+popped **every** recent turn: the runtime arm would have received the bug list and **no file state
+at all**, then failed mechanically — a result that would have read as *"anchoring does not help"*.
+
+Caught by **simulation before the arm ran** (real per-turn sizes, both budgets, 80 turns):
+
+| `RUNTIME_TOKENS` | turn 0 | turn 20 | turn 79 | file state? |
+|---|---|---|---|---|
+| 2048 | 2637 tok | 2637 tok | 2637 tok | **no** |
+| **6144** | 2637 tok | **4337 tok** | **4337 tok** | **yes, flat** |
+
+vs linear, which reaches the 12,000-token cap and **loses turn 1 at ~turn 7**.
+
+## Fairness gates — a comparison that cannot be refused is just a formatter
+
+Two ways this experiment could have reported a difference it did not earn, both closed in code:
+
+**1. A wall-clock stop is arm-dependent by construction.** The runtime arm keeps a small bounded
+context, so it is *faster per turn*; stopping on time lets it complete **more** turns and win on
+volume rather than policy. The stop condition is therefore the **turn count**. `TIME_BUDGET_S`
+survives only as an emergency break (`CCAI_TIME_BUDGET_S`, default 21600), so a genuine
+interruption grades what completed instead of losing everything.
+
+**2. Two policies capped at the same ceiling become the same policy.** An earlier version capped
+*both* arms at 12k, so runtime grew to ~9.9k and linear to ~11.2k and they converged — measured
+4,180 ms vs 4,308 ms, a ratio of 1.0. The experiment could not discriminate at all. Each policy
+now has its **own** budget sized to its own claim.
+
+`tools/run_compare.py` **refuses to report** unless `features_completed` is identical across arms,
+and refuses any run carrying `harness_failed`. Proven in four cases: fair pair → exit 0; unequal
+turns → exit 1; `harness_failed` → exit 1; explicit paths → exit 0.
+
+## The sliding-window confound — must be stated
+
+Gemma 4 is not dense attention. Read from the real `config.json`:
+
+| model | layers | heads/kv | head_dim | layer types | bf16 |
+|---|---|---|---|---|---|
+| gemma-4-12B-it | 48 | 16/8 | 256 | **40 sliding / 8 full** | 23.9 GB |
+| gemma-4-26B-A4B-it | 30 | 16/8 | 256 | **25 sliding / 5 full** | 51.6 GB |
+| gemma-4-31B-it | 60 | 32/16 | 256 | **50 sliding / 10 full** | 62.5 GB |
+
+`sliding_window = 1024`, and **83% of layers are sliding**. Two consequences:
+
+1. **VRAM sizing** — a dense KV calculation overstates the cache by ~4x. Use
+   `sliding_layers × 1024 + full_layers × ctx`.
+2. **Part of "linear lost the contract" is the model's own attention pattern**, not purely the
+   baseline's eviction: past 1024 tokens the turn-1 fact is invisible to the sliding layers
+   regardless of policy. The full-attention layers can still carry it, and the runtime arm's
+   explicit anchor keeps it in the retained set by construction. **This is stated rather than
+   buried, because a reviewer would otherwise be right to raise it.**
+
+## Reproducing it
+
+### Hardware and model
+
+Everything here ran on a rented **RTX A6000 (48 GB)** with **Gemma-4-12B-it in bf16, fully
+GPU-resident** — 23.9 GB, **0 parameters offloaded**, ~82% GPU utilisation. No quantisation
+library in the path, no CPU offload.
+
+### Why 12B bf16, and not 8-bit or 26B
+
+- **8-bit is a silent no-op on this MoE.** `BitsAndBytesConfig(load_in_8bit=True)` on
+  `gemma-4-26B-A4B-it` does not quantise it: bnb only replaces `nn.Linear`, and in this MoE the
+  **expert weights are raw parameters**. Measured: 426 `Linear8bitLt` modules but **`bytes/param`
+  = 1.94 — i.e. bf16**, 48.8 GB allocated on a 48 GB card, OOM on the first forward pass.
+  **`bytes/param` is the oracle** (int8 ≈ 1.0, bf16 ≈ 2.0); `config.quantization_config` being
+  present proves nothing about what landed on the GPU.
+- **A conversion-time quantised checkpoint** (`cyankiwi/gemma-4-26B-A4B-it-AWQ-8bit`) was tried and
+  failed to apply (`lm_head.weight ... MISSING`, loaded as bf16).
+- **26B bf16 with CPU offload works but is unusable**: per-turn wall grew 59 → 98 → 136 → **416 s**
+  (~16 h per 80 turns). Offload hooks — arithmetic, not tuning.
+- **12B fits entirely on the GPU and finishes.** bf16 with nothing offloaded is also *cleaner* than
+  8-bit: there is no quantisation confound in the result at all.
+
+### The harness
+
+```
+modal/incremental_coding.py   the loop, both arms, the graders, the checkpointing
+modal/bug_task.py             the broken-repo task generator (build(n))
+deploy/vast_entry.py          runs it on a plain GPU box (stubs the Modal decorators)
+deploy/runfix.sh              fix-mode A/B: smoke -> linear -> runtime
+tools/run_compare.py          the fairness gate; refuses an unfair comparison
+```
+
+Run it on any GPU box:
+
+```bash
+export HF_HOME=/root/hf
+export HF_TOKEN="$(cat /root/.hftok)"        # the token must reach the PROCESS, see below
+CCAI_TASK=fix CCAI_MODEL=gemma-4-12b CCAI_QUANT=none \
+CCAI_ARM=linear CCAI_FEATURES=80 \
+  python -u /root/ccai/vast_entry.py
+```
+
+Then compare the two arms **through the gate**, never by eye:
+
+```bash
+python3 tools/run_compare.py '/root/ccai/results/*.json'
+```
+
+### Environment facts that cost real time
+
+- **`HF_HUB_ENABLE_HF_TRANSFER=1` is deprecated** and does nothing. The live knob is
+  `HF_XET_HIGH_PERFORMANCE=1`.
+- **An unauthenticated HF download is rate-limited to a crawl.** Measured: **9 MB/s decaying to
+  0.00 MB/s** with the progress bar frozen, versus **17.9 MB/s** authenticated. Diagnostic that
+  works: sample the directory size twice —
+  `a=$(du -sb "$D"|cut -f1); sleep 30; b=$(du -sb "$D"|cut -f1)` — and confirm the token reached
+  the **process** with `tr '\0' '\n' < /proc/<pid>/environ | grep -c HF_TOKEN`. A credential on
+  disk is not a credential in the process.
+- **`curl` without `-L`** reports the redirect, not the download — a fabricated speed.
+- **A Cloudflare speed test from the box is useless**: it returned HTTP 403 / 18 B/s while HF was
+  pulling 17.9 MB/s.
+- **`ssh` can refuse while the run is fine.** Judge the box by the API's `actual_status` +
+  `gpu_util`, never by the ssh port.
+- **A "stopped" instance can still be billing.** Two A6000s were running at once; the old one sat
+  at 0% GPU charging $0.317/hr. `actual_status` from the API is the oracle, and an idle GPU is
+  visible only in the instance list.
+
+### The checkpoint must be atomic — and it matters most at the end
+
+`open(path,"w")` truncates first: die in that window and the file is half-written JSON, the loader
+raises, and the resume path **silently starts fresh** — a whole paid run lost to a ~10 ms window.
+
+Fixed as `tmp → flush → fsync → rotate to .bak → os.replace`, with a `.bak` fallback on read, and
+a `_ckpt_dir()` that **creates** an explicitly named `CCAI_CKPT_DIR` rather than silently ignoring
+it and falling through to the CWD. Measured, SIGKILL at varying offsets inside the write window,
+14 rounds per size:
+
+| checkpoint size | old (truncating) | new (atomic) |
+|---|---|---|
+| 400 KB | 13/14 | **14/14** |
+| 2 MB | 12/14 | **14/14** |
+| **8 MB** | **7/14 — a coin flip** | **14/14** |
+
+The risk is highest at turn 150–200, exactly when the most compute has been invested.
+
+## Harness defects found by running, each of which scored zero for the harness and not the model
+
+The recurring lesson of this project: **the reply is a claim; the file at the line is the
+evidence.** Every one of these produced a number that looked like a model failure.
+
+1. **A grader that cannot fail measures nothing** — the bare-comparison bug above (broken module
+   scored 20/20).
+2. **A rename is not a wrong answer** — grading by name failed a run that applied every value.
+3. **A parser that rejects valid input is indistinguishable from a model that cannot produce valid
+   output** — flat-args tool calls and raw newlines inside JSON strings were both discarded as
+   "malformed" while the model was doing the work correctly.
+4. **A truncated reply recorded as a model failure** — 215 of 219 no-answer rows were the
+   harvester's own `MAX_TOKENS` cap (`finish_reason=length`, `reasoning_tokens == MAX_TOKENS`).
+5. **A missing key is falsy** — a status reader trusting the wrong field reports a confident
+   falsehood rather than an error (a healthy run read as dead; a busy lane read as idle).
+6. **0.0% CPU + frozen output = blocked, not thinking** — a wedged lane was diagnosed as "still
+   generating" for 15 minutes.
+7. **An empty findings document is ambiguous** — a lazy model returning `[]` for every file is
+   indistinguishable from a genuinely clean batch unless the engine refuses to resolve it as
+   "clean".
+
+## Citation of the earlier findings
+
+Findings 1–17 (the rotation study) are largely **superseded** by Findings 18–24. Finding 20 was
+retracted in part: line pooling and the mid-layer band were compensating for a corrupted cache,
+and against the corrected pipeline baseline / line-pooling / mid-layer-band are all 4/4. The
+selector is not the lever — **the pipeline is**.
+
+Findings 25–34 (block-diagonal attention, the cascade, needle preservation, the shallow-depth
+budget) and 35–43 (the positional-gap defect, the state-update case, raw hardware metrics,
+SWE-bench and long-horizon tool calling) stand as written, with their corrections indexed inline.
