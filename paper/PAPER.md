@@ -148,7 +148,7 @@ codes probe separates the arms and the gate does not.
 ### 4.1 Prefix-cache reuse
 
 Each turn we record the longest common token prefix between the current prompt and the previous one,
-exactly what an automatic prefix cache would reuse. Cost is in raw compute units: a fresh token costs
+what an automatic prefix cache would reuse. Cost is in raw compute units: a fresh token costs
 1.0 and a reused token an assumed multiplier of 0.1, so a turn costs the miss count plus the hit count
 times the multiplier, against a no-cache baseline where every token costs 1.0. The multiplier is one
 named constant, so the assumption is visible and re-runnable. We compare on total
