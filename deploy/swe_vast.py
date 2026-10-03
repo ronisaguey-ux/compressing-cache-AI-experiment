@@ -338,10 +338,15 @@ def solve(model, arm, limit, max_turns, max_new=1024):
         mdl = load_model(mid)
 
     def build_prompt(messages):
+        # ★ apply_chat_template WANTS DICTS, NOT TUPLES. MEASURED: passing `("system", text)`
+        # tuples does not raise -- it produces a prompt the model does not follow, so every turn
+        # came back as prose with no JSON object and the whole arm scored zero for a prompt
+        # serialisation detail. The same content as `{"role":..,"content":..}` produces the correct
+        # Gemma turn format and the model replies with the tool json on the first line.
+        msgs = [{"role": r, "content": c} for r, c in messages]
         try:
-            return tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            return tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
         except Exception:
-            # fall back to a plain join if the checkpoint has no chat template
             s = "".join("<|%s|>\n%s\n" % (r, c) for r, c in messages)
             return s + "<|assistant|>\n"
 
