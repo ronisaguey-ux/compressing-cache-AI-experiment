@@ -37,14 +37,11 @@ rewriting it?** Our policy pins an immutable front (system prompt and the turn-1
 a bounded window at the end. Nothing is summarised: the information-dense part of each turn is
 kept, the superseded part dropped.
 
-**Contributions.**
-1. A context policy that bounds the working set while leaving the prefix shared with the previous
-   turn intact (§3).
-2. A direct, per-turn measurement of prefix-cache reuse, and a compute-cost model that prices a miss
-   and a hit differently (§4).
-3. A long-horizon evaluation that discriminates, with per-turn grading and a retention probe that
-   cannot be satisfied by recency alone (§4.2).
-4. A catalogue of four failure modes by which such an evaluation silently measures nothing (§6).
+**Contributions.** A context policy that bounds the working set while leaving the prefix shared
+with the previous turn intact (§3); a per-turn measurement of prefix-cache reuse under a compute
+model that prices a miss and a hit differently (§4); an evaluation that discriminates, using
+per-turn grading and a probe recency cannot satisfy (§4.2); and four failure modes by which such an
+evaluation silently measures nothing (§6).
 
 ## 2. Related work
 
@@ -77,7 +74,7 @@ local-attention window, so a turn-1 fact is unavailable to those layers regardle
 F4). Retention claims here concern **the tokens the agent retained**.
 
 **Corrected results.** The §6 F3 result is a defect in our own benchmark; we report the corrected
-task. A position paper argues venues need a refutations track [16], the literature documents leakage
+task. A position paper argues venues need a refutations track [16]; the literature documents leakage
 and reporting error [17,18], and empirical-method work [19] shows comparisons favour the proposed
 method — the bias F1 and F2 produce. We adopt artifact-review expectations [20].
 

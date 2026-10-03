@@ -133,12 +133,25 @@ def main():
     best = max(hr, key=lambda a: hr[a])
     cheap = min(cu, key=lambda a: cu[a])
     worst = min(hr, key=lambda a: hr[a])
-    L.append("**Separation.** `%s` reuses a prefix for %.0f%% of its prefill against %.0f%% for "
-             "`%s`, at %s compute units against %s (%s less). " % (
-                 best, 100 * hr[best], 100 * hr[worst], worst,
-                 fmt(cu[cheap], "int"), fmt(cu[worst], "int"),
-                 fmt((cu[worst] / cu[cheap]) if cu[cheap] else None, "x")))
-    if hr[best] - hr[worst] < 0.15:
+    # ★ THE COMPARISON ARM MUST NOT BE THE BEST ARM ITSELF. Picking `worst` as the second value is
+    # degenerate whenever only one arm carries cache data: it resolves to the same arm as `best`
+    # and the sentence reads "`runtime` ... against 81% for `runtime`", which is a comparison of an
+    # arm with itself dressed up as a separation. The contrast arm is the strongest OTHER arm.
+    others = [a for a in order if a != best]
+    other = max(others, key=lambda a: hr[a]) if others else None
+    if other is None:
+        L.append("**Separation.** Only one arm reported prefix-cache data, so there is no contrast "
+                 "to state. The retention table above stands on its own.")
+        other = best
+        gap = 0.0
+    else:
+        gap = hr[best] - hr[other]
+        L.append("**Separation.** `%s` reuses a prefix for %.0f%% of its prefill against %.0f%% for "
+                 "`%s`, at %s compute units against %s (%s)." % (
+                     best, 100 * hr[best], 100 * hr[other], other,
+                     fmt(cu[cheap], "int"), fmt(cu[other], "int"),
+                     fmt((cu[other] / cu[cheap]) if cu[cheap] else None, "x")))
+    if other is not None and gap < 0.15:
         L.append("The margin in prefix reuse is under 15 points, so **this run does not establish "
                  "the cost claim**; stating otherwise would be the artefact the fairness gate "
                  "exists to prevent.")
@@ -158,10 +171,8 @@ def main():
             if pr[i - 1].get("prompt") and pr[i]["prompt"] < pr[i - 1]["prompt"]:
                 drops.append((pr[i]["turn"], pr[i - 1]["prompt"], pr[i]["prompt"], pr[i].get("hit")))
         if drops:
-            L.append("**Compaction events.** `prune` compacted on %d turn(s) (%s). Each is a "
-                     "discontinuity in the prompt: %s. This is the operation the cost argument is "
-                     "about — the retained blocks are rewritten, so the prefix shared with the "
-                     "previous turn no longer applies and the prompt is re-processed." % (
+            L.append("**Compaction events.** `prune` compacted on %d turn(s) (%s), each a "
+                     "discontinuity: %s." % (
                          len(drops),
                          ", ".join(str(d[0]) for d in drops[:8]),
                          "; ".join("turn %d %d→%d tok, %d reused" % d for d in drops[:4])))
