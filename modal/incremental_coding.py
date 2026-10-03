@@ -1431,42 +1431,76 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                 # not. So build the candidate in memory, ast.parse it, and only then touch disk.
                 _cand = (content if call["tool"] == "write_file"
                          else (open(solution).read() if _os.path.exists(solution) else "") + "\n" + content)
-                try:
-                    ast.parse(_cand)
-                except SyntaxError as _se:
-                    # ★★ UNDO ONE LAYER OF OVER-ESCAPING BEFORE REJECTING (measured on ARC 4ff4c9da).
-                    #
-                    # MEASURED: eleven consecutive turns were rejected with `invalid syntax` while
-                    # the model was in fact doing the task. The cause was double-escaping -- the
-                    # reply contained `\\n` where it meant `\n`, so after JSON decoding the program
-                    # collapsed onto a single line and no program parsed. The code was correct; its
-                    # transport encoding was not. Retry with the surviving escapes removed, and
-                    # accept ONLY if the result is valid Python, so a genuinely broken reply still
-                    # fails. The candidate is written and then graded by the real grader either way,
-                    # so this cannot manufacture a pass.
-                    _alt = _unescape_code(content)
-                    _alt_cand = (_alt if call["tool"] == "write_file"
+                # ★★ VALIDATE, AND ON FAILURE RETAKE THE TURN IN-PLACE (measured on ARC 4ff4c9da).
+                #
+                # MEASURED: the model wrote an `if` broken across two lines with a trailing `and`
+                # (line 36, offset 62) -- invalid Python -- and every later turn re-emitted the same
+                # shape. Because a rejected turn `continue`d with NO retry, the run burned the whole
+                # 60-turn budget producing nothing: solution.py frozen at 751 chars. The model is not
+                # failing the task; it is failing to TRANSPORT a syntactically valid program, and the
+                # harness never told it so. A rejection with no retry measures the harness.
+                #
+                # So: try the raw content, then the un-escaped content, and if both fail, re-generate
+                # immediately with the EXACT syntax error fed back. Any candidate that is written is
+                # still graded by the real grader, so this cannot manufacture a pass; it can only
+                # convert "the model wrote broken syntax" into "the model got one more chance".
+                _parsed = False
+                _last_se = None
+                for _retry in range(3):
+                    try:
+                        ast.parse(_cand)
+                        _parsed = True
+                        break
+                    except SyntaxError as _se:
+                        _last_se = _se
+                        _alt = _unescape_code(content)
+                        _alt_cand = (_alt if call["tool"] == "write_file"
+                                     else (open(solution).read() if _os.path.exists(solution)
+                                           else "") + "\n" + _alt)
+                        if _alt != content and _first_that_parses([_alt_cand]) is not None:
+                            print("[%s] turn %d: over-escaping repaired (%d chars)"
+                                  % (arm, i, len(_alt)), flush=True)
+                            content, _cand = _alt, _alt_cand
+                            _parsed = True
+                            break
+                        # Retake the turn with the error in hand.
+                        _retry_prompt = (prompt + "\n" + txt +
+                                         "\n\nYour last reply was REJECTED: it does not parse as "
+                                         "Python (%s, line %s). Reply again with exactly one json "
+                                         "object whose \"content\" is VALID Python with correct "
+                                         "indentation and no line broken inside an expression. Do "
+                                         "NOT use markdown fences. Do NOT add comments."
+                                         % (_se.msg, _se.lineno))
+                        _txt2, _m2 = complete(_retry_prompt, max_new)
+                        _call2, _err2 = parse(_txt2)
+                        if _err2 or not isinstance(_call2, dict) or \
+                                _call2.get("tool") not in ("write_file", "append"):
+                            print("[%s] turn %d: retry %d did not yield a usable call (%s)"
+                                  % (arm, i, _retry + 1, _err2), flush=True)
+                            break
+                        txt = _txt2
+                        call = _call2
+                        content = str(_call2.get("content", ""))
+                        _cand = (content if call["tool"] == "write_file"
                                  else (open(solution).read() if _os.path.exists(solution) else "")
-                                      + "\n" + _alt)
-                    if _alt != content and _first_that_parses([_alt_cand]) is not None:
-                        print("[%s] turn %d: over-escaping repaired (%d chars)"
-                              % (arm, i, len(_alt)), flush=True)
-                        content = _alt
-                    else:
-                        _fail += 1
-                        # ★ DUMP THE EXACT REPLY. Two vacuous ARC runs were diagnosed from a
-                        # truncated transcript; the raw bytes are what the next fault needs.
-                        try:
-                            _os.makedirs(WORK, exist_ok=True)
-                            with open(_os.path.join(WORK, "reject_turn%03d.txt" % i), "w") as _rf:
-                                _rf.write(txt)
-                        except Exception:
-                            pass
-                        obs = ("REJECTED: your code does not parse as Python (%s, line %s). "
-                               "solution.py was left UNCHANGED. Re-send it as valid Python."
-                               % (_se.msg, _se.lineno))
-                        print("[%s] turn %d REJECTED (unparseable): %s" % (arm, i, _se.msg), flush=True)
-                        continue
+                                      + "\n" + content)
+                        print("[%s] turn %d: retook the turn with the syntax error fed back (retry %d)"
+                              % (arm, i, _retry + 1), flush=True)
+                if not _parsed:
+                    _fail += 1
+                    # ★ DUMP THE EXACT REPLY. Two vacuous ARC runs were diagnosed from a
+                    # truncated transcript; the raw bytes are what the next fault needs.
+                    try:
+                        _os.makedirs(WORK, exist_ok=True)
+                        with open(_os.path.join(WORK, "reject_turn%03d.txt" % i), "w") as _rf:
+                            _rf.write(txt)
+                    except Exception:
+                        pass
+                    obs = ("REJECTED: your code does not parse as Python (%s, line %s). "
+                           "solution.py was left UNCHANGED. Re-send it as valid Python."
+                           % (_last_se.msg, _last_se.lineno))
+                    print("[%s] turn %d REJECTED (unparseable): %s" % (arm, i, _last_se.msg), flush=True)
+                    continue
                 if call["tool"] == "write_file":
                     open(solution, "w").write(content)
                 else:
