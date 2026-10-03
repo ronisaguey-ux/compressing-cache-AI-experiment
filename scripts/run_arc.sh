@@ -38,6 +38,10 @@ say "=== ARC-AGI-2  N=$N  index=$IDX  arms=runtime,linear ==="
 # PREFLIGHT: prove the task loads and the grader is satisfiable BEFORE spending GPU hours. A missing
 # data dir or a task-index typo would otherwise burn a whole arm and read as "the model failed".
 say "--- preflight: task loads, grader accepts the reference and rejects identity ---"
+# ★ `set -o pipefail` + PIPESTATUS: `$?` after `... | tee` is TEE's status, which is always 0, so the
+# previous version reported a vacuous grader and then ran anyway. The assertion below is only worth
+# anything if its failure actually stops the run.
+set -o pipefail
 CCAI_ARC_DIR=/root/arc/data CCAI_ARC_SPLIT=training CCAI_ARC_INDEX="$IDX" \
 /venv/main/bin/python - <<'PY' 2>&1 | tee -a "$LOG"
 import sys, os, json, subprocess, tempfile
@@ -49,17 +53,22 @@ seed, brief, tests, ref = at.build(3)
 tid, train, ti, to = at.load_task()
 print("task=%s  examples=%d  test=%dx%d  brief~%d tok" % (tid, len(train), len(ti), len(ti[0]), len(brief[0])//4))
 prelude = at.arc_prelude(work)
+# ★ tests entries are (name, expr) PAIRS -- take the expression, not the tuple. Formatting the tuple
+# yields a valid Python expression of two strings, which exits 0 and makes the grader look vacuous.
+tcheck = tests[0][1]
 def rc(src):
     open(os.path.join(work, "solution.py"), "w").write(src)
-    code = "import sys; sys.path.insert(0,%r)\nimport solution as m\n%s\n%s\n" % (work, prelude, tests[0])
+    code = "import sys; sys.path.insert(0,%r)\nimport solution as m\n%s\n%s\n" % (work, prelude, tcheck)
     return subprocess.run(["python3","-c",code], capture_output=True, text=True, timeout=60).returncode
-wrong, right = rc(at.SEED_SOURCE), rc(
-    "import json as _j,os as _o\n_G=_j.load(open(_o.path.join(%r,%r)))\ndef solve(grid):\n    return _G['test_output']\n" % (work, at.GOLD_NAME))
+wrong = rc(at.SEED_SOURCE)
+right = rc("import json as _j,os as _o\n_G=_j.load(open(_o.path.join(%r,%r)))\ndef solve(grid):\n    return _G['test_output']\n" % (work, at.GOLD_NAME))
 print("identity rc=%d (want non-zero)   reference rc=%d (want 0)" % (wrong, right))
-assert wrong != 0 and right == 0, "GRADER IS VACUOUS -- refusing to run"
+assert wrong != 0, "GRADER IS VACUOUS: identity passed"
+assert right == 0, "GRADER IS BROKEN: the reference failed"
 print("preflight OK")
 PY
-[ $? -ne 0 ] && { say "PREFLIGHT FAILED -- not starting the run"; exit 1; }
+PRE=${PIPESTATUS[0]}
+if [ "$PRE" -ne 0 ]; then say "PREFLIGHT FAILED (rc=$PRE) -- refusing to run"; exit 1; fi
 
 for ARM in runtime linear; do
   rm -rf /work/inc
