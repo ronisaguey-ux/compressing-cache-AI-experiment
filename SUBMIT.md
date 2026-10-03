@@ -24,8 +24,9 @@ arc-agi-2, arc-agi-3, paper-track and gemma-paper throughout. Read that error fr
 Prerequisites are met: entered, rules accepted, identity verified, repository public.
 
 Artifact: `paper/gemma4-paper-track.ipynb`, generated from `paper/PAPER.md` by
-`tools/make_notebook.py`. The paper is written in continuous academic prose and is **2,719 words of
-body** against the track's 3,000-word maximum. Section 5 carries the measured results.
+`tools/make_notebook.py`. The paper is written in continuous academic prose and is **2,986 words of
+body** against the track's 3,000-word maximum (3,352 including references). Section 5 carries the
+measured results, including the ablation.
 
 Before submitting, re-run the comparison so the notebook matches the committed code:
 
@@ -38,10 +39,12 @@ python3 tools/run_compare.py benchmarks/results/incremental_gemma-4-12b_{linear,
 **This track has a 1,500-word cap**, verified on the competition page: the Writeup "should not exceed
 1,500 words". It is a separate document from the Gemma paper.
 
-Artifact: `paper/ARC_PAPER.md`, **1,498 words**, built to the official six-part structure and mapped to
-the six rubric categories. It reports our own ARC-AGI-2 score as 0.0% and labels the extension from
-measured cost to ARC search budget as a hypothesis with its falsification test named, rather than
-presenting an argument as a result.
+Artifact: `paper/ARC_PAPER.md`, **1,485 words**, built to the official six-part structure. It reports
+our own ARC-AGI-2 score as 0.0%, and now reports the retention measurement **run inside an ARC solve
+loop**: on an 8x8 ARC-AGI-2 puzzle neither policy solved any of sixty attempts, and the anchored
+policy cost 53,849 compute units against 392,390, a factor of 7.29 at identical accuracy. The
+remaining step, from cheaper turns to a larger search budget, is labelled a hypothesis with its
+falsification test named.
 
 Required assets: a Writeup, a cover image in the Media Gallery, and a public notebook attached in
 Project Links.
@@ -61,14 +64,19 @@ Project Links.
 
 ## Known defects that affect a reviewer's reproduction
 
-1. **The runtime arm's reported numbers predate the commit that fixes a duplicated-brief bug.** The
-   anchored policy carried the turn-1 brief twice on every turn, because the archive's first entry is
-   the same object as the transcript's first entry; the fix is committed. A corrected runtime run is
-   queued. Until its results replace the committed ones, `tools/run_compare.py` on the committed files
-   regenerates the historical figures rather than current-code figures.
-2. **All 17 arXiv identifiers in the paper were verified against the arXiv API** and resolve to the
+1. **The runtime numbers are the corrected re-run, not the historical ones.** The anchored policy
+   carried the turn-1 brief twice on every turn (the archive's first entry is the same object as the
+   transcript's first entry); the fix is committed and the reported figures are from the re-run with
+   that fix: 76.0% reuse, 106,678 compute units against 484,957 for the linear policy, a factor of
+   4.55 (4.49 against prune).
+2. **The ablation's per-turn grades are suppressed.** `ablate-recent` (anchored minus the instruction
+   archive) isolates the archive as the mechanism: code recall collapses from 60/60 to 8/60 while the
+   final artifact still passes 60/60. Its per-turn column is not reported because the run resumed
+   after a crash and its pre-crash grades were not checkpointed; code recall and final state come
+   from the final artifact and are unaffected. A clean re-run is in progress.
+3. **All 17 arXiv identifiers in the paper were verified against the arXiv API** and resolve to the
    cited titles, including `[20]` SinkTrack (arXiv:2604.10027, Liu, Chen and Wang).
-3. **One model, one seed per arm.** Results carry no error bars; the sensitivity of the cost result to
+4. **One model, one seed per arm.** Results carry no error bars; the sensitivity of the cost result to
    the cache-hit multiplier is swept from 0.05 to 1.00 and reported in Section 7.
 
 ## Historical defects, kept because they generalise
