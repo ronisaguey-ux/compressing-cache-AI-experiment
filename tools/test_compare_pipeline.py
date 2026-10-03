@@ -118,6 +118,23 @@ def main():
     spliced = open(paper, encoding="utf-8").read()
     check("§5 was replaced in the paper", "## 5. Results" in spliced and "to be completed" not in spliced)
 
+
+    # ---- non-vacuity of the honesty guard: it must DECLINE when the arms do not separate ----
+    # A guard only ever exercised in the passing direction stays green even when stuck on, so the
+    # negative case is the one that proves it works.
+    dA = tempfile.mkdtemp(prefix="cmp_nosep_")
+    for a in ("runtime", "linear", "prune"):
+        r = arm(a, 60, 0.81, True, 60)
+        json.dump(r, open(os.path.join(dA, "incremental_%s.json" % a), "w"))
+    paperA = os.path.join(dA, "PAPER.md")
+    open(paperA, "w", encoding="utf-8").write(src)
+    gA = subprocess.run([sys.executable, RESULTS], capture_output=True, text=True,
+                        env=dict(os.environ, RESULTS_DIR=dA, PAPER=paperA), timeout=180).stdout
+    check("guard DECLINES when arms do not separate",
+          "does not establish the cost claim" in gA)
+    check("guard CLAIMS when arms do separate",
+          "does not establish" not in gen and "Separation." in gen)
+
     print()
     if FAILURES:
         print("FAILED: %d check(s): %s" % (len(FAILURES), ", ".join(FAILURES)))
