@@ -66,10 +66,16 @@ def fmt(v, kind="num"):
 
 def main():
     runs = load(OUT)
-    if len(runs) < 3:
-        print("only %d arm(s) present in %s: %s" % (len(runs), OUT, sorted(runs)))
-        print("the results section cannot be generated until all three land.")
+    if not runs:
+        print("no arms with cache_rows in %s" % OUT)
         return 1
+    if len(runs) < 3:
+        # ★ DEGRADE, DO NOT REFUSE. A box that dies mid-run leaves the later arms short or absent,
+        # and refusing here would leave the paper with no results section at all on exactly the run
+        # that cost the most. The section states which arms are present and how many comparable
+        # turns they share, so a partial result is legible as partial instead of being withheld.
+        print("!! only %d arm(s) present in %s: %s -- generating a PARTIAL section"
+              % (len(runs), OUT, sorted(runs)))
     order = [a for a in ("runtime", "linear", "prune") if a in runs]
     order += [a for a in sorted(runs) if a not in order]
     m = {a: (runs[a].get("metrics") or {}) for a in order}
@@ -83,7 +89,13 @@ def main():
         L.append("Common prefix: **%d** turns (arms ran unequal lengths: %s)." % (
             min(runs[a].get("features_completed") or 0 for a in order), ", ".join(inc)))
         L.append("")
-    L.append("All three ran %s turns under an identical prompt and tool budget (\u00a73.1)." % n)
+    # ★ THE COUNT MUST BE THE COMPARABLE PREFIX, NOT THE FIRST ARM'S LENGTH. On a partial run the
+    # first arm is the long one, so "all three ran 60 turns" contradicted the common-prefix line
+    # printed directly above it and overstated what was compared. "three" is also wrong when an arm
+    # is absent -- the section says what it has.
+    n_cmp = min((runs[a].get("features_completed") or 0) for a in order)
+    L.append("All %s arm(s) ran %s comparable turns under an identical prompt and tool budget "
+             "(\u00a73.1)." % (len(order), n_cmp))
     L.append("")
     L.append("**Figure 1** (`figs/trajectory.svg`) — growth (a) and reuse (b), per turn.")
 
