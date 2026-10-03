@@ -194,9 +194,8 @@ quoted until the final-turn probes have been checked on both arms)*
 Each of the following produced, or would have produced, a clean-looking table that measured nothing.
 
 **F1 — shared ceiling.** Capping two policies at the same limit makes both converge on "whatever
-fits". An earlier design gave both arms one 12k cap: measured, both reached ~9.9k with identical
-latency (4180 vs 4308 ms) — the cap, not the policy, set the working set. Each policy now gets a
-budget sized to its own claim, which is why the arms in §5 diverge by an order of magnitude.
+fits": with one shared 12k cap both arms reached ~9.9k with identical latency (4180 vs 4308 ms).
+The cap, not the policy, set the working set. Each policy now gets a budget sized to its own claim.
 
 **F2 — re-derivable probes.** A rule the model re-applies every turn can be inferred from recent
 turns without the original ever being seen, so both arms pass and the probe is vacuous. Only a value
@@ -213,13 +212,14 @@ claim about retaining an early fact must be stated against that background.
 ## 7. Limitations
 
 One model, one task family; the task is synthetic by design so retention is measurable. The cost model
-uses an assumed hit multiplier rather than a billing measurement, and is stated as such. The gate
-probe is a single value: it establishes that a mid-session fact survived, not a rate.
+uses an assumed hit multiplier rather than a billing measurement. The gate probe is a single value:
+it establishes that a mid-session fact survived, not a rate.
 
-**Model choice.** The reported run uses Gemma-4-12B bf16, which loads entirely on one accelerator with
-no quantization confound. The policy is model-independent — a decision about which token blocks are
-retained, implemented outside the model — so a different checkpoint changes the numbers, not the
-mechanism. A submission must name the checkpoint it measured on.
+**Model choice.** The reported run uses Gemma-4-12B bf16, which loads on one accelerator with no
+quantization confound; the competition checkpoint (`gemma-4-31b-it-qat-w4a16-ct`) is 4-bit and would
+add a quantization variable to a retention measurement. The policy is model-independent — a decision
+about retained blocks, implemented outside the model — so another checkpoint changes the numbers, not
+the mechanism.
 
 ## 8. Conclusion
 
