@@ -1089,6 +1089,41 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                 keep = (keep[:1] + keep[-4:]) if len(keep) > 5 else keep
                 print("[%s] turn %d CONTEXT PRUNED -> %d block(s) retained"
                       % (arm, i, len(keep)), flush=True)
+        elif arm == "ablate-recent":
+            # ★★★ ABLATION: THE RUNTIME **MINUS** THE INSTRUCTION ARCHIVE.
+            #
+            # `runtime` keeps three things: the turn-1 anchor, EVERY past instruction verbatim, and
+            # the single newest reply. The archive is the load-bearing one (it is the only home of
+            # each turn's code and of the turn-30 gate secret), but a paper that asserts that without
+            # testing it is asserting its own mechanism. This arm is EXACTLY runtime with the archive
+            # removed -- same anchor, same single-newest-reply rule, same RUNTIME_TOKENS -- so the
+            # ONLY difference is whether the instructions are retained.
+            #
+            # PREDICTION, stated before the run so it cannot be rationalised afterwards: codes_n
+            # collapses to roughly the handful of instructions that fit alongside the anchor
+            # (~4 at this budget), while `passed` stays high because the newest reply still carries
+            # the file state the bug report refers to. If it instead keeps 60/60, the archive is NOT
+            # the mechanism and the paper's explanation of its own result is wrong.
+            #
+            # Anchoring the SAME forms as the other arms is deliberate: an ablation that differs in
+            # two ways cannot attribute anything (the shared-ceiling trap, third time).
+            keep = [transcript[0]] if transcript else []
+            budget = RUNTIME_TOKENS - _SYS_TOKENS
+            total = _counts(keep)[0] if keep else 0
+            for _blk in reversed(transcript[1:]):
+                _c = _counts([_blk])[0]
+                if total + _c > budget:
+                    break
+                keep.insert(1, _blk)
+                total += _c
+            _last_asst = next((b for b in reversed(transcript) if b[0] == "assistant"), None)
+            if _last_asst is not None and _last_asst not in keep:
+                keep.append(_last_asst)
+            costs = _counts(keep)
+            total = sum(costs)
+            while len(keep) > 1 and total > budget:
+                total -= costs.pop(1)
+                keep.pop(1)
         else:
             # ★★ THE RUNTIME IS BOUNDED BY TOKENS, NOT BY A BLOCK COUNT -- and this was WRONG in
             # the first version in a way that made the two arms indistinguishable.

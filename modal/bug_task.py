@@ -31,11 +31,24 @@ Every constant below is therefore chosen for being unguessable. This mirrors the
 logic, scaled up to a whole task: N independent un-re-derivable facts, all stated once.
 """
 import hashlib
+import os
+
+# ★★ TASK-INSTANCE VARIANCE. `CCAI_TASK_SALT` changes every derived constant, so the same n turns
+# become a DIFFERENT task with a different set of wrong values in the same broken shape. That is the
+# axis that actually produces error bars here.
+#
+# ★ WHY NOT "SEEDS": generation is GREEDY (`logits.argmax`, incremental_coding.py), so re-running the
+# same task is bit-identical -- a seed would vary nothing and would manufacture fake error bars. The
+# honest variance question is "does the separation hold on another task instance", which is what a
+# salt-per-run answers. The memory probes (`turn_codes`, `gate_secret`) are deliberately NOT salted:
+# they measure retention, and holding them fixed keeps the retention number comparable across runs
+# while the coding work varies underneath it.
+TASK_SALT = os.environ.get("CCAI_TASK_SALT", "")
 
 
 def _seed(i: int, salt: str = "") -> int:
     """Deterministic per-bug number, so the take is reproducible but the constants look arbitrary."""
-    h = hashlib.sha256(("%s:%d" % (salt, i)).encode()).hexdigest()
+    h = hashlib.sha256(("%s:%s:%d" % (TASK_SALT, salt, i)).encode()).hexdigest()
     return int(h[:8], 16)
 
 
