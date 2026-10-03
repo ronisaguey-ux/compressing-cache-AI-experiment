@@ -185,14 +185,14 @@ reached.
 Both policies ran sixty comparable turns under an identical prompt and tool budget. Figure 1 shows
 growth and reuse per turn; in Table 1 a reused token is priced at one tenth of a fresh one.
 
-**Table 1. Compute cost over sixty turns.**
+Table 1. Compute cost over sixty turns.
 
 | policy | hit rate | miss tokens | cost units | no-cache cost | saving | prompt first to last | TTFT first to last (ms) |
 |---|---|---|---|---|---|---|---|
 | anchored | 81.3% | 82,854 | 118,817 | 442,488 | 3.72x | 2,057 to 9,934 | 1,786.2 to 5,592.0 |
 | linear | 30.8% | 464,305 | 484,956 | 670,822 | 1.38x | 2,057 to 12,142 | 1,795.1 to 7,370.6 |
 
-**Table 2. Retention.** Per-turn success is graded after each turn, code recall is the accumulated
+Table 2. Retention. Per-turn success is graded after each turn, code recall is the accumulated
 list, and the release gate is the independent mid-session secret.
 
 | policy | per-turn success | final state | applied then lost | code recall | ordered | release gate |
