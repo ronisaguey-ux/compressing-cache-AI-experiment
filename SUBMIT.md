@@ -61,9 +61,25 @@ the notebook page. `maxDailySubmissions` is 5.
 ARC-AGI-2, with a non-zero control on ARC-AGI-1 training (9.8%) proving the tool works. It is a
 formality to satisfy the participation rule, not a competitive entry — and it says so about itself.
 
+## Verified kernel state (2026-10-02)
+
+| what | result |
+|---|---|
+| Gemma paper notebook pushed | `roni9999/bounded-context-without-context-rewrites` |
+| its Kaggle run | **COMPLETE** — rendered 48 KB notebook / 315 KB HTML, no errors |
+| submission attempt | **403** on `CreateCodeSubmission` — rules gate, as expected |
+| ARC notebook pushed | `roni9999/arc-agi-2-baseline-submission` |
+| its Kaggle run | **ERROR**, and correctly so: `input dir: None` → guard refused an empty submission |
+| Gemma notebooks in the field | 11 public for 101 teams |
+| repo flag name | `is_private: true` in kernel metadata — set false at submission time |
+
+The Gemma notebook is **ready to submit the moment rules are accepted**; everything on our side
+already runs clean on Kaggle. The ARC notebook cannot run until then, because an unaccepted-rules
+competition does not mount its data.
+
 ## Order
 
 1. Accept ARC-AGI-2 rules → unblocks the ARC Paper Track
-2. Accept both paper-track rules
+2. Accept the Gemma paper-track rules → unblocks the submission above
 3. Decide repo visibility → unblocks the Verifiability criterion on both
-4. Submit the Gemma notebook; submit the ARC baseline
+4. Flip `is_private` to false in the kernel metadata, re-push, submit
