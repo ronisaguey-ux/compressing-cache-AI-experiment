@@ -20,7 +20,21 @@ def check(path):
     if "## References" not in text:
         return ["no '## References' section"]
     body, refs = text.split("## References", 1)
-    cited = sorted({int(x) for x in re.findall(r"\[(\d+)\]", body)})
+    # ★ A citation can be a LIST: "[21, 22]" or a range "[21-24]". The original regex only matched a
+    # single number per bracket, so a grouped citation was invisible and the checker reported the
+    # reference as "listed but not cited" -- a false failure on a correct paper. Parse every number
+    # inside each bracket group.
+    cited = set()
+    for group in re.findall(r"\[([\d,\s\-]+)\]", body):
+        for part in group.split(","):
+            part = part.strip()
+            if "-" in part:
+                lo, _, hi = part.partition("-")
+                if lo.strip().isdigit() and hi.strip().isdigit():
+                    cited.update(range(int(lo), int(hi) + 1))
+            elif part.isdigit():
+                cited.add(int(part))
+    cited = sorted(cited)
     listed = sorted({int(m.group(1)) for m in re.finditer(r"^\[(\d+)\]", refs, re.M)})
     problems = []
     for c in cited:

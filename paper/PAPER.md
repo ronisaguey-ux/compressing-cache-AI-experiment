@@ -17,12 +17,12 @@ clean-looking table that measures nothing.
 ## 1. Introduction
 
 An agent coherent across hundreds of turns accumulates history, and with it two costs: the key and
-value cache footprint, and the compute spent re-processing the context each turn. The dominant
-response is compaction, which summarises or discards the middle of the conversation to stay below the
-window. Compaction reduces size but changes content, and this matters beyond the agent. Serving
-engines maintain an automatic prefix cache, in which a prefix identical to the previous request reuses
-its key and value state, so a cached token costs a fraction of a fresh one. A policy that rewrites the
-prefix re-bills the whole context at full rate.
+value cache footprint, and the compute spent re-processing the context each turn. The dominant response
+is compaction, which summarises or discards the middle of the conversation to stay below the window.
+Compaction reduces size but changes content, and this matters beyond the agent. Serving engines keep an
+automatic prefix cache, in which a prefix identical to the previous request reuses its key and value
+state, so a cached token costs a fraction of a fresh one. Rewriting the prefix re-bills the whole
+context at full rate.
 
 The constraint is concrete in the setting motivating this work. The Gemma 4 Developer Agent harness
 compacts history at 14,336 tokens, 2,048 below the output ceiling it also requests, and acts on the
@@ -53,7 +53,17 @@ with a sliding window, and the sink mechanism is characterised in [10]. Sinks st
 are not a channel for specific information [11], which is why our probes test a particular fact rather
 than fluency.
 
-The closest prior work is SinkTrack [20]: it anchors a model to its initial context and identifies
+Prefix caching is a serving-engine feature in paged-attention systems [21, 22] and modular attention
+reuse [23]. The subject closest to ours is a recent evaluation of prompt caching for agent workloads
+[24], which measures caching across three providers on a multi-turn web-search benchmark and finds
+cost reductions of 41 to 80 percent. That work operates at the provider level and its strategies
+concern where dynamic content is placed; it compares no retention policies and does not measure the
+discontinuity a compaction introduces. We compare no providers or prices. We measure, per turn from
+the token stream, what a retention policy does to prefix reuse and to the retention of early facts.
+A provider-level benefit holds whether or not the policy rewrites its prefix, whereas our measurement
+prices the rewrite itself and the recall lost alongside it.
+
+The closest prior work in intent is SinkTrack [20]: it anchors a model to its initial context and identifies
 context forgetting as a real failure of long generation. The mechanisms differ in kind. SinkTrack is a
 model-level intervention injecting features into the beginning-of-sequence representation, evaluated
 on single-generation question answering. Ours operates at the agent level, deciding which tokens are
@@ -106,18 +116,17 @@ which we would report as such.
 
 ### 3.3 Task
 
-A Python module is seeded with faulty functions. The first turn carries the complete bug report, giving
-for each bug the exact wrong and required constant; every later turn says only that a particular bug
-should be fixed. The list is never repeated and no reminder is given, so a later turn depends on
-retaining the first. Four properties are deliberate. Each bug family has the same shape, a one-line
-body with one wrong constant; an earlier version used a keyword default and a table lookup, both of
-which invited a rewrite and then failed with the brief one turn back, a task defect rather than a
-retention result. The required constants are arbitrary and appear nowhere else, so they cannot be
-re-derived. Grading is per turn: bug k is tested immediately after turn k in a subprocess, so a fix
-applied and later clobbered by a rewrite is distinguishable from one never applied. Repetition is
-across task instances rather than sampled seeds; decoding is greedy, so re-running a task is
-bit-identical and a seed would fabricate variance, whereas a task salt re-derives every constant into
-a new instance of the same broken shape, a different task with the same probes.
+A Python module is seeded with faulty functions. The first turn carries the complete bug report,
+giving for each bug the exact wrong and required constant; every later turn says only that a particular
+bug should be fixed. The list is never repeated, so a later turn depends on retaining the first. Four
+properties are deliberate. Each bug family has the same shape, a one-line body with one wrong constant;
+an earlier version used a keyword default and a table lookup, both of which invited a rewrite and then
+failed with the brief one turn back, a task defect rather than a retention result. The required
+constants are arbitrary and appear nowhere else, so they cannot be re-derived. Grading is per turn:
+bug k is tested immediately after turn k in a subprocess, so a fix applied and later clobbered is
+distinguishable from one never applied. Repetition is across task instances rather than sampled seeds,
+because decoding is greedy and a seed would fabricate variance; a task salt re-derives every constant
+into a new instance of the same broken shape, a different task with the same probes.
 
 ### 3.4 Retention probes
 
@@ -155,10 +164,10 @@ tokens.
 
 ### 4.2 Metrics
 
-Retention is measured by per-turn success, final accuracy, fixes applied then lost, code recall, and
-the gate verdict; cost by hit rate, miss tokens, compute units, the no-cache baseline, and the saving
-ratio; context by first, last, and peak prompt size; and latency by time to first token, wall time
-per turn, decode throughput, and KV-cache peak. All derive from data the loop already collects.
+We record retention (per-turn success, final accuracy, fixes applied then lost, code recall, gate
+verdict), cost (hit rate, miss tokens, compute units, no-cache baseline, saving ratio), context (first,
+last and peak prompt size), and latency (time to first token, wall time per turn, decode throughput,
+KV-cache peak). All derive from data the loop already collects.
 
 ### 4.3 Fairness
 
@@ -267,3 +276,7 @@ rather than asserted, and shown how such an evaluation silently fails.
 [18] Herrmann et al. Why We Must Rethink Empirical Research in Machine Learning. ICML 2024.
 [19] ACM. Artifact Review and Badging, v1.1. https://www.acm.org/publications/policies/artifact-review-and-badging-current
 [20] Liu, Chen and Wang. SinkTrack: Attention Sink based Context Anchoring for Large Language Models. ICLR 2026. arXiv:2604.10027
+[21] Kwon et al. Efficient Memory Management for Large Language Model Serving with PagedAttention. SOSP 2023. arXiv:2309.06180
+[22] Zheng et al. SGLang: Efficient Execution of Structured Language Model Programs. NeurIPS 2024. arXiv:2312.07104
+[23] Gim, Chen, Lee, Sarda and Khandelwal. Prompt Cache: Modular Attention Reuse for Low-Latency Inference. MLSys 2024. arXiv:2311.04934
+[24] Lumer. Don't Break the Cache: An Evaluation of Prompt Caching for Long-Horizon Agents. arXiv:2601.06007
