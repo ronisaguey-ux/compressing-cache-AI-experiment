@@ -40,6 +40,10 @@ wait_gpu_free(){
 # run_arm <tag> <wait-min> <remote-filename> <local-dest> <workdir> <env>
 run_arm(){
   local tag="$1" mins="$2" remote="$3" dest="$4" work="$5" envs="$6" i rc rf
+  # ★ Free-GPU assertion BEFORE every launch, not just once for the whole queue. A DONE marker says
+  # the previous process exited; it does not guarantee the allocator released the card, and it says
+  # nothing about a foreign job holding it. Every OOM in this project came from skipping this.
+  wait_gpu_free 10 || say "  GPU still busy before $tag -- launching anyway"
   timeout 45 $SSH 'rm -f /root/chain_post.marker' >/dev/null 2>&1
   timeout 60 $SSH "cd /root && setsid nohup bash -lc '
     export HF_HOME=/root/hf HF_TOKEN=\$(cat /root/.hftok 2>/dev/null || echo \"\") HF_XET_HIGH_PERFORMANCE=1
@@ -70,14 +74,22 @@ run_arm(){
 }
 
 say "=== POST-ABLATION QUEUE START $(date -u) ==="
-say "waiting for the RUNNING ablation to write 'ABLATION EXIT'"
-for i in $(seq 1 180); do
-  if timeout 45 $SSH 'grep -qa "ABLATION EXIT" /root/chain_after_v3.marker 2>/dev/null'; then
-    say "ablation reported done"; break
+# ★ WAIT ON THE RESULT FILE, NOT A MARKER. The ablation was launched by a wrapper shell that also
+# wrote `DONE_ABLATE`; that wrapper was cleaned up together with the racing queue drivers, so the
+# marker would never appear and a marker-wait would have sat here for its full timeout. The result
+# file is the stronger signal anyway: a marker only says a shell exited, while the result file is
+# evidence the run finished AND produced output. It does not exist yet (checked), so this cannot
+# latch onto a stale file.
+say "waiting for the RUNNING ablation to produce its result file"
+got=0
+for i in $(seq 1 240); do
+  if timeout 45 $SSH 'test -s /root/ccai/results/incremental_gemma-4-12b_ablate-recent.json'; then
+    say "ablation result file present"; got=1; break
   fi
   sleep 60
 done
-# The marker says the process ended; it does not say the memory came back.
+[ "$got" = 0 ] && say "ABLATION RESULT NEVER APPEARED after 240m -- inspect the box"
+# The file appearing says the run finished; it does not say the memory came back.
 wait_gpu_free 20 || say "continuing anyway, next run may OOM"
 
 say "--- pull the ablation result ---"
