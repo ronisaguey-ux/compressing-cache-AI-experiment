@@ -552,8 +552,26 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
         # one fights the stored quantisation and the model silently loads unquantised, which is
         # exactly the failure this whole entry exists to avoid. Just load it and let the config
         # do the work. Requires `pip install compressed-tensors`.
-        mdl = AutoModelForCausalLM.from_pretrained(
-            mid, device_map=_dev, attn_implementation="sdpa").eval()
+        #
+        # ★★ OFFLOAD HEADROOM IS MANDATORY FOR THE 31B (measured). `compressed_tensors` installs a
+        # `ct_decompress_hook` that fires on the FIRST FORWARD and unpacks the pack-quantized
+        # weights back to full precision IN MEMORY. A plain `device_map="cuda"` therefore needs the
+        # packed weights AND the unpacked weights resident at the same moment: on the 31B QAT the
+        # card reached 40.78 GiB allocated and then OOM'd asking for another 442 MiB
+        # (`unpack_from_int32` in compressors/pack_quantized/helpers.py). A per-layer CPU offload
+        # budget moves the tail of the layers -- and their decompression -- to host RAM, which is
+        # the same mechanism the bf16 path below already relies on. Without this the 31B can never
+        # start on a 48 GB card.
+        _gpu_mem = _os.environ.get("CCAI_MAX_GPU_MEMORY", "44GiB")
+        _cpu_mem = _os.environ.get("CCAI_MAX_CPU_MEMORY", "64GiB")
+        if _dev == "cpu":
+            mdl = AutoModelForCausalLM.from_pretrained(
+                mid, attn_implementation="sdpa").eval().to("cpu")
+        else:
+            mdl = AutoModelForCausalLM.from_pretrained(
+                mid, device_map="auto",
+                max_memory={0: _gpu_mem, "cpu": _cpu_mem},
+                attn_implementation="sdpa").eval()
     elif _quant in ("4", "8"):
         from transformers import BitsAndBytesConfig
         if _quant == "4":
