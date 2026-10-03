@@ -38,10 +38,9 @@ a bounded window at the end. Nothing is summarised: the information-dense part o
 kept, the superseded part dropped.
 
 **Contributions.** A context policy that bounds the working set while leaving the prefix shared
-with the previous turn intact (§3); a per-turn measurement of prefix-cache reuse under a compute
-model that prices a miss and a hit differently (§4); an evaluation that discriminates, using
-per-turn grading and a probe recency cannot satisfy (§4.2); and four failure modes by which such an
-evaluation silently measures nothing (§6).
+with the previous turn intact (§3); a per-turn measurement of prefix-cache reuse (§4.1); an
+evaluation that discriminates, using per-turn grading and a probe recency cannot satisfy (§4.2);
+and four failure modes by which such an evaluation silently measures nothing (§6).
 
 ## 2. Related work
 
@@ -231,14 +230,12 @@ measurement can silently fail.
 ## Reproduction
 
 ```
-python3 tools/run_compare.py benchmarks/results/incremental_*_linear_*.json \
-                               benchmarks/results/incremental_*_runtime_*.json
+python3 tools/run_compare.py benchmarks/results/incremental_*_{linear,runtime}_*.json
 ```
 
-Environment, task generator, policies and graders are in this repository; the command above runs
-against committed result files. The three policies are selected by `CCAI_ARM` (`runfix3.sh` sets
-all three); the retention gate is opt-in via `CCAI_GATE=1`; the compaction period by
-`CCAI_PRUNE_EVERY`.
+The environment, task generator, policies and graders are in this repository, and that command runs
+against committed result files. Policies are selected by `CCAI_ARM`; the retention gate is opt-in
+via `CCAI_GATE=1`; the compaction period by `CCAI_PRUNE_EVERY`.
 
 ## References
 

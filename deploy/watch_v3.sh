@@ -50,5 +50,11 @@ if command -v python3 >/dev/null; then
     say "--- figure (SVG, from the same cache_rows as the tables) ---"
     python3 "$HOME/.local/share/ccai-repo/tools/make_figures.py" "$OUT" \
         "$HOME/.local/share/ccai-repo/paper/figs/trajectory.svg" 2>&1 | tee -a "$LOG" | tail -5
+    # ★ THE RESULTS SECTION MUST REACH THE SUBMISSION ARTIFACT, not just the markdown. The Kaggle
+    # notebook is generated from PAPER.md, so leaving it out of this pipeline means the submitted
+    # notebook keeps the placeholder §5 while the repo carries the real one -- the two drift exactly
+    # where it matters most. Rebuilding here costs a second and closes that.
+    say "--- submission notebook (rebuilt from the paper, so §5 is the measured one) ---"
+    python3 "$HOME/.local/share/ccai-repo/tools/make_notebook.py" 2>&1 | tee -a "$LOG" | tail -5
 fi
 say "DONE"

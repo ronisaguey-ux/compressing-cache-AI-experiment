@@ -208,16 +208,22 @@ def main():
     # ★ WORD-BUDGET GUARD. The cap is 3,000 and §5 is generated, so an overrun could otherwise be
     # introduced by a run with more compaction events than expected. Warn loudly rather than trim
     # silently -- silently dropping a table row to fit would be a worse failure than being long.
+    # ★ COUNT EVERYTHING, NOT JUST THE PROSE. Stripping fenced code blocks before counting makes
+    # the guard read ~18 words lower than a counter that includes them, and the two readings
+    # disagreed on which side of the cap the paper was on. Which one Kaggle applies is unknown, so
+    # the guard takes the STRICTER reading: a cap you might be over is not a cap you are under.
     import re as _re
-    flat = _re.sub(r"```.*?```", " ", new, flags=_re.S)
-    n_words = len(_re.findall(r"\S+", flat))
+    n_words = len(_re.findall(r"\S+", new))
+    n_lenient = len(_re.findall(r"\S+", _re.sub(r"```.*?```", " ", new, flags=_re.S)))
     flag = "OK" if n_words <= 3000 else "OVER THE 3,000 LIMIT"
-    print(">> spliced into %s (§5 replaced, %d -> %d chars)  words=%d  [%s]"
-          % (PAPER, len(src), len(new), n_words, flag))
+    print(">> spliced into %s (§5 replaced, %d -> %d chars)  words=%d (all text) / %d (code blocks "
+          "excluded)  [%s]" % (PAPER, len(src), len(new), n_words, n_lenient, flag))
     if n_words > 3000:
-        print("   ⚠️ OVER by %d words -- trim §2 or the abstract before submitting." % (n_words - 3000))
+        print("   ⚠️ OVER by %d words under the STRICTER count (code blocks included); %d under the "
+              "lenient one. Trim §2 or the abstract." % (n_words - 3000, n_lenient - 3000))
     elif n_words > 2950:
-        print("   ⚠️ within 50 words of the cap -- leave no room for a late addition.")
+        print("   ⚠️ within 50 words of the cap under the stricter count -- leave no room for a "
+              "late addition.")
     return 0
 
 
