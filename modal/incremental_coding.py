@@ -432,6 +432,70 @@ Rules:
 """
 
 
+# ══════════════════════════════════════════════════════════════════════════════════════════════════
+# ★★★ TWO PARSER-ROBUSTNESS HELPERS, both earned from a measured ARC failure.
+#
+# MEASURED: on ARC task 4ff4c9da the model replied correctly for four turns, then produced eleven
+# consecutive replies the parser could not accept. The transcript shows why, and it is two distinct
+# defects, neither of them the model being unable to do the task:
+#
+#   1. `Invalid \escape` -- a stray backslash in a code comment (the model uses comments to reason,
+#      and prose about grids contains things like `\ ` or `\.`). Valid Python, invalid JSON string.
+#   2. `invalid syntax` -- the model DOUBLE-ESCAPES: it writes `\\n` where it means `\n`, so after
+#      JSON decoding the content holds literal backslash-n sequences and the whole program collapses
+#      onto one line. The code is correct; its transport encoding is not.
+#
+# Both are transport faults. A parser that rejects a correct answer is indistinguishable from a
+# model that cannot produce one -- the same blind spot that made the linear arm score 1/17. These
+# helpers repair the transport without inventing content: they only ever turn an UNPARSEABLE input
+# into one that parses, and every repaired candidate is re-validated with the real grader.
+# ══════════════════════════════════════════════════════════════════════════════════════════════════
+
+def _repair_json_escapes(s):
+    """Double any backslash that does not begin a valid JSON escape.
+
+    Strict JSON rejects `\\ `, `\\.`, `\\d`; models emit them in code comments constantly. Doubling the
+    offending backslash turns an invalid string into a valid one while leaving every REAL escape
+    (`\\n`, `\\"`, `\\uXXXX`, ...) untouched.
+    """
+    out, i, n = [], 0, len(s)
+    valid = set('"\\/bfnrtu')
+    while i < n:
+        c = s[i]
+        if c == "\\" and i + 1 < n and s[i + 1] not in valid:
+            out.append("\\\\")          # the stray backslash becomes a literal backslash
+        else:
+            out.append(c)
+        i += 1
+    return "".join(out)
+
+
+def _unescape_code(content):
+    """Undo one layer of over-escaping in a code string.
+
+    The decoder already removed one layer, so a string that still contains a literal `\\n` was
+    double-escaped. This removes the surviving escapes so the code becomes real Python again.
+    """
+    return (content.replace("\\\\n", "\n")
+                   .replace("\\\\t", "\t")
+                   .replace('\\\\"', '"')
+                   .replace("\\\\'", "'")
+                   .replace("\\\\\\\\", "\\\\"))
+
+
+def _first_that_parses(cands):
+    """Return the first candidate that is valid Python, else None. Never invents a candidate."""
+    for c in cands:
+        if not c or not c.strip():
+            continue
+        try:
+            ast.parse(c)
+            return c
+        except SyntaxError:
+            continue
+    return None
+
+
 @app.function(image=image, gpu=GPU, secrets=[modal.Secret.from_name("hf-token")],
               volumes={"/cache": hf_cache}, timeout=14400, memory=40960)
 def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int = 16,
@@ -648,6 +712,23 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
         try:
             d, _ = _json.JSONDecoder().raw_decode(body)
         except Exception as e:
+            # ★★ REPAIR INVALID JSON ESCAPES (measured on ARC task 4ff4c9da).
+            #
+            # The model writes prose in code comments, and prose about a grid contains backslashes.
+            # A stray `\` that does not begin a valid JSON escape makes the WHOLE reply unparseable,
+            # even though the json object is otherwise perfectly well formed. MEASURED on the ARC
+            # run: `could not parse your reply (invalid JSON: Invalid \escape: line 1 column 4532)`.
+            # Doubling only the offending backslash recovers the reply and leaves every real escape
+            # alone. Retried BEFORE the salvage, because an invalid escape is a cheaper fault to
+            # repair than a truncation.
+            try:
+                _d2, _ = _json.JSONDecoder().raw_decode(_repair_json_escapes(body))
+                if isinstance(_d2, dict) and _d2.get("tool") in (
+                        "read_file", "write_file", "append", "done"):
+                    print("   (repaired invalid JSON escapes)", flush=True)
+                    return _d2, None
+            except Exception:
+                pass
             # ★★ TRUNCATED-REPLY SALVAGE (measured on ARC task 287).
             #
             # A reply that overruns max_new is cut MID-STRING, so the JSON never closes and the
@@ -698,13 +779,13 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                     return lit, None
             except Exception:
                 pass
-            try:
-                d, _ = _json.JSONDecoder().raw_decode("".join(out))
-            except Exception:
-                fm = re.search(r"```(?:python|py)?\s*\n(.*?)```", t, re.S)
-                if fm and fm.group(1).strip():
-                    return {"tool": "write_file", "content": fm.group(1)}, None
-                return None, "invalid JSON: %s" % e
+            # The escape-repair and salvage attempts above both failed, so this reply is genuinely
+            # unusable as an object. Last resort: a fenced code block in a turn whose only job is to
+            # write one file is unambiguous in intent.
+            fm = re.search(r"```(?:python|py)?\s*\n(.*?)```", t, re.S)
+            if fm and fm.group(1).strip():
+                return {"tool": "write_file", "content": fm.group(1)}, None
+            return None, "invalid JSON: %s" % e
         if not isinstance(d, dict) or d.get("tool") not in ("read_file", "write_file", "append", "done"):
             return None, "bad or unknown tool"
         return d, None
@@ -1341,12 +1422,39 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                 try:
                     ast.parse(_cand)
                 except SyntaxError as _se:
-                    _fail += 1
-                    obs = ("REJECTED: your code does not parse as Python (%s, line %s). "
-                           "solution.py was left UNCHANGED. Re-send it as valid Python."
-                           % (_se.msg, _se.lineno))
-                    print("[%s] turn %d REJECTED (unparseable): %s" % (arm, i, _se.msg), flush=True)
-                    continue
+                    # ★★ UNDO ONE LAYER OF OVER-ESCAPING BEFORE REJECTING (measured on ARC 4ff4c9da).
+                    #
+                    # MEASURED: eleven consecutive turns were rejected with `invalid syntax` while
+                    # the model was in fact doing the task. The cause was double-escaping -- the
+                    # reply contained `\\n` where it meant `\n`, so after JSON decoding the program
+                    # collapsed onto a single line and no program parsed. The code was correct; its
+                    # transport encoding was not. Retry with the surviving escapes removed, and
+                    # accept ONLY if the result is valid Python, so a genuinely broken reply still
+                    # fails. The candidate is written and then graded by the real grader either way,
+                    # so this cannot manufacture a pass.
+                    _alt = _unescape_code(content)
+                    _alt_cand = (_alt if call["tool"] == "write_file"
+                                 else (open(solution).read() if _os.path.exists(solution) else "")
+                                      + "\n" + _alt)
+                    if _alt != content and _first_that_parses([_alt_cand]) is not None:
+                        print("[%s] turn %d: over-escaping repaired (%d chars)"
+                              % (arm, i, len(_alt)), flush=True)
+                        content = _alt
+                    else:
+                        _fail += 1
+                        # ★ DUMP THE EXACT REPLY. Two vacuous ARC runs were diagnosed from a
+                        # truncated transcript; the raw bytes are what the next fault needs.
+                        try:
+                            _os.makedirs(WORK, exist_ok=True)
+                            with open(_os.path.join(WORK, "reject_turn%03d.txt" % i), "w") as _rf:
+                                _rf.write(txt)
+                        except Exception:
+                            pass
+                        obs = ("REJECTED: your code does not parse as Python (%s, line %s). "
+                               "solution.py was left UNCHANGED. Re-send it as valid Python."
+                               % (_se.msg, _se.lineno))
+                        print("[%s] turn %d REJECTED (unparseable): %s" % (arm, i, _se.msg), flush=True)
+                        continue
                 if call["tool"] == "write_file":
                     open(solution, "w").write(content)
                 else:
