@@ -257,7 +257,7 @@ selected by `CCAI_ARM`; the retention gate is opt-in via `CCAI_GATE=1`; the comp
 [14] Liu et al. *Lost in the Middle: How Language Models Use Long Contexts.* TACL 2024. arXiv:2307.03172
 [15] Han et al. *Found in the Middle: Calibrating Positional Attention Bias.* arXiv:2406.16008
 [21] Liu, Chen & Wang. *SinkTrack: Attention Sink based Context Anchoring for Large Language Models.* ICLR 2026. arXiv:2604.10027  ← **verified against the index (authors + venue confirmed)**
-[16] Schaeffer et al. *Position: ML Conferences Should Establish a "Refutations and Critiques" Track.* NeurIPS 2025.
+[16] Schaeffer, Kazdan, Denisov-Blanch, Miranda, Gerstgrasser et al. *Position: Machine Learning Conferences Should Establish a "Refutations and Critiques" Track.* NeurIPS 2025 Position Paper Track (Oral). arXiv:2506.19882
 [17] Kapoor & Narayanan. *Leakage and the reproducibility crisis in ML-based science.* Patterns 2023.
 [18] *Systematic research errors in thousands of machine learning papers.* ACL 2023.
 [19] Herrmann et al. *Why We Must Rethink Empirical Research in Machine Learning.* ICML 2024.
