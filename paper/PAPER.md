@@ -18,19 +18,19 @@ how each was caught.
 
 ## 1. Introduction
 
-An agent that must remain coherent across hundreds of turns accumulates history. Two costs grow
-with it: the memory footprint of the key/value cache, and the compute spent re-reading the context
-each turn. The dominant response is **compaction** — periodically summarising or discarding the
-middle of the conversation to return under the window.
+An agent coherent across hundreds of turns accumulates history. Two costs grow with it: the
+key/value cache footprint, and the compute spent re-reading the context each turn. The dominant
+response is **compaction** — summarising or discarding the middle of the conversation to stay under
+the window.
 
-Compaction shrinks the context but changes its *content*. With automatic prefix caching a cached
+Compaction shrinks the context but changes its *content*. Under automatic prefix caching a cached
 token costs a fraction of a fresh one, so a changed prefix means the prompt is re-processed (§4).
 
 **Why this matters in deployment.** The Gemma 4 Developer Agent harness compacts the agent's history
 at 14,336 tokens -- 2,048 below the output ceiling it also requests -- and acts on the prompt just
 sent rather than prompt plus output, so it is one call late. The scorer refuses any call past 32,768
 tokens, and with a LoRA adapter the KV cache on four L4s falls from ~46,000 to ~7,600. Context
-capacity, not reasoning, is the binding constraint, and compaction is the field's response.
+capacity, not reasoning, is the binding constraint — and compaction is the response.
 
 We therefore ask a narrow, measurable question: **can an agent keep a small context without
 rewriting it?** Our policy pins an immutable front (system prompt and the turn-1 brief) and advances
@@ -40,41 +40,39 @@ kept, the superseded part dropped.
 **Contributions.** A context policy that bounds the working set while leaving the prefix shared
 with the previous turn intact (§3); a per-turn measurement of prefix-cache reuse (§4.1); an
 evaluation that discriminates, using per-turn grading and a probe recency cannot satisfy (§4.2);
-and four failure modes by which such an evaluation silently measures nothing (§6).
+and four ways such an evaluation silently measures nothing (§6).
 
 ## 2. Related work
 
 **Eviction and compression.** H2O [1], Scissorhands [2], TOVA [3] and SnapKV [4] shrink the cache by
-scoring tokens and dropping the low-scoring ones, assuming survivors stay valid after eviction — an
-assumption we do not share (§6, F4). Others repair positional integrity directly: CacheBlend [5]
+scoring tokens and dropping the low-scoring ones, assuming survivors stay valid after eviction —
+which we do not (§6, F4). Others repair positional integrity directly: CacheBlend [5]
 recomputes part of the KV and re-encodes positions, CacheFocus [6] re-positions after pruning,
-DSCache [7] stores pre-rotation keys, CacheGen [8] recomputes as a fallback. **We attempt none of
+DSCache [7] stores pre-rotation keys, CacheGen [8] recomputes as a fallback. **We do none of
 that**: we never rewrite the region the cache depends on.
 
 **Attention sinks.** StreamingLLM [9] keeps sink tokens and a sliding window, and the sink
-mechanism [10] makes pinning an immutable front mechanically sensible. Sinks stabilise a stream but
+mechanism [10] makes pinning an immutable front sensible. Sinks stabilise a stream but
 are not a memory channel [11], which is why our probes test a *specific fact*, not fluency.
 
 **Closest prior art.** SinkTrack [20] is nearest in *intent*: it anchors a model to its initial
 context and reports context forgetting as a real failure of long generation. The mechanisms differ in
 kind — SinkTrack is **model-level**, injecting features into the `<BOS>` representation, evaluated on
 single-generation QA; ours is **policy-level**, deciding *which tokens the agent retains* and
-measuring the serving-cost consequence over a long horizon. It is also a reason to expect a pinned
-prefix to work: if the first token attracts attention, an agent that can keep its brief at the front
-should.
+measuring the serving-cost consequence over a long horizon. It also suggests a pinned
+prefix should work: if the first token attracts attention, keeping the brief at the front should help.
 
 **Agent memory.** MemGPT [12] pages context OS-style; the survey [13] taxonomises memory
-operations. Both address what an agent should *store*, not the serving cost of rewriting it.
+operations. Both address what to *store*, not the serving cost of rewriting it.
 
 **Position and architecture.** *Lost in the Middle* [14] and *Found in the Middle* [15] establish
 position-dependent context use. Gemma-4 makes it concrete: 40 of 48 layers use a 1024-token
-local-attention window, so a turn-1 fact is unavailable to those layers regardless of policy (§6,
-F4). Retention claims here concern **the tokens the agent retained**.
+local window, so a turn-1 fact is unavailable to them regardless of policy (§6, F4). Retention claims here concern **the tokens the agent retained**.
 
 **Corrected results.** The §6 F3 result is a defect in our own benchmark; we report the corrected
-task. A position paper argues venues need a refutations track [16]; the literature documents leakage
-and reporting error [17], and empirical-method work [18] shows comparisons favour the proposed
-method — the bias F1 and F2 produce. We adopt artifact-review expectations [19].
+task. A position paper argues venues need a refutations track [16]; the literature documents leakage and
+reporting error [17], and empirical-method work [18] shows comparisons favour the proposed method —
+the bias F1 and F2 produce. We adopt artifact-review expectations [19].
 
 ## 3. Method
 
@@ -186,15 +184,15 @@ than one run per question.
 
 ### 4.3 Fairness gate
 
-The stopping rule is the **turn count**, not wall-clock time. This is load-bearing: a policy that
-keeps a smaller context is faster per turn *by construction*, so a time-based stop would let it
-complete more turns and win on volume rather than on policy. Time is retained only as an emergency
-break, so that an interrupted run grades what it finished instead of being discarded.
+The stopping rule is the **turn count**, not wall-clock time. Load-bearing: a policy keeping a
+smaller context is faster per turn *by construction*, so a time-based stop would let it complete more
+turns and win on volume, not policy. Time remains only as an emergency break, so an interrupted run
+grades what it finished.
 
 Because that break can fire at different turn counts per arm, the comparison script reconciles to
 the **common prefix** — the turns both arms completed — re-summing cost, context and latency over it.
-Measurements are per-turn and indexed by turn, so the shared turns are the same turns. It refuses
-only when fewer than two are comparable.
+Measurements are per-turn and indexed, so the shared turns are the same turns. It refuses only when
+fewer than two are comparable.
 
 One asymmetry is deliberate: **retention** counts are not reconstructed, because the artifact's state
 at turn *n* cannot be recovered from a later snapshot; they describe only the turns reached.
@@ -235,8 +233,8 @@ turns without the original, so both arms pass and the probe is vacuous. Only a v
 never repeated discriminates.
 
 **F3 — periodic failures are task defects.** Two of six bug families failed on *every* instance from
-turn 2 — one turn after the brief, so memory was not in question: the families had unusual shapes the
-model rewrote. A turn-indexed task must be checked for periodic failure before its losses count.
+turn 2 — one turn after the brief, so memory was not in question: their shapes invited a rewrite. A
+turn-indexed task must be checked for periodic failure before its losses count.
 
 **F4 — architectural confound.** Gemma-4 uses local attention in 40 of 48 layers with a 1024-token
 window, so beyond 1024 tokens a turn-1 fact is invisible to those layers regardless of policy. Any
@@ -251,13 +249,13 @@ it establishes that a mid-session fact survived, not a rate.
 **Model choice.** The reported run uses Gemma-4-12B bf16, which loads on one accelerator with no
 quantization confound; the competition checkpoint (`gemma-4-31b-it-qat-w4a16-ct`) is 4-bit and would
 add a quantization variable to a retention measurement. The policy is model-independent — a decision
-about retained blocks, implemented outside the model — so another checkpoint changes the numbers, not
-the mechanism.
+about retained blocks, outside the model — so another checkpoint changes the numbers, not the
+mechanism.
 
 ## 8. Conclusion
 
-Keeping a context small and keeping it *stable* are different problems, and the usual solution to
-the first destroys the second. Pinning an immutable front and rolling the window at the end bounds
+Keeping a context small and keeping it *stable* are different problems; the usual solution to the
+first destroys the second. Pinning an immutable front and rolling the window at the end bounds
 the working set without invalidating the prefix already paid for. We have made that claim measurable
 rather than asserted, and documented how such a measurement silently fails.
 
