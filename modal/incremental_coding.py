@@ -712,38 +712,65 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
     # guess, and a guess is visibly wrong. That is the property that discriminates.
     # ══════════════════════════════════════════════════════════════════════════════════════════
     _TASK = _os.environ.get("CCAI_TASK", "feature").strip().lower()
-    _fix_mode = (_TASK == "fix")
+    # ★★ ARC MODE reuses the entire fix-mode machinery -- the broken-repo seed/rewrite loop, the
+    # per-turn grader, the codes probe, the policy branches and every cache metric -- because
+    # arc_task exposes the same interface as bug_task. The ONLY difference is the task module, the
+    # turn-1 brief and the verb in the instruction. Keeping the loop identical is what makes the
+    # ARC result comparable to the fix result instead of a second, differently-built experiment.
+    _fix_mode = (_TASK in ("fix", "arc"))
+    _arc_mode = (_TASK == "arc")
+
     # ★ THE RELEASE GATE IS OPT-IN. The turn-code baseline run measured a task WITHOUT this
     # function; enabling it by default would silently change what that run measured.
     _GATE_ON = _os.environ.get("CCAI_GATE", "0").strip() == "1"
     _gate_test = None
     _gate_line = None
     _gate_final = None
+    _gint = None
     _turn_codes = []
     if _fix_mode:
-        import bug_task as _bt                      # same directory as this module
-        _seed_src, _fixes, _ftests, _ref_src = _bt.build(features)
-        _turn_codes = _bt.turn_codes(features)
-        if _GATE_ON:
-            # ★★★ THE STRONGER VERSION. One extra function whose CORRECT VALUE is a SEPARATE
-            # secret handed over at turn `features // 2`, never part of the code list, so this
-            # metric is informationally INDEPENDENT of `codes_*` rather than a second reading of
-            # the same fact. It is delivered on the final turn, so a model that lost the middle of
-            # the session cannot ship a correct artifact -- the retention cost shows up as a
-            # broken function, not as a failed quiz. See bug_task.gate().
-            _gsrc, _gate_line, _gate_test, _gidx, _gint = _bt.gate(features)
-            _seed_src = _seed_src + "\n" + _gsrc
-            _gate_turn = features // 2
-            _gate_final = ("Also fix `%s`: it must return the integer %d, which was the SECRET "
-                           "SHIPPED GATE value given at turn %d."
-                           % (_bt.GATE_FN, _gint, _gate_turn))
-        # seed the broken repo BEFORE the loop starts -- the model edits an existing file
-        if not (_os.path.exists(solution) and _os.environ.get("CCAI_RESUME") == "1"):
-            open(solution, "w").write(_seed_src)
-        specs = ["Fix bug %d." % i for i in range(features)]
+        if _arc_mode:
+            import arc_task as _bt                  # same directory as this module
+            # The gold output goes to WORK before the loop, so the per-turn grader has an oracle
+            # from turn 0. It is never placed in a prompt.
+            _gold_path = _bt.write_gold(WORK, _os.environ.get("CCAI_TASK_SALT", ""))
+            _seed_src, _brief, _ftests, _ref_src = _bt.build(features,
+                                                             _os.environ.get("CCAI_TASK_SALT", ""))
+            _turn_codes = _bt.turn_codes(features)
+            _bt.FIX_PRELUDE = _bt.arc_prelude(WORK)     # same attribute name the harness reads
+            if not (_os.path.exists(solution) and _os.environ.get("CCAI_RESUME") == "1"):
+                open(solution, "w").write(_seed_src)
+            specs = ["Attempt %d." % i for i in range(features)]
+            _BUG_REPORT = _brief[0]
+            print("[%s] ARC mode: task=%s gold=%s brief_tokens~%d"
+                  % (arm, _bt.load_task(_os.environ.get("CCAI_TASK_SALT", ""))[0],
+                     _os.path.basename(_gold_path), len(_brief[0]) // 4), flush=True)
+            _bt = _bt
+        else:
+            import bug_task as _bt                      # same directory as this module
+            _seed_src, _fixes, _ftests, _ref_src = _bt.build(features)
+            _turn_codes = _bt.turn_codes(features)
+            if _GATE_ON:
+                # ★★★ THE STRONGER VERSION. One extra function whose CORRECT VALUE is a SEPARATE
+                # secret handed over at turn `features // 2`, never part of the code list, so this
+                # metric is informationally INDEPENDENT of `codes_*` rather than a second reading of
+                # the same fact. It is delivered on the final turn, so a model that lost the middle of
+                # the session cannot ship a correct artifact -- the retention cost shows up as a
+                # broken function, not as a failed quiz. See bug_task.gate().
+                _gsrc, _gate_line, _gate_test, _gidx, _gint = _bt.gate(features)
+                _seed_src = _seed_src + "\n" + _gsrc
+                _gate_turn = features // 2
+                _gate_final = ("Also fix `%s`: it must return the integer %d, which was the SECRET "
+                               "SHIPPED GATE value given at turn %d."
+                               % (_bt.GATE_FN, _gint, _gate_turn))
+            # seed the broken repo BEFORE the loop starts -- the model edits an existing file
+            if not (_os.path.exists(solution) and _os.environ.get("CCAI_RESUME") == "1"):
+                open(solution, "w").write(_seed_src)
+            specs = ["Fix bug %d." % i for i in range(features)]
         # TURN 1 IS THE WHOLE BUG REPORT. It is long on purpose: that is the content that must
         # survive N turns with no reminder. Kept out of `specs` so it is never re-sent.
-        _BUG_REPORT = (
+        # ARC mode already set `_BUG_REPORT` to its own brief; do not overwrite it with the bug text.
+        _BUG_REPORT = _BUG_REPORT if _arc_mode else (
             "This repository is broken. `solution.py` contains exactly %d faulty functions. "
             "Each one is listed below with the EXACT correction required. This is the ONLY time "
             "this list will be given to you -- it will NOT be repeated, and no later message will "
@@ -1000,17 +1027,23 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
             # ★ THE RELEASE GATE'S SECRET IS HANDED OVER HERE, exactly once, mid-session, and is
             # NEVER repeated. It is deliberately not one of the turn codes -- see bug_task.gate()
             # -- so `gate_ok` and `codes_n` measure two independent things.
-            if _GATE_ON and i == features // 2:
+            if _GATE_ON and not _arc_mode and i == features // 2:
                 _code_line += ("\nSECRET SHIPPED GATE value for turn %d: %d -- this is NOT a turn "
                                "code; do not add it to TURN_CODES." % (i, _gint))
             if i == len(specs) - 1:
-                _code_line = ("FINAL TURN. Fix bug %d, and also add to the TOP of solution.py a "
+                _what = ("Produce your final solve()" if _arc_mode else ("Fix bug %d" % i))
+                _code_line = ("FINAL TURN. %s, and also add to the TOP of solution.py a "
                               "list named TURN_CODES containing every turn code you were given "
                               "in this session, in the order you received them. %s%s"
-                              % (i, _code_line,
+                              % (_what, _code_line,
                                  (" " + _gate_final) if _gate_final else ""))
             if i == 0:
-                instr = _BUG_REPORT + "\n\n%s\nFix bug 0 now. %s" % (_code_line, _tool_line)
+                _now = ("Start solving the puzzle now." if _arc_mode else "Fix bug 0 now.")
+                instr = _BUG_REPORT + "\n\n%s\n%s %s" % (_code_line, _now, _tool_line)
+            elif _arc_mode:
+                instr = ("Attempt %d. Re-derive the transformation from the examples in the "
+                         "puzzle brief and rewrite solve() in full so it produces the correct "
+                         "output for the test input. %s\n%s" % (i + 1, _tool_line, _code_line))
             else:
                 instr = ("Fix bug %d. Apply exactly the correction given for bug %d in the bug "
                          "report. %s\n%s" % (i, i, _tool_line, _code_line))
