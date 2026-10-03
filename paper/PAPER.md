@@ -125,12 +125,11 @@ a new instance of the same broken shape, a different task with the same probes.
 Two probes measure retention. The first is accumulated codes: one fresh unguessable code per turn,
 forbidden from the file until the final turn, when it must be returned as an ordered list, scored from
 zero to n so partial retention appears as a prefix gap. The second is a release gate: on the final
-turn an additional function must return a separate secret handed over at the session midpoint. It is
-deliberately not one of the codes, so a policy can recite the list and still ship a broken artifact;
-we verified independence on two simulated agents with identical bug and code scores.
+turn an additional function must return a separate secret handed over at the session midpoint. It is deliberately not one of the codes, so a policy can recite the list and still ship a broken
+artifact; we verified independence on two simulated agents with identical bug and code scores.
 
-The policies diverge in growth rate by roughly an order of magnitude, measured live. Linear adds about
-1,248 tokens per turn, a full pair, while the anchored policy adds about 159. Against a 12,000-token
+The policies diverge in growth rate by roughly an order of magnitude. Linear adds about 1,248
+tokens per turn, a full pair, while the anchored policy adds about 159. Against a 12,000-token
 ceiling linear reaches the limit near turn nine and evicts thereafter, holding the most recent four
 blocks, while the anchored policy holds every instruction and finishes at about 9,934 tokens. This was
 computed against the real tokenizer before the run and observed during it.
@@ -159,9 +158,8 @@ tokens.
 
 Retention is measured by per-turn success, final accuracy, fixes applied then lost, code recall, and
 the gate verdict; cost by hit rate, miss tokens, compute units, the no-cache baseline, and the saving
-ratio; context by first, last, and peak prompt size and growth; and latency by time to first token,
-wall time per turn, decode throughput, KV-cache peak, and total prefill. All derive from data the loop
-already collects, so one run yields the whole table.
+ratio; context by first, last, and peak prompt size; and latency by time to first token, wall time
+per turn, decode throughput, and KV-cache peak. All derive from data the loop already collects.
 
 ### 4.3 Fairness
 
@@ -201,17 +199,17 @@ policy evicting from the front changes its first block as soon as eviction begin
 the front and advancing the window at the end keeps it.
 
 The third arm, prune, behaves as linear does: sixty of sixty, nine of sixty codes unordered, gate
-passed, hit rate 0.310. Its compaction at turn thirty appears in the per-turn record as a collapse of
-the reused prefix from 3,226 tokens to 2,057, the anchored prefix alone, so compaction pays a
-re-prefill at every boundary rather than recovering that cost.
+passed, hit rate 0.310. Its turn-thirty compaction appears as a collapse of the reused prefix from
+3,226 tokens to 2,057, the anchored prefix alone, so compaction pays a re-prefill at every boundary
+rather than recovering that cost.
 
 ## 6. Failure Modes of the Evaluation
 
 Each of the following produced, or would have produced, a clean-looking table that measured nothing.
 
 A shared ceiling. Two policies capped at the same limit converge on whatever fits: with one shared
-12,000-token cap both reached about 9,900 tokens at nearly identical latency, so the cap and not the
-policy set the working set. Each budget is now sized to its own claim.
+12,000-token cap both reached about 9,900 tokens at nearly identical latency, so the cap, not the policy,
+set the working set. Each budget is now sized to its own claim.
 
 A re-derivable probe. A rule the model re-applies each turn can be inferred from recent turns without
 the original, so both policies pass and the probe is vacuous. Only a value stated once and never
@@ -230,8 +228,7 @@ of policy, and the KV-cache peak is not a result of retention for the same reaso
 The evaluation covers one model and one task family, and the task is synthetic so retention is
 measurable. The cost model uses an assumed hit multiplier rather than a measured billing figure,
 and the sensitivity of the conclusion to it is reported separately. Each policy ran once per
-configuration, so the results carry no error bars, and repetition is across task instances, not seeds,
-for the reason in Section 3.3. The gate probe is a single value establishing that one
+configuration, so the results carry no error bars, and repetition is across task instances, not seeds. The gate probe is a single value establishing that one
 mid-session fact survived, not a rate.
 
 The reported run uses Gemma-4-12B in bfloat16, which loads on one accelerator without a quantization
