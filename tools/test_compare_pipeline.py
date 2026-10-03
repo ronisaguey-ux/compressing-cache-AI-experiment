@@ -135,6 +135,27 @@ def main():
     check("guard CLAIMS when arms do separate",
           "does not establish" not in gen and "Separation." in gen)
 
+    # ---- partial runs: the box dying mid-run leaves later arms short or absent ----
+    # ★ THE REALISTIC FAILURE. Refusing here would leave the paper with no results section on the
+    # run that cost the most, and a count taken from the first arm overstates what was compared.
+    dB = tempfile.mkdtemp(prefix="cmp_partial_")
+    for a in ("runtime", "linear"):
+        r = arm(a, 22 if a == "linear" else 60, 0.81, a == "runtime", 60)
+        if a == "linear":
+            r["stopped_early"] = "time_budget"
+        json.dump(r, open(os.path.join(dB, "incremental_%s.json" % a), "w"))
+    paperB = os.path.join(dB, "PAPER.md")
+    open(paperB, "w", encoding="utf-8").write(src)
+    gB = subprocess.run([sys.executable, RESULTS], capture_output=True, text=True,
+                        env=dict(os.environ, RESULTS_DIR=dB, PAPER=paperB), timeout=180).stdout
+    check("generator DEGRADES on a partial run instead of refusing", "words=" in gB,
+          gB.strip().splitlines()[-1] if gB.strip() else "no output")
+    bodyB = open(paperB, encoding="utf-8").read()
+    check("partial section is marked partial", "PARTIAL" in gB or "Common prefix" in bodyB)
+    check("arm count reflects arms present, not a hardcoded three", "2 arm(s)" in bodyB)
+    check("turn count is the comparable prefix, not the longest arm",
+          "22 comparable turns" in bodyB and "60 comparable turns" not in bodyB)
+
     print()
     if FAILURES:
         print("FAILED: %d check(s): %s" % (len(FAILURES), ", ".join(FAILURES)))
