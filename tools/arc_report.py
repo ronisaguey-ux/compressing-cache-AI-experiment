@@ -95,6 +95,18 @@ def main(argv):
     if not argv:
         print(__doc__)
         return 1
+    # `--task <id>` supplies the chosen ARC task when the result has no task field. The task id is a
+    # SETUP fact (which puzzle was selected), not a measured number, so it is passed in rather than
+    # invented -- and it keeps the report readable instead of printing "?".
+    task_override = None
+    if "--task" in argv:
+        i = argv.index("--task")
+        try:
+            task_override = argv[i + 1]
+        except IndexError:
+            print("--task needs a value", file=sys.stderr)
+            return 1
+        argv = argv[:i] + argv[i + 2:]
     res = load_results(argv)
     if not res:
         print("no results loaded", file=sys.stderr)
@@ -110,7 +122,8 @@ def main(argv):
         c = cost_stats(d)
         print("\narm=%s   (%s)" % (arm, os.path.basename(path)))
         print("  task/model: %s / %s   features=%s" % (
-            (d.get("task_id") or d.get("arc_task") or "?"), d.get("model"), d.get("features")))
+            (d.get("task_id") or d.get("arc_task") or task_override or "?"),
+            d.get("model"), d.get("features")))
         print("  SOLVES      %d/%d   rate=%.3f   first=%s   last=%s   best_streak=%d   final_ok=%s" % (
             s["solved"], s["turns"], s["solve_rate"],
             ("turn %d" % s["first_solve_turn"]) if s["first_solve_turn"] is not None else "never",
