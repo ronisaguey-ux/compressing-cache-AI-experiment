@@ -66,10 +66,8 @@ Project Links.
    the same object as the transcript's first entry; the fix is committed. A corrected runtime run is
    queued. Until its results replace the committed ones, `tools/run_compare.py` on the committed files
    regenerates the historical figures rather than current-code figures.
-2. **Reference `[20]`, SinkTrack (arXiv:2604.10027), was not independently confirmed.** All other
-   arXiv identifiers in the paper were checked against the arXiv API and resolve to the cited titles.
-   If SinkTrack cannot be confirmed, the closest-prior-art paragraph must be rewritten around a
-   confirmed work.
+2. **All 17 arXiv identifiers in the paper were verified against the arXiv API** and resolve to the
+   cited titles, including `[20]` SinkTrack (arXiv:2604.10027, Liu, Chen and Wang).
 3. **One model, one seed per arm.** Results carry no error bars; the sensitivity of the cost result to
    the cache-hit multiplier is swept from 0.05 to 1.00 and reported in Section 7.
 
