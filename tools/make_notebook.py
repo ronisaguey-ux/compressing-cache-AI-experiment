@@ -71,14 +71,21 @@ def main(argv):
     }]
     cells += md_cells(md)
 
-    # the figure, as an image cell, so the notebook shows it without a separate file
+    # The figure, INLINED. A relative path like `figs/trajectory.svg` renders as a broken image on
+    # Kaggle -- the notebook has no filesystem beside it unless the file is uploaded as a dataset,
+    # and an image that fails to load is a figure a reviewer does not see. The SVG is self-contained
+    # and Kaggle's markdown renderer accepts raw HTML, so it goes in whole, with the source path
+    # named in the caption so the file is still findable in the repository.
     if os.path.exists(FIG):
+        svg = open(FIG, encoding="utf-8").read()
+        svg = svg[svg.index("<svg"):] if "<svg" in svg else svg
         cells.append({
             "cell_type": "markdown",
             "metadata": {},
-            "source": "## Figure 1\n\n![trajectory](figs/trajectory.svg)\n\n"
-                      "Growth (a) and prefix reuse (b), per turn, from the same per-turn records "
-                      "the tables are generated from.",
+            "source": ("## Figure 1\n\n" + svg + "\n\n"
+                       "Growth (a) and prefix reuse (b), per turn, from the same per-turn records "
+                       "the tables are generated from. Source: `paper/figs/trajectory.svg`, "
+                       "regenerable with `tools/make_figures.py`."),
         })
 
     nb = {
