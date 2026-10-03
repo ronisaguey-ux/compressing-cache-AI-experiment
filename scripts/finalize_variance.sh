@@ -14,7 +14,7 @@ exec >>"$LOG" 2>&1
 say(){ echo "[$(date -u +%H:%M:%S)] $*"; }
 
 say "=== VARIANCE FINALIZER START $(date -u) ==="
-NEED=10
+NEED=6
 for i in $(seq 1 720); do        # up to 12h
   n=$(ls "$VAR"/var_*.json 2>/dev/null | wc -l)
   if [ "$n" -ge "$NEED" ]; then say "have $n result files"; break; fi
