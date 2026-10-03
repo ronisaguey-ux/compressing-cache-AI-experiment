@@ -133,8 +133,8 @@ artifact; we verified independence on two simulated agents with identical bug an
 The policies diverge in growth rate by roughly an order of magnitude. Linear adds about 1,248 tokens
 per turn, a full pair, while the anchored policy adds about 159. Against a 12,000-token ceiling linear
 reaches the limit near turn nine and evicts thereafter, while the anchored policy holds every
-instruction and finishes near 8,149 tokens. This was computed against the real tokenizer before the
-run and observed during it.
+instruction and finishes near 8,149 tokens. This was computed against the real tokenizer before the run
+and observed during it.
 
 One probe failed to discriminate, and we report that as a negative result. We predicted linear would
 fail the release gate; it passed, as did the anchored policy. The gate's value is a function the
