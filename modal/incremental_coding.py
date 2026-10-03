@@ -1639,7 +1639,14 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                 turns=turns_log,
                 # `None` is "never asked", not "failed" -- listing the contract keys as failures in
                 # a fix-mode run would report twelve failures for requirements never sent.
-                failed=[k for k, v in results.items() if v is False])
+                #
+                # ★★ NOT EVERY `False` IS A FAILURE. `codes_dup` False means NO DUPLICATES, i.e.
+                # success -- and the generic `v is False` sweep reported it as a failure on a run
+                # that scored 60/60, printing "failed: codes_dup" beside a perfect result. The
+                # headline summary of a clean run must not name a failure. Inverted-sense flags are
+                # named here so a new one is a deliberate decision rather than a silent misreport.
+                failed=[k for k, v in results.items()
+                        if v is False and k not in ("codes_dup", "manifest_dup")])
 
 
 @app.local_entrypoint()
