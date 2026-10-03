@@ -47,5 +47,8 @@ if command -v python3 >/dev/null; then
     python3 "$HOME/.local/share/ccai-repo/tools/run_compare.py" "$OUT"/incremental_*.json 2>&1 | tee -a "$LOG" | tail -80
     say "--- results section (generated, never hand-typed) ---"
     python3 "$HOME/.local/share/ccai-repo/tools/make_results_section.py" 2>&1 | tee -a "$LOG" | tail -30
+    say "--- figure (SVG, from the same cache_rows as the tables) ---"
+    python3 "$HOME/.local/share/ccai-repo/tools/make_figures.py" "$OUT" \
+        "$HOME/.local/share/ccai-repo/paper/figs/trajectory.svg" 2>&1 | tee -a "$LOG" | tail -5
 fi
 say "DONE"
