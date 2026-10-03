@@ -219,16 +219,34 @@ def main(argv=None):
     if args.solutions:
         # Score only if ground truth is supplied. Attempt 1 counts, attempt 2 counts only when the
         # first is wrong -- that is how the metric reads a two-attempt submission.
+        #
+        # ★ THE SHAPE HERE IS THE WHOLE CORRECTNESS ARGUMENT. A prediction is one entry PER TEST
+        # INPUT, each entry holding [attempt1, attempt2]. Ground truth is a list of gold grids, one
+        # per test input. So the comparison is `prediction[i][0] == gold[i]`. An earlier version
+        # compared `prediction[0]` (a two-element list) against `gold[0]` (a grid) and therefore
+        # reported 0% on every run -- including runs where a verified hypothesis had been applied
+        # and the answer was right. A scorer whose comparison can never succeed reports a score, and
+        # that score is indistinguishable from a solver that fails.
         sol = json.load(open(args.solutions))
         first = second = 0
+        scored = 0
         for tid, s in sol.items():
-            got = per_task_attempts.get(tid) or []
+            got = per_task_attempts.get(tid)
+            if not got:
+                continue
             gold = s if isinstance(s, list) else [s]
-            if got and got[0] == gold[0]:
-                first += 1
-            elif len(got) > 1 and gold and got[1] == gold[0]:
-                second += 1
-        n = len(sol) or 1
+            for i, g in enumerate(gold):
+                if i >= len(got):
+                    break
+                attempts = got[i]
+                if not isinstance(attempts, list) or not attempts:
+                    continue
+                scored += 1
+                if attempts[0] == g:
+                    first += 1
+                elif len(attempts) > 1 and attempts[1] == g:
+                    second += 1
+        n = scored or 1
         print("accuracy: attempt-1 %d/%d (%.1f%%), attempt-2 %d/%d, combined %.1f%%"
               % (first, n, 100.0 * first / n, second, n, 100.0 * (first + second) / n))
     return 0
