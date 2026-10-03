@@ -70,11 +70,19 @@ PY
 PRE=${PIPESTATUS[0]}
 if [ "$PRE" -ne 0 ]; then say "PREFLIGHT FAILED (rc=$PRE) -- refusing to run"; exit 1; fi
 
+# ★ MODEL IS OVERRIDABLE. The owner's direction: run the ARC task on a stronger coding model that can
+# actually solve some of it, so the paper shows a real solve difference between the policies rather
+# than two zeros. `CCAI_ARC_MODEL` (and its quantisation) select it; the default stays Gemma so an
+# unadorned invocation reproduces the recorded run.
+ARC_MODEL="${CCAI_ARC_MODEL:-gemma-4-12b}"
+ARC_QUANT="${CCAI_ARC_QUANT:-none}"
+say "model=$ARC_MODEL quant=$ARC_QUANT"
+
 for ARM in runtime linear; do
   rm -rf /work/inc
   mkdir -p /root/ccai/ckpt_arc_$ARM
-  say "--- arm=$ARM starting on ARC task $IDX ---"
-  CCAI_TASK=arc CCAI_MODEL=gemma-4-12b CCAI_QUANT=none CCAI_MAX_GPU_MEMORY=44GiB \
+  say "--- arm=$ARM starting on ARC task $IDX model=$ARC_MODEL ---"
+  CCAI_TASK=arc CCAI_MODEL="$ARC_MODEL" CCAI_QUANT="$ARC_QUANT" CCAI_MAX_GPU_MEMORY=44GiB \
   CCAI_ARM=$ARM CCAI_FEATURES=$N CCAI_GATE=0 CCAI_PRUNE_EVERY=30 CCAI_RUNTIME_TOKENS=10240 \
   CCAI_ARC_DIR=/root/arc/data CCAI_ARC_SPLIT=training CCAI_ARC_INDEX="$IDX" \
   CCAI_TIME_BUDGET_S="${CCAI_TIME_BUDGET_S:-10800}" CCAI_CKPT_DIR=/root/ccai/ckpt_arc_$ARM \
