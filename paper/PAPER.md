@@ -260,7 +260,7 @@ rather than asserted, and documented how such a measurement silently fails.
 ## Reproduction
 
 ```
-python3 tools/run_compare.py benchmarks/results/incremental_*_{linear,runtime}_*.json
+python3 tools/run_compare.py benchmarks/results/incremental_gemma-4-12b_{linear,runtime}.json
 ```
 
 The environment, task generator, policies and graders are in this repository, and that command runs

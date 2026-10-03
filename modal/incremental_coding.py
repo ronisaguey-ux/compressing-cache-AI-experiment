@@ -105,6 +105,16 @@ MODELS = {
     "gemma-4-12b": "google/gemma-4-12B-it",
     "gemma-4-e4b": "google/gemma-4-E4B-it",
     "gemma-4-26b-a4b": "google/gemma-4-26B-A4B-it",
+    # ★★ THE COMPETITION-MANDATED CHECKPOINT. The main Gemma 4 Developer Agent competition
+    # (comp 149921) requires `gemma-4-31B-it-qat-w4a16-ct`. The PAPER track does not require it, but
+    # running the same two policies on the exact checkpoint the host ships is the difference between
+    # "a result about our method" and "a result about Gemma 4 as the competition defines it" -- and
+    # it forecloses the most obvious reviewer objection ("this is a small-model artifact").
+    # 23.3 GB on disk (pack-quantized 4-bit weights / 16-bit activations, compressed-tensors), so it
+    # fits a 48 GB card with headroom. Load with CCAI_QUANT=pre: the checkpoint carries its own
+    # quantization_config and handing the loader a BitsAndBytesConfig fights it (that is the exact
+    # failure recorded for the 26B-A4B above, and it is worse here because the model is bigger).
+    "gemma-4-31b-qat": "google/gemma-4-31B-it-qat-w4a16-ct",
     # ★★ PRE-QUANTISED 8-BIT -- THE ONE THAT ACTUALLY QUANTISES THE MoE EXPERTS.
     #
     # MEASURED, and this is why the entry exists: loading the bf16 checkpoint with

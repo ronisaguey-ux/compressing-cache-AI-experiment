@@ -1,7 +1,24 @@
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+.venv/
+venv/
+
+# Local runtime state — never commit locks, keys or scratch
 locks/
-data/_7b_*
+locks_test2/
+*.lock
+*_smoke.log
+
+# Credentials — the vast_setup helper writes these
 vast_setup/session_key
 vast_setup/api_key
 vast_setup/last_instance
+*.hftok
+.env
+
+# Large local artifacts (models, caches) — download, never track
+*.safetensors
+*.gguf
+hf/
+.cache/
