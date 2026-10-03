@@ -322,8 +322,26 @@ def main(argv):
         _cost = {a: (_m(a, "cost_units") or 0) for a in _arms}
         _cheap = min(_cost, key=lambda a: _cost[a])
         print()
-        print("  VERDICT: %s keeps the most prefix cache (%.1f%% of prefill reusable) and costs "
-              "the least compute (%.0f units)." % (_best, _h[_best] * 100, _cost[_cheap]))
+        # ★ THE VERDICT STATES THE HONEST CLAIM, and the claim is bounded by what we compare to.
+        # "Prefix reuse" alone is the property being measured, and it is advantageous to any policy
+        # that never evicts -- so quoting it as the headline would be circular. If the run carries a
+        # mid-session gate, retention is the discriminator and is named first; the cost line then
+        # says the two agree, rather than implying cost alone proves capability.
+        _gate = {a: r.get("gate_ok") for a, r in runs.items() if r.get("gate_ok") is not None}
+        if _gate:
+            _ret = [a for a, v in _gate.items() if v]
+            _lost = [a for a, v in _gate.items() if not v]
+            print("  VERDICT: retention separates the arms -- %s reproduced the turn-%s secret; "
+                  "%s did not." % (", ".join(_ret) or "none",
+                                   runs[_ret[0]].get("gate_turn", "mid-session") if _ret else "mid-session",
+                                   ", ".join(_lost) or "none"))
+            print("           %s also keeps the most prefix cache (%.1f%% of prefill reusable) and "
+                  "costs the least compute (%.0f units) -- consistent with, not a substitute for, "
+                  "the retention result." % (_best, _h[_best] * 100, _cost[_cheap]))
+        else:
+            print("  VERDICT: %s keeps the most prefix cache (%.1f%% of prefill reusable) and costs "
+                  "the least compute (%.0f units). No mid-session retention probe in this run, so "
+                  "reuse is a cost claim only." % (_best, _h[_best] * 100, _cost[_cheap]))
     except Exception:
         pass
 
