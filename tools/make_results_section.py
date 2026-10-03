@@ -85,6 +85,7 @@ def main():
         L.append("")
     L.append("All three ran %s turns under an identical prompt and tool budget (\u00a73.1)." % n)
     L.append("")
+    L.append("**Figure 1** (`figs/trajectory.svg`) — growth (a) and reuse (b), per turn.")
 
     # ---- Table 1: cost and context ----
     L.append("**Table 1 — cost in raw compute units.** A cache-reused token costs 0.1 of a fresh "
