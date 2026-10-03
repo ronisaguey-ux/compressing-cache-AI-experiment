@@ -69,11 +69,12 @@ Project Links.
    transcript's first entry); the fix is committed and the reported figures are from the re-run with
    that fix: 76.0% reuse, 106,678 compute units against 484,957 for the linear policy, a factor of
    4.55 (4.49 against prune).
-2. **The ablation's per-turn grades are suppressed.** `ablate-recent` (anchored minus the instruction
-   archive) isolates the archive as the mechanism: code recall collapses from 60/60 to 8/60 while the
-   final artifact still passes 60/60. Its per-turn column is not reported because the run resumed
-   after a crash and its pre-crash grades were not checkpointed; code recall and final state come
-   from the final artifact and are unaffected. A clean re-run is in progress.
+2. **The ablation is reported from a clean re-run.** `ablate-recent` (anchored minus the instruction
+   archive) isolates the archive as the mechanism: code recall collapses from 60/60 to 8/60, per-turn
+   success 0.917, final artifact 55/60. A prior run reached 60/60 at the end but its per-turn grades
+   were corrupted by a resume (turn_ok was not checkpointed at the time), so it is archived as
+   `CONTAMINATED_...resume-artifact.json` and only the clean run is reported. Final state varies
+   across the two runs; the recall collapse does not.
 3. **All 17 arXiv identifiers in the paper were verified against the arXiv API** and resolve to the
    cited titles, including `[20]` SinkTrack (arXiv:2604.10027, Liu, Chen and Wang).
 4. **One model, one seed per arm.** Results carry no error bars; the sensitivity of the cost result to
