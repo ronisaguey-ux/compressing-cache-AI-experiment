@@ -30,32 +30,77 @@ import glob, json, os, sys
 
 # The mounted input directory has varied across ARC releases, so it is discovered rather than
 # hardcoded -- a wrong hardcoded path produces an empty submission that still "runs successfully".
-CANDIDATES = [
-    "/kaggle/input/arc-prize-2026-arc-agi-2",
-    "/kaggle/input/arc-prize-2026-arc-agi-2/",
-]
+#
+# ★★ THE 2026 MOUNT IS NESTED ONE LEVEL DEEPER: /kaggle/input/competitions/<slug>. A flat
+# `glob("/kaggle/input/*arc*")` finds nothing there and the kernel then refuses (correctly) to write
+# an empty submission -- which read for two runs as "the data is not mounting" when the data was
+# right there under an extra directory. The search is RECURSIVE and the path is never assumed.
 INPUT = None
-for c in CANDIDATES:
+for c in ("/kaggle/input/arc-prize-2026-arc-agi-2",
+          "/kaggle/input/competitions/arc-prize-2026-arc-agi-2"):
     if os.path.isdir(c):
         INPUT = c
         break
 if INPUT is None:
-    hits = glob.glob("/kaggle/input/*arc*")
+    hits = sorted(glob.glob("/kaggle/input/**/*arc*", recursive=True))
     INPUT = hits[0] if hits else None
 print("input dir:", INPUT)
-
-# Find the challenge file: the test set is JSON with a "test" key and no "output".
-challenge_path = None
 if INPUT:
-    for p in sorted(glob.glob(os.path.join(INPUT, "**", "*.json"), recursive=True)):
-        try:
-            d = json.load(open(p))
-        except Exception:
-            continue
-        if isinstance(d, dict) and d and all(isinstance(v, dict) and "test" in v for v in d.values()):
+    print("  contents:", sorted(os.listdir(INPUT))[:20])
+
+# Find the challenge file. ★ THE MOUNT HOLDS FIVE JSONs AND THREE OF THEM LOOK ELIGIBLE:
+# training (1000 tasks), evaluation (120), and test (240) all carry "test" entries, so "the first
+# one with a test key" picks EVALUATION -- the driver scored 120 tasks while the grader expects 240,
+# and the artifact looked structurally valid at 0% instead of failing loudly.
+#
+# Two disambiguators, in order: the filename must name the test set, and the key set must match
+# sample_submission.json when that file is present. The submission is checked against the sample,
+# so deriving the task set from anything else is how a silent 120-vs-240 mismatch happens.
+SAMPLE = None
+for _s in glob.glob(os.path.join(INPUT or "/kaggle/input", "**", "sample_submission.json"),
+                    recursive=True):
+    try:
+        SAMPLE = set(json.load(open(_s)))
+    except Exception:
+        SAMPLE = None
+    break
+print("sample keys:", len(SAMPLE) if SAMPLE else None)
+
+def _eligible(p, d):
+    return (isinstance(d, dict) and d
+            and all(isinstance(v, dict) and "test" in v for v in d.values()))
+
+cands = []
+for p in sorted(glob.glob(os.path.join(INPUT, "**", "*.json"), recursive=True)):
+    try:
+        d = json.load(open(p))
+    except Exception:
+        continue
+    if _eligible(p, d):
+        cands.append((p, d))
+
+challenge_path = None
+# (1) the file whose name names the test set
+for p, d in cands:
+    if "test_challenges" in os.path.basename(p):
+        challenge_path = p
+        break
+# (2) otherwise the one whose keys match the official sample
+if challenge_path is None and SAMPLE:
+    for p, d in cands:
+        if set(d) == SAMPLE:
             challenge_path = p
             break
-print("challenges:", challenge_path)
+# (3) last resort: the largest eligible file, and say which rule was used
+if challenge_path is None and cands:
+    challenge_path = max(cands, key=lambda pd: len(pd[1]))[0]
+    print("WARNING: matched by size, not by name or sample — verify the task set")
+print("challenges:", challenge_path,
+      "(%d tasks)" % len(json.load(open(challenge_path))) if challenge_path else "")
+
+if challenge_path and SAMPLE and set(json.load(open(challenge_path))) != SAMPLE:
+    raise SystemExit("challenge key set does not match sample_submission.json — refusing to "
+                     "submit a task set the grader does not expect")
 
 if challenge_path is None:
     # Fail LOUDLY. An empty submission that exits 0 is indistinguishable from a solved one at the
@@ -71,7 +116,15 @@ for tid, task in tasks.items():
     attempts, names = solve_task(task)
     if names:
         solved += 1
-    submission[tid] = attempts
+    # ★ WRAP INTO THE GRADER'S CONTRACT. `solve_task` returns raw [[a1,a2],...]; the grader wants
+    # [{"attempt_1": g, "attempt_2": g}, ...] -- one DICT per test input. The library was fixed but
+    # this driver kept writing the raw form, so the notebook emitted [[[grid]]] (120 keys, 1 entry
+    # each) while the local tool emitted the correct dict shape. The self-check below did not catch
+    # it because it was never reached: the write happened first and the check ran on a shape it
+    # then had to interpret. Wrapping here fixes the artifact; the check now guards it.
+    submission[tid] = [{"attempt_1": pair[0],
+                        "attempt_2": pair[1] if len(pair) > 1 else pair[0]}
+                       for pair in attempts]
 
 out = "/kaggle/working/submission.json"
 with open(out, "w") as fh:
