@@ -34,6 +34,27 @@ say "final count: $n files"
   else
     echo "not enough results to analyse"
   fi
+  echo ""
+  echo "=== per-arm spread across salts (the metric that actually varies) ==="
+  echo "Token counts are fixed-width constants, so cost_units is expected to be near-identical"
+  echo "across salts; that makes the cost RATIO structural rather than seed-dependent. Per-turn"
+  echo "SUCCESS and final state are where run-to-run variation lives, so both are reported."
+  python3 - "$VAR" <<'PY'
+import json, glob, os, sys
+V=sys.argv[1]
+by={}
+for f in sorted(glob.glob(os.path.join(V,"var_*.json"))):
+    d=json.load(open(f)); by.setdefault(d.get("arm"),[]).append((os.path.basename(f),d))
+for arm,rows in sorted(by.items()):
+    costs=[(r.get("metrics") or {}).get("cost_units") for _,r in rows if (r.get("metrics") or {}).get("cost_units")]
+    hits=[r.get("cache_hit_rate") for _,r in rows if r.get("cache_hit_rate") is not None]
+    pturn=[(r.get("metrics") or {}).get("per_turn_success") for _,r in rows if (r.get("metrics") or {}).get("per_turn_success") is not None]
+    passed=[r.get("passed") for _,r in rows]
+    def rng(xs):
+        return "--" if not xs else "min=%.4f max=%.4f" % (min(xs), max(xs))
+    print("  %-8s n=%d  cost %s  hit %s  per-turn %s  passed %s" % (
+        arm, len(rows), rng(costs), rng(hits), rng(pturn), passed))
+PY
 } > "$OUT" 2>&1
 say "wrote $OUT"
 tail -30 "$OUT"
