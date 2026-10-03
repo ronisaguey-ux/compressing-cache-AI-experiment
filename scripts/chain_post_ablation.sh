@@ -95,6 +95,16 @@ run_arm "RUNTIMEFIX" 240 "incremental_gemma-4-12b_runtime_fixed.json" \
   "fixmode-v3/incremental_gemma-4-12b_runtime_fixed.json" "/work/rfix" \
   "$M12 CCAI_ARM=runtime CCAI_RUN_TAG=_fixed CCAI_CKPT_DIR=/root/ccai/ckpt_runtime_fixed"
 
+# ★ RE-RUN THE ABLATION. The first ablation crashed at turn 27 (a racing queue deleted its working
+# directory) and resumed, and `turn_ok` was not checkpointed at the time, so turns 1..27 came back as
+# zeros -- an artifact of resuming, not a measurement. It is the run that tests whether the
+# instruction archive is the mechanism, so it has to be clean. It is also FIRST among the optional
+# arms: if the budget runs out, mechanism evidence is worth more than error bars.
+say "--- ablation, clean re-run (mechanism evidence) ---"
+run_arm "ABLATE2" 300 "incremental_gemma-4-12b_ablate-recent.json" \
+  "fixmode-v3/incremental_gemma-4-12b_ablate-recent.json" "/work/ablate2" \
+  "$M12 CCAI_ARM=ablate-recent CCAI_CKPT_DIR=/root/ccai/ckpt_ablate-recent2"
+
 say "--- variance: 3 salts x 2 arms ---"
 for SALT in salt1 salt2 salt3; do
   for ARM in runtime linear; do
