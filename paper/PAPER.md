@@ -131,14 +131,19 @@ list is repeated and no reminder is given.
   first probe: a policy can recite the list and still ship a broken artifact. Verified independent:
   two simulated agents with identical bug and code scores receive opposite gate verdicts.
 
-**Why the gate discriminates, checked before the run rather than after.** The mid-session secret is
-handed over at turn *n*/2 and is only required at the end, so it is recoverable exactly when the
-turn *n*/2 instruction is still in the prompt. Both policies anchor the turn-1 brief, so the brief's
-survival is not the discriminator. The discriminator is the **window depth**: at ~1,879 tokens per
-turn block against an 11.3k budget, `linear` retains only the most recent ~4 turn blocks, so by turn
-40 it reaches back to turn 36 and the turn-30 secret is gone; `runtime` retains every instruction
-verbatim. A run in which both arms happened to hold the secret would not discriminate, so this was
-computed against the real tokenizer and the real per-turn sizes before the run started.
+**Why the gate discriminates, checked before the run and confirmed against it.** The mid-session
+secret is handed over at turn *n*/2 and is required only at the end, so it is recoverable exactly
+when the turn *n*/2 instruction is still in the prompt. Both policies anchor the turn-1 brief, so the
+brief's survival is not the discriminator; **window depth** is.
+
+The two policies diverge in growth rate by roughly an order of magnitude, measured live: `linear`
+adds ~1,248 tokens per turn (a full instruction/reply pair) while `runtime` adds ~159 (one
+instruction plus a single superseded reply). Against a 12k ceiling, `linear` therefore reaches the
+ceiling at about **turn 9** and evicts from then on, holding only the most recent ~4 turn blocks —
+so by the end its window reaches back ~4 turns and the turn-30 secret is long gone. `runtime` holds
+every instruction and finishes at ~9.9k tokens, still under budget, with the mid-session instruction
+reachable. This was computed against the real tokenizer before the run and then observed in the run
+itself.
 
 ## 4. Measurement
 
