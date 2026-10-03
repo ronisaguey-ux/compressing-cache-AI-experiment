@@ -192,17 +192,17 @@ quoted until the final-turn probes have been checked on both arms)*
 Each of the following produced, or would have produced, a clean-looking table that measured nothing.
 
 **F1 — shared ceiling.** Capping two policies at the same limit makes both converge on "whatever
-fits". Measured: both arms hit ~9.9k against a 12k limit and had identical latency (4180 vs 4308 ms).
-Each policy needs a budget sized to its own claim.
+fits". An earlier design gave both arms one 12k cap: measured, both reached ~9.9k with identical
+latency (4180 vs 4308 ms) — the cap, not the policy, set the working set. Each policy now gets a
+budget sized to its own claim, which is why the arms in §5 diverge by an order of magnitude.
 
 **F2 — re-derivable probes.** A rule the model re-applies every turn can be inferred from recent
 turns without the original ever being seen, so both arms pass and the probe is vacuous. Only a value
 stated once and never repeated can discriminate.
 
 **F3 — periodic failures are task defects.** Two of six bug families failed on *every* instance from
-turn 2. Since turn 2 is one turn after the brief, memory was not in question: the families had
-unusual shapes the model rewrote, and the rewrites failed. A turn-indexed task must be checked for
-periodic failure before its losses are interpreted.
+turn 2 — one turn after the brief, so memory was not in question: the families had unusual shapes the
+model rewrote. A turn-indexed task must be checked for periodic failure before its losses count.
 
 **F4 — architectural confound.** Gemma-4 uses local attention in 40 of 48 layers with a 1024-token
 window, so beyond 1024 tokens a turn-1 fact is invisible to those layers regardless of policy. Any
