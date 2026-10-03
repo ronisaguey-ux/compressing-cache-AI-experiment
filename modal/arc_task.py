@@ -114,6 +114,19 @@ def _render_brief(task_id, train, test_input):
                  "grid as a list of lists of integers. The transformation is the same for every "
                  "example. This is the ONLY time the examples are given; they will not be repeated "
                  "and no reminder will restate them. Rewrite solve() in full on every turn.")
+    # ★ KEEP THE REPLY SHORT. MEASURED: on the first ARC run the model wrote solve() with long
+    # comment blocks, overran the 3072-token reply budget, and the JSON was cut mid-string, so the
+    # turn was discarded and `solution.py` was never written. Every turn failed that way and the run
+    # was vacuous. Comments are what consumed the budget, so they are forbidden here exactly as the
+    # fix task forbids them.
+    parts.append("")
+    parts.append("CRITICAL OUTPUT RULES:\n"
+                 "  * Reply with EXACTLY ONE json object and NOTHING else. Do NOT wrap it in "
+                 "markdown fences.\n"
+                 "  * Do NOT write comments in the code. Every comment spends reply budget that "
+                 "your reply needs, and a reply cut off mid-string is DISCARDED ENTIRELY.\n"
+                 "  * Keep solve() as short as it can be while still being correct.\n"
+                 "  * Do NOT include any text before or after the json object.")
     return "\n".join(parts)
 
 

@@ -648,6 +648,34 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
         try:
             d, _ = _json.JSONDecoder().raw_decode(body)
         except Exception as e:
+            # ★★ TRUNCATED-REPLY SALVAGE (measured on ARC task 287).
+            #
+            # A reply that overruns max_new is cut MID-STRING, so the JSON never closes and the
+            # whole turn is thrown away even though the model produced usable code. MEASURED
+            # CONSEQUENCE: on the ARC task every one of the first three turns was rejected this way,
+            # `solution.py` stayed at its 125-char seed, and the run would have reported 0/60 for
+            # both policies -- a vacuous result that reads as "the policies cannot solve ARC".
+            #
+            # The reply is unambiguous in intent: a write_file object whose content string is simply
+            # unterminated. Recover it by closing the string. A dangling backslash is removed first,
+            # because truncation can bisect an escape sequence. Only accepted if it yields a dict
+            # with a known tool, so a malformed reply still fails.
+            try:
+                mt = re.search(r'"tool"\s*:\s*"(\w+)"', body)
+                mc = re.search(r'"content"\s*:\s*"', body)
+                if mt and mc and mt.group(1) in ("write_file", "append"):
+                    raw = body[mc.end():]
+                    raw = raw.rsplit("```", 1)[0]            # model may have begun closing a fence
+                    raw = raw.rstrip()
+                    while raw.endswith("\\"):                 # do not bisect an escape
+                        raw = raw[:-1]
+                    _content = _json.loads('"' + raw + '"')
+                    if _content.strip():
+                        print("   (salvaged a truncated reply: %d chars of content)"
+                              % len(_content), flush=True)
+                        return {"tool": mt.group(1), "content": _content}, None
+            except Exception:
+                pass
             # ★ PYTHON-LITERAL FALLBACK — this is the fix that mattered, and the defect it
             # exposes is the whole reason the linear arm scored 1/17.
             #
