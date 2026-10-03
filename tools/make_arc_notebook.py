@@ -80,16 +80,21 @@ print("wrote %s  (%d tasks, %d with a verified hypothesis)" % (out, len(submissi
 
 # Format self-check before finishing: the grader rejects a malformed file, and a rejected file
 # scores nothing regardless of the solver. Check the shape, do not assume it.
+# ★ THE CONTRACT, taken from the competition's own sample_submission.json rather than assumed:
+#   {"<task>": [{"attempt_1": grid, "attempt_2": grid}, ...]}  -- one dict per test input.
+# An earlier version checked for a list of two grids, which is self-consistent and wrong; a format
+# check written from an assumption validates the assumption, not the contract.
 bad = []
 for tid, preds in submission.items():
     if not isinstance(preds, list) or not preds:
         bad.append((tid, "no predictions")); continue
-    for p in preds:
-        if not isinstance(p, list) or len(p) != 2:
-            bad.append((tid, "prediction is not 2 attempts")); break
-        for g in p:
+    for entry in preds:
+        if not isinstance(entry, dict) or set(entry) != {"attempt_1", "attempt_2"}:
+            bad.append((tid, "entry is not {attempt_1,attempt_2}")); break
+        for key in ("attempt_1", "attempt_2"):
+            g = entry[key]
             if not isinstance(g, list) or not g or not all(isinstance(r, list) for r in g):
-                bad.append((tid, "attempt is not a grid")); break
+                bad.append((tid, "%s is not a grid" % key)); break
 print("format check:", "PASS" if not bad else "FAIL %r" % bad[:5])
 print("submission bytes:", os.path.getsize(out))
 '''

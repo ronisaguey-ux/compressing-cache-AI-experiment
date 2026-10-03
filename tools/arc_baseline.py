@@ -202,7 +202,14 @@ def main(argv=None):
         stats["total"] += 1
         attempts, names = solve_task(task)
         per_task_attempts[tid] = attempts
-        submission[tid] = attempts
+        # ★ THE GRADER'S SHAPE IS A DICT PER TEST INPUT, not a list of two grids.
+        # Taken from the competition's own sample_submission.json:
+        #   {"<task>": [{"attempt_1": grid, "attempt_2": grid}, ...]}   one entry per test input.
+        # The list form this tool first emitted was self-consistent and would have been rejected:
+        # it was validated against my assumption rather than against the official file.
+        submission[tid] = [{"attempt_1": pair[0],
+                            "attempt_2": pair[1] if len(pair) > 1 else pair[0]}
+                           for pair in attempts]
         if names:
             stats["solved"] += 1
         else:
@@ -238,13 +245,13 @@ def main(argv=None):
             for i, g in enumerate(gold):
                 if i >= len(got):
                     break
-                attempts = got[i]
-                if not isinstance(attempts, list) or not attempts:
+                entry = got[i]
+                if not isinstance(entry, dict):
                     continue
                 scored += 1
-                if attempts[0] == g:
+                if entry.get("attempt_1") == g:
                     first += 1
-                elif len(attempts) > 1 and attempts[1] == g:
+                elif entry.get("attempt_2") == g:
                     second += 1
         n = scored or 1
         print("accuracy: attempt-1 %d/%d (%.1f%%), attempt-2 %d/%d, combined %.1f%%"

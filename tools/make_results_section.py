@@ -94,8 +94,10 @@ def main():
     # printed directly above it and overstated what was compared. "three" is also wrong when an arm
     # is absent -- the section says what it has.
     n_cmp = min((runs[a].get("features_completed") or 0) for a in order)
-    L.append("All %s arm(s) ran %s comparable turns under an identical prompt and tool budget "
-             "(\u00a73.1)." % (len(order), n_cmp))
+    _lead = {1: "One arm ran", 2: "Both arms ran", 3: "All three arms ran"}.get(
+        len(order), "All %d arms ran" % len(order))
+    L.append("%s %s comparable turns under an identical prompt and tool budget "
+             "(\u00a73.1)." % (_lead, n_cmp))
     L.append("")
     L.append("**Figure 1** (`figs/trajectory.svg`) — growth (a) and reuse (b), per turn.")
 

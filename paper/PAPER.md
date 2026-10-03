@@ -133,19 +133,19 @@ list is repeated and no reminder is given.
   still ship a broken artifact. Verified independent:
   two simulated agents with identical bug and code scores receive opposite gate verdicts.
 
-**Why the gate discriminates, checked before the run and confirmed against it.** The mid-session
-secret is handed over at turn *n*/2 and is required only at the end, so it is recoverable exactly
-when the turn *n*/2 instruction is still in the prompt. Both policies anchor the turn-1 brief, so the
-brief's survival is not the discriminator; **window depth** is.
+**Window depth, measured.** The two policies diverge in growth rate by roughly an order of
+magnitude, measured live: `linear` adds ~1,248 tokens per turn (a full instruction/reply pair) while
+`runtime` adds ~159 (one instruction plus a single superseded reply). Against a 12k ceiling `linear`
+reaches it at about **turn 9** and evicts from then on, holding the most recent ~4 turn blocks;
+`runtime` holds every instruction and finishes at ~9.9k tokens, under budget. This was computed
+against the real tokenizer before the run and observed in the run.
 
-The two policies diverge in growth rate by roughly an order of magnitude, measured live: `linear`
-adds ~1,248 tokens per turn (a full instruction/reply pair) while `runtime` adds ~159 (one
-instruction plus a single superseded reply). Against a 12k ceiling, `linear` therefore reaches the
-ceiling at about **turn 9** and evicts from then on, holding only the most recent ~4 turn blocks —
-so by the end its window reaches back ~4 turns and the turn-30 secret is long gone. `runtime` holds
-every instruction and finishes at ~9.9k tokens, still under budget, with the mid-session instruction
-reachable. This was computed against the real tokenizer before the run and then observed in the run
-itself.
+**★ THE RELEASE GATE DID NOT DISCRIMINATE.** We predicted `linear` would fail it; it passed, as
+did `runtime`. The gate's value is a function the artifact already contains, so committing the secret
+to that function when it is handed over carries it forward through every later rewrite — the probe
+measures artifact persistence, not retention. **The accumulated codes have no such escape: they are
+forbidden from the file until the final turn**, which is why the codes probe separates the arms (§5)
+and the gate is reported as having failed to separate.
 
 ## 4. Measurement
 
