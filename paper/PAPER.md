@@ -287,5 +287,5 @@ via `CCAI_GATE=1`; the compaction period by `CCAI_PRUNE_EVERY`.
 [16] Schaeffer, Kazdan, Denisov-Blanch, Miranda, Gerstgrasser et al. *Position: Machine Learning Conferences Should Establish a "Refutations and Critiques" Track.* NeurIPS 2025 Position Paper Track (Oral). arXiv:2506.19882
 [17] Kapoor & Narayanan. *Leakage and the reproducibility crisis in ML-based science.* Patterns 2023.
 [18] Herrmann et al. *Why We Must Rethink Empirical Research in Machine Learning.* ICML 2024.
-[19] ACM. *Artifact Review and Badging, v1.1.*
+[19] ACM. *Artifact Review and Badging, v1.1.* https://www.acm.org/publications/policies/artifact-review-and-badging-current
 [20] Liu, Chen & Wang. *SinkTrack: Attention Sink based Context Anchoring for Large Language Models.* ICLR 2026. arXiv:2604.10027
