@@ -107,8 +107,7 @@ predictions follow, because retention and cost are measured independently (§4.2
 - **Cost.** The anchored policy reuses a larger prefix, never rewriting the front the previous turn
   already paid for; `prune` re-prefills at every compaction.
 
-A cost difference alone would not support the claim: prefix reuse is the property being measured and
-favours any policy that never evicts. §5 therefore states the two separately.
+A cost difference alone would not support the claim, so §5 states the two separately.
 
 ### 3.3 The task
 
@@ -153,21 +152,23 @@ itself.
 ### 4.1 Prefix-cache reuse
 
 Per turn we record the longest common **token** prefix between the current prompt and the previous
-one — exactly what an automatic prefix cache would reuse. Cost is reported in **raw compute units,
-not currency**: a fresh token costs 1.0 and a cache-reused token costs an assumed multiplier (0.1),
-so
+one — exactly what an automatic prefix cache would reuse. Cost is in **raw compute units, not
+currency**: a fresh token costs 1.0, a reused token an assumed multiplier (0.1), so
 
 ```
 cost_units = miss_tokens · 1.0 + hit_tokens · HIT_MULT
 ```
 
-and the no-cache baseline is `total_tokens · 1.0`. The multiplier is one named constant so the
-assumption is visible and re-runnable. This makes the cache claim falsifiable: if the policies do
-not separate on hit rate, the argument does not hold.
+against a no-cache baseline of `total_tokens · 1.0`. The multiplier is one named constant, so the
+assumption is visible and re-runnable.
+
+The comparison is on `cost_units`, not on hit rate alone, because cost separates only if a policy
+both reuses its prefix **and** keeps the prompt small: a high hit rate on a prompt that grows
+without bound still processes far more tokens than a short one.
 
 ### 4.2 Metrics collected
 
-Retention (per-turn success, final accuracy, fixes applied then lost, code recall and ordering, gate
+Retention (per-turn success, final accuracy, fixes applied then lost, code recall, gate
 verdict); cost (hit rate, miss tokens, cost units, no-cache baseline, saving ratio); context (first,
 last, peak, growth); latency (TTFT, wall per turn, decode throughput); memory (KV peak, total
 prefill). All derive from data the loop already collects, so one run yields the whole table rather
@@ -206,8 +207,8 @@ one shared 12k cap both arms reached ~9.9k at identical latency (4180 vs 4308 ms
 not the policy set the working set. Each budget is now sized to its own claim.
 
 **F2 — re-derivable probes.** A rule the model re-applies every turn can be inferred from recent
-turns without the original ever being seen, so both arms pass and the probe is vacuous. Only a value
-stated once and never repeated can discriminate.
+turns without the original, so both arms pass and the probe is vacuous. Only a value stated once and
+never repeated discriminates.
 
 **F3 — periodic failures are task defects.** Two of six bug families failed on *every* instance from
 turn 2 — one turn after the brief, so memory was not in question: the families had unusual shapes the
