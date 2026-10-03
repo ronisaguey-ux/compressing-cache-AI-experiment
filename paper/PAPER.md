@@ -1,5 +1,5 @@
 # Bounded Context Without Context Rewrites
-## Flat context and an intact prefix cache for long-horizon agents
+## A bounded working set with an intact prefix cache for long-horizon agents
 
 ---
 
@@ -11,8 +11,8 @@ shared prefix a serving engine's prefix cache depends on, re-billing the whole p
 We describe a policy that keeps the window small *without* rewriting the front: the system prompt and
 the turn-1 brief are pinned, and the window advances at the end. We evaluate policies over 60 turns
 of a bug-fixing task on a 12B model, measuring retention, cost and prefix-cache reuse directly rather
-than inferring them. The bounded-anchor policy holds a flat context, recovers **every** turn-1 fact,
-and costs **4.1× less** than the growing baseline — which recovers 15% of them; figures in §5. We
+than inferring them. The bounded-anchor policy keeps its working set bounded and recovers **every** per-turn secret
+(60/60 against 9/60) at **4.1× less** compute and identical coding accuracy; figures in §5. We
 also document four ways such an evaluation produces a clean-looking result that means nothing, and
 how each was caught.
 

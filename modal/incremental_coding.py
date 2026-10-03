@@ -1157,7 +1157,21 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
             # Measured cost of those two kinds over 60 turns: instructions ~4500 tok total against
             # ~108000 for the replies. That asymmetry IS the method.
             keep = [transcript[0]] if transcript else []
+            # ★★ ADV-010, CONFIRMED BUG: `_arch_instr[0]` IS `transcript[0]`.
+            #
+            # Turn 0 appends one instruction and the SAME object is used as the anchor, so
+            # iterating the archive from index 0 re-emits the entire turn-1 brief a second time
+            # on every turn. MEASURED: the pinned brief is ~1058 tokens, so ~1000 tokens of the
+            # runtime's budget were spent carrying a duplicate of the anchor for all 60 turns.
+            #
+            # Skipped by VALUE, not by index: a resume rebuilds `transcript` from the checkpoint
+            # while `_arch_instr` is restored from state, so index 0 is not guaranteed to line up
+            # after a resume. Comparing text cannot drop a *distinct* instruction, which an
+            # index-based skip could if the two ever diverged.
+            _anchor_text = transcript[0][1] if transcript else None
             for _a in _arch_instr:
+                if _a == _anchor_text:                 # already carried as the pinned anchor
+                    continue
                 keep.append(("user", _a))              # every past instruction, verbatim
             _last_asst = next((b for b in reversed(transcript) if b[0] == "assistant"), None)
             if _last_asst is not None:

@@ -25,6 +25,7 @@ Usage
 """
 import glob
 import json
+import os
 import sys
 
 
@@ -163,6 +164,8 @@ def main(argv):
         if n < 2:
             print("REFUSING: fewer than 2 comparable turns survive.")
             return 1
+    elif "CCAI_CACHE_HIT_MULT" in os.environ:
+        runs = {a: _truncate_to(r, n) for a, r in runs.items()}
 
     truncated = [a for a, r in runs.items() if r.get("stopped_early") is not None]
     if truncated:
