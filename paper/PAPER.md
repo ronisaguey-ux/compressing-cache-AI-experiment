@@ -52,8 +52,8 @@ none of that**: we avoid needing to, by never rewriting the region the cache dep
 
 **Attention sinks.** StreamingLLM [9] keeps sink tokens and a sliding window. The sink mechanism
 [10] — a learned, first-token attractor — makes pinning an immutable front mechanically sensible.
-Sinks stabilise a stream without acting as a memory channel [11], which is why our probes test a
-*specific fact* rather than fluency.
+Sinks stabilise a stream but are not a memory channel [11], which is why our probes test a *specific
+fact* rather than fluency.
 
 **Closest prior art.** SinkTrack [21] is nearest in *intent*: it anchors a model to its initial
 context and reports context forgetting as a real failure of long generation. The mechanisms differ in
@@ -63,7 +63,7 @@ measuring the serving-cost consequence over a long horizon. It is also a reason 
 prefix to work: if the first token attracts attention, an agent that can keep its brief at the front
 should.
 
-**Agent memory.** MemGPT [12] pages context OS-style and the survey [13] taxonomises memory
+**Agent memory.** MemGPT [12] pages context OS-style; the survey [13] taxonomises memory
 operations. Both address what an agent should *store*; neither makes the *serving-cost* consequence
 of rewriting it measurable — the gap this paper fills.
 
@@ -74,9 +74,9 @@ policy. Retention claims here concern **the tokens the agent retained**, not a f
 had discarded (§6, F4).
 
 **Corrected results.** The §6 F3 result is a defect in our own benchmark; we report the corrected
-task, not the broken number. A position paper argues venues need a refutations track
-[16], the literature documents leakage and reporting error [17,18], and work on empirical-method bias
-[19] shows comparisons favour the proposed method — the bias F1 and F2 produce.
+task. A position paper argues venues need a refutations track [16], the literature documents leakage
+and reporting error [17,18], and empirical-method work [19] shows comparisons favour the proposed
+method — the bias F1 and F2 produce. We adopt artifact-review expectations [20].
 
 ## 3. Method
 
@@ -176,11 +176,10 @@ latency figures over that prefix. The measurements are per-turn and indexed by t
 captured on both sides are the same turns, which is what comparability requires. It refuses only
 when fewer than two turns are comparable.
 
-One asymmetry is deliberate. The **retention** counts are not reconstructed under reconciliation:
-the state of the artifact at turn *n* cannot be recovered from a later snapshot, and manufacturing
-it would be worse than reporting it unavailable for that arm. A run that stops early is therefore
-compared on cost and context over the shared prefix, and its retention numbers carry the caveat
-that they describe the turns it reached.
+One asymmetry is deliberate: the **retention** counts are not reconstructed, because the artifact's
+state at turn *n* cannot be recovered from a later snapshot. A run that stops early is therefore
+compared on cost and context over the shared prefix, and its retention numbers describe only the
+turns it reached.
 
 ## 5. Results
 
