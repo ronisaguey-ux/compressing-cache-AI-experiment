@@ -122,24 +122,63 @@ def main():
     L.append("")
 
     # ---- Table 2: retention ----
+    def _resume_artifact(r):
+        """Detect a resumed run's phantom per-turn zeros.
+
+        MEASURED, ablate-recent: the run crashed at turn 27, resumed, and -- because `turn_ok` was
+        not checkpointed at the time -- reported turns 1..27 as ZEROS. The tell is a long LEADING run
+        of zeros followed by a perfect tail, together with a `fixes_applied_then_lost` that is
+        negative. A real policy failure scatters its failures; it does not fail a clean prefix and
+        then succeed on every remaining turn. Reporting such a number as a result would put a harness
+        artifact into the paper, so it is suppressed and named instead.
+        """
+        tok = r.get("turn_ok") or []
+        if len(tok) < 10:
+            return False
+        if tok[0] != 0 or sum(tok) == len(tok):
+            return False
+        lead = 0
+        for x in tok:
+            if x:
+                break
+            lead += 1
+        # a long zero prefix that then never fails again, plus a negative applied-then-lost
+        tail_clean = all(tok[i] for i in range(lead, len(tok)))
+        lost = r.get("metrics", {}).get("fixes_applied_then_lost")
+        return lead >= 5 and tail_clean and (lost is not None and lost < 0)
+
     L.append("**Table 2 — retention.** Per-turn success is graded after each turn; code recall is "
              "the accumulated list; the release gate is the independent mid-session secret.")
     L.append("")
     L.append("| policy | per-turn success | final state | applied-then-lost | code recall | "
              "ordered | release gate |")
     L.append("|---|---|---|---|---|---|---|")
+    _artifact_arms = []
     for a in order:
         d = m[a]
         r = runs[a]
+        if _resume_artifact(r):
+            _artifact_arms.append(a)
+            pts, lost = "INVALID", "INVALID"
+        else:
+            pts = fmt(d.get("per_turn_success"), "f3")
+            lost = fmt(d.get("fixes_applied_then_lost"), "int")
         L.append("| `%s` | %s | %s | %s | %s | %s | %s |" % (
             a,
-            fmt(d.get("per_turn_success"), "f3"),
+            pts,
             fmt(d.get("final_state_accuracy"), "f3"),
-            fmt(d.get("fixes_applied_then_lost"), "int"),
+            lost,
             fmt(d.get("codes_recall"), "f3"),
             str(r.get("codes_ordered")),
             "PASS" if r.get("gate_ok") else ("FAIL" if r.get("gate_ok") is False else "n/a")))
     L.append("")
+    if _artifact_arms:
+        L.append("**Suppressed as a harness artifact:** %s. The run resumed after a crash and its "
+                 "per-turn grades for the pre-crash turns were not checkpointed, so they are "
+                 "recorded as failures the model did not commit. `code recall` and `final state` "
+                 "are computed from the final artifact and are unaffected; only the per-turn "
+                 "column is suppressed." % ", ".join("`%s`" % a for a in _artifact_arms))
+        L.append("")
 
     # ---- the claim, stated conditionally on what the numbers show ----
     hr = {a: (m[a].get("cache_hit_rate") or 0.0) for a in order}
