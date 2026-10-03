@@ -35,10 +35,20 @@ timeout 120 $SCP "root@$HOST:/root/arm3_${ARM}.log" "$RES/" >/dev/null 2>&1 || t
 
 # ---- regenerate §5 from whatever arms we actually have ----------------------
 cd "$REPO" || exit 1
+# ★ THESE TOOLS TAKE ENV VARS AND POSITIONALS, NOT FLAGS. Passing --results-dir/--paper/--out was
+# silently ignored: the generator fell back to a FIXTURE directory and the figure tool ran with an
+# empty path (FileNotFoundError: ''). The docstrings said so; the watcher contradicted them.
 cp paper/PAPER.md /tmp/opencode/paper_live.md
 RESULTS_DIR="$RES" PAPER=/tmp/opencode/paper_live.md python3 tools/make_results_section.py
-python3 tools/make_figures.py --results-dir "$RES" --out paper/figs 2>/dev/null || true
-python3 tools/make_notebook.py --paper /tmp/opencode/paper_live.md --out paper/gemma4-paper-track.ipynb 2>/dev/null || true
+mkdir -p paper/figs
+RESULTS_DIR="$RES" python3 tools/make_figures.py "$RES" "$REPO/paper/figs/trajectory.svg" || true
+PAPER=/tmp/opencode/paper_live.md NB_OUT="$REPO/paper/gemma4-paper-track.ipynb" \
+  python3 tools/make_notebook.py || true
+# §5 must not be a placeholder in the artifact that gets submitted
+if grep -q "to be completed from the run in flight" paper/gemma4-paper-track.ipynb 2>/dev/null; then
+  echo "WARNING: notebook still carries a placeholder §5"
+fi
+python3 tools/check_citations.py paper/PAPER.md 2>/dev/null || true
 
 # ---- report ----------------------------------------------------------------
 SUMMARY=$(python3 - <<'PY'
