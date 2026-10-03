@@ -1066,6 +1066,15 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                 "cache_rows": _cache_rows,
                 "cache_hit": _cache_hit,
                 "cache_total": _cache_total,
+                # ★★★ THE PER-TURN GRADES MUST SURVIVE A RESUME TOO.
+                #
+                # MEASURED: the ablation run crashed at turn 27 (its working directory was deleted
+                # by a racing queue) and resumed from its checkpoint. `turn_ok` was NOT checkpointed,
+                # so the resuming process knew nothing about turns 1..27 -- and the final result
+                # reported them as zeros. Those zeros are not "the model failed 27 turns"; they are
+                # turns that were graded and then forgotten by the harness. Anything built on them
+                # (per_turn_success, fixes_applied_then_lost) would have measured the crash.
+                "turn_ok": {str(k): int(v) for k, v in turn_ok.items()},
                 "prev_ids": _prev_ids,
                 "arch_instr": [list(b) if isinstance(b, tuple) else b for b in _arch_instr],
             })
@@ -1091,6 +1100,9 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                 _prev_ids = list(_ck.get("prev_ids") or [])
                 _arch_instr = [tuple(b) if isinstance(b, list) else b
                                for b in (_ck.get("arch_instr") or [])]
+                # ★ restore the per-turn grades, or a resumed run reports every pre-crash turn as a
+                # zero. Measured on the ablation: a crash at turn 27 became 27 phantom failures.
+                turn_ok = {int(k): int(v) for k, v in (_ck.get("turn_ok") or {}).items()}
                 _start_i = int(_ck.get("turn_ix", 0)) + 1
                 if _ck.get("solution"):
                     open(solution, "w").write(_ck["solution"])
