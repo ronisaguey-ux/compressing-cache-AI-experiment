@@ -697,6 +697,37 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                 if pp.startswith("{"):
                     t = pp; break
         i = t.find("{")
+        # ★★ ARC MODE: ACCEPT RAW CODE, NOT ONLY JSON.
+        #
+        # MEASURED, three separate ARC runs: the transport keeps killing the turn. On a hard puzzle
+        # the model writes long code, and long code inside a JSON string produces an unescaped quote
+        # ("Expecting ',' delimiter"), a stray backslash ("Invalid \escape"), truncation, or a
+        # multi-line condition it never validates. Each fault discards the turn, and the run reports
+        # zeros that say nothing about the policies. The fix is to stop requiring an encoding the
+        # model keeps failing at: in ARC mode the reply's ONLY job is to define solve(), so if the
+        # reply contains a solve() definition, that IS the answer and the JSON envelope is noise.
+        #
+        # This cannot manufacture a pass: the extracted code is written to solution.py and graded by
+        # the real grader exactly like any other candidate, and a reply with no code still fails.
+        if _arc_mode:
+            _raw = t
+            if "```" in _raw:
+                _m = re.search(r"```(?:python|py|json)?\s*\n(.*?)```", _raw, re.S)
+                if _m:
+                    _raw = _m.group(1)
+            # A json object whose content field we can strip is still fine to unwrap.
+            _mc = re.search(r'"content"\s*:\s*"', _raw)
+            if _mc and _raw.lstrip().startswith("{"):
+                _raw = _raw[_mc.end():]
+            if "def solve" in _raw:
+                _code = _raw
+                _code = _code.replace("\\n", "\n").replace("\\t", "\t").replace('\\"', '"')
+                _code = _code.replace("\\'", "'").replace("\\\\", "\\")
+                # Trim a trailing JSON tail if the envelope survived the unwrap.
+                _code = re.split(r'"\s*\}\s*$', _code)[0].rstrip()
+                if "def solve" in _code and _first_that_parses([_code]) is not None:
+                    print("   (ARC: accepted raw code -- no JSON envelope)", flush=True)
+                    return {"tool": "write_file", "content": _code}, None
         if i < 0:
             # ★ A CODING MODEL'S DOMINANT PRIOR IS A FENCED CODE BLOCK, NOT JSON. Measured:
             # the linear arm emitted no JSON object for SIXTEEN consecutive turns and wrote

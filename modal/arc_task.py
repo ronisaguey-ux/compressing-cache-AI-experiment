@@ -119,14 +119,21 @@ def _render_brief(task_id, train, test_input):
     # turn was discarded and `solution.py` was never written. Every turn failed that way and the run
     # was vacuous. Comments are what consumed the budget, so they are forbidden here exactly as the
     # fix task forbids them.
+    # ★ REPLY WITH RAW CODE, NOT JSON. MEASURED across three ARC runs: requiring a json envelope
+    # made the model fail the transport, not the task. Long code inside a JSON string produced an
+    # unescaped quote ("Expecting ',' delimiter"), a stray backslash ("Invalid \escape"), a
+    # truncated object, or a multi-line condition it never validated -- each discarded the turn and
+    # the run reported zeros that said nothing about the policies. In ARC mode the reply's only job
+    # is to define solve(), so the envelope is noise and the parser accepts the code directly.
     parts.append("")
-    parts.append("CRITICAL OUTPUT RULES:\n"
-                 "  * Reply with EXACTLY ONE json object and NOTHING else. Do NOT wrap it in "
-                 "markdown fences.\n"
-                 "  * Do NOT write comments in the code. Every comment spends reply budget that "
-                 "your reply needs, and a reply cut off mid-string is DISCARDED ENTIRELY.\n"
-                 "  * Keep solve() as short as it can be while still being correct.\n"
-                 "  * Do NOT include any text before or after the json object.")
+    parts.append("HOW TO REPLY:\n"
+                 "  * Reply with the Python source of the complete file and NOTHING else.\n"
+                 "  * Do NOT wrap it in a json object. Do NOT wrap it in markdown fences.\n"
+                 "  * Do NOT write comments in the code: every comment spends reply budget that your "
+                 "solution needs, and a reply cut off mid-line is DISCARDED ENTIRELY.\n"
+                 "  * Put every expression on ONE line. A condition broken across two lines with a "
+                 "trailing `and`/`or` is a syntax error unless it is wrapped in parentheses.\n"
+                 "  * Keep solve() as short as it can be while still being correct.")
     return "\n".join(parts)
 
 
