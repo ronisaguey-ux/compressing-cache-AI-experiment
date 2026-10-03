@@ -14,7 +14,7 @@ evaluate three policies over 60 turns of a bug-fixing task on one 12B model, mea
 compute cost and prefix-cache reuse directly rather than inferring them. The bounded-anchor policy
 holds a flat context while the alternatives grow to the ceiling or collapse on each compaction;
 figures are in §5. We also document four ways such an evaluation produces a clean-looking result that
-means nothing, and how each was detected.
+means nothing, and how each was caught.
 
 ## 1. Introduction
 
@@ -45,10 +45,10 @@ is retained and the large, superseded part is dropped.
 
 **Eviction and compression.** H2O [1], Scissorhands [2], TOVA [3] and SnapKV [4] shrink the cache by
 scoring tokens and dropping the low-scoring ones, assuming survivors stay valid after eviction — an
-assumption we do not share (§6, F4). A parallel line repairs that positional integrity directly:
-CacheBlend [5] recomputes part of the KV and re-encodes positions, CacheFocus [6] re-positions the
-cache after pruning, DSCache [7] stores pre-rotation keys, CacheGen [8] recomputes as a fallback.
-**We attempt none of that**: we avoid needing to, by never rewriting the region the cache depends on.
+assumption we do not share (§6, F4). Others repair that positional integrity directly: CacheBlend [5]
+recomputes part of the KV and re-encodes positions, CacheFocus [6] re-positions the cache after
+pruning, DSCache [7] stores pre-rotation keys, CacheGen [8] recomputes as a fallback. **We attempt
+none of that**: we avoid needing to, by never rewriting the region the cache depends on.
 
 **Attention sinks.** StreamingLLM [9] keeps sink tokens and a sliding window. The sink mechanism
 [10] — a learned, first-token attractor — makes pinning an immutable front mechanically sensible.
@@ -74,7 +74,7 @@ policy. Retention claims here concern **the tokens the agent retained**, not a f
 had discarded (§6, F4).
 
 **Corrected results.** The §6 F3 result is a defect in our own benchmark; we report the corrected
-task, not the number the broken one produced. A position paper argues venues need a refutations track
+task, not the broken number. A position paper argues venues need a refutations track
 [16], the literature documents leakage and reporting error [17,18], and work on empirical-method bias
 [19] shows comparisons favour the proposed method — the bias F1 and F2 produce.
 
