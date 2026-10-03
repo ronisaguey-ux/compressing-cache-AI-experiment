@@ -12,8 +12,8 @@ the whole prompt at full price. We describe a policy that keeps the window small
 the front: the system prompt and the turn-1 brief are pinned, and the window advances at the end. We
 evaluate three policies over 60 turns of a bug-fixing task on one 12B model, measuring retention,
 compute cost and prefix-cache reuse directly rather than inferring them. The bounded-anchor policy
-holds a flat context while the alternatives grow to the ceiling or collapse on each compaction;
-figures are in §5. We also document four ways such an evaluation produces a clean-looking result that
+holds a flat context, recovers **every** turn-1 fact, and costs **4.1× less** than the growing
+baseline — which recovers 15% of them; figures in §5. We also document four ways such an evaluation produces a clean-looking result that
 means nothing, and how each was caught.
 
 ## 1. Introduction
@@ -109,6 +109,16 @@ predictions follow, because retention and cost are measured independently (§4.2
 
 A cost difference alone would not support the claim, so §5 states the two separately.
 
+**The mechanism prediction, registered before the run.** The anchored policy keeps three things: the
+turn-1 brief, every past *instruction*, and the single newest reply. The instruction archive is the
+part doing the explanatory work — it is the only home of each turn's code, since a full-file rewrite
+supersedes every earlier reply. To test that rather than assert it, we run an **ablation arm** that
+is the anchored policy *minus the archive*, identical in every other respect. **If the archive is the
+mechanism, its fact-recall collapses to the handful of instructions that fit beside the brief, while
+per-turn success stays high** (the newest reply still carries the file state the current bug refers
+to). **If it instead retains 60/60, the archive is not the mechanism and the explanation above is
+wrong** — which we would report as such.
+
 ### 3.3 The task
 
 `solution.py` is seeded with *n* faulty functions, and **turn 1 carries the complete bug report** —
@@ -122,6 +132,10 @@ list is repeated and no reminder is given.
 2. The required constants are **arbitrary and appear nowhere else**, so they cannot be re-derived.
 3. Grading is **per-turn**: bug *k* is tested right after turn *k*, in a subprocess, so a fix applied
    and later clobbered by a rewrite is distinguishable from one never applied.
+4. Repetition across *task instances* rather than sampling seeds: decoding is greedy, so re-running a
+   task is bit-identical and a seed would manufacture variance that does not exist. A **task salt**
+   re-derives every constant into a new instance of the same broken shape — a genuinely different
+   task with the same retention probes, so a run is comparable while the work underneath it varies.
 
 ### 3.4 Two independent retention probes
 
