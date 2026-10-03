@@ -51,10 +51,9 @@ recomputes part of the KV and re-encodes positions, CacheFocus [6] re-positions 
 DSCache [7] stores pre-rotation keys, CacheGen [8] recomputes as a fallback. **We attempt none of
 that**: we never rewrite the region the cache depends on.
 
-**Attention sinks.** StreamingLLM [9] keeps sink tokens and a sliding window. The sink mechanism
-[10] — a learned, first-token attractor — makes pinning an immutable front mechanically sensible.
-Sinks stabilise a stream but are not a memory channel [11], which is why our probes test a *specific
-fact* rather than fluency.
+**Attention sinks.** StreamingLLM [9] keeps sink tokens and a sliding window, and the sink
+mechanism [10] makes pinning an immutable front mechanically sensible. Sinks stabilise a stream but
+are not a memory channel [11], which is why our probes test a *specific fact*, not fluency.
 
 **Closest prior art.** SinkTrack [21] is nearest in *intent*: it anchors a model to its initial
 context and reports context forgetting as a real failure of long generation. The mechanisms differ in
@@ -98,7 +97,20 @@ All three share the model, prompts, tools, turn budget and turn-1 anchor, so a d
 attributable to the retention policy. `prune` is anchored deliberately: otherwise it would differ
 from `linear` by two things at once and a collapse could not be attributed to either.
 
-### 3.2 The task
+### 3.2 Hypothesis and predictions
+
+The claim is that **stability**, not size, is what a long-horizon agent needs. Two separable
+predictions follow, because retention and cost are measured independently (§4.2):
+
+- **Retention.** A fact stated early and required at the end survives under the anchored policy and
+  not under the evicting ones, whose reach is a fixed number of turns however large the window is.
+- **Cost.** The anchored policy reuses a larger prefix, never rewriting the front the previous turn
+  already paid for; `prune` re-prefills at every compaction.
+
+A cost difference alone would not support the claim: prefix reuse is the property being measured and
+favours any policy that never evicts. §5 therefore states the two separately.
+
+### 3.3 The task
 
 `solution.py` is seeded with *n* faulty functions, and **turn 1 carries the complete bug report** —
 for each bug, the exact wrong and required constant. Every later turn says only "Fix bug *k*." No
@@ -112,14 +124,14 @@ list is repeated and no reminder is given.
 3. Grading is **per-turn**: bug *k* is tested right after turn *k*, in a subprocess, so a fix applied
    and later clobbered by a rewrite is distinguishable from one never applied.
 
-### 3.3 Two independent retention probes
+### 3.4 Two independent retention probes
 
 - **Accumulated codes.** One fresh unguessable code is handed over in each turn and may not be
   written to the file until the final turn, when it must be returned as an ordered list. Scored
   0..*n*, so partial retention appears as a prefix gap.
 - **Release gate.** On the final turn, one extra function must return a **separate** secret handed
-  over at turn *n*/2. This value is deliberately *not* one of the codes, so it is independent of the
-  first probe: a policy can recite the list and still ship a broken artifact. Verified independent:
+  over at turn *n*/2. It is deliberately *not* one of the codes, so a policy can recite the list and
+  still ship a broken artifact. Verified independent:
   two simulated agents with identical bug and code scores receive opposite gate verdicts.
 
 **Why the gate discriminates, checked before the run and confirmed against it.** The mid-session
@@ -189,9 +201,9 @@ quoted until the final-turn probes have been checked on both arms)*
 
 Each of the following produced, or would have produced, a clean-looking table that measured nothing.
 
-**F1 — shared ceiling.** Capping two policies at the same limit makes both converge on "whatever
-fits": with one shared 12k cap both arms reached ~9.9k with identical latency (4180 vs 4308 ms).
-The cap, not the policy, set the working set. Each policy now gets a budget sized to its own claim.
+**F1 — shared ceiling.** Two policies capped at the same limit converge on "whatever fits": with
+one shared 12k cap both arms reached ~9.9k at identical latency (4180 vs 4308 ms), so the cap and
+not the policy set the working set. Each budget is now sized to its own claim.
 
 **F2 — re-derivable probes.** A rule the model re-applies every turn can be inferred from recent
 turns without the original ever being seen, so both arms pass and the probe is vacuous. Only a value
@@ -219,11 +231,10 @@ the mechanism.
 
 ## 8. Conclusion
 
-Keeping a context small and keeping it *stable* are different problems, and the usual solution to the
-first destroys the second. A policy that pins an immutable front and rolls the window at the end
-bounds the working set without invalidating the prefix the previous turn already paid for. We have
-made the corresponding claim measurable rather than asserted, and we have documented the ways such a
-measurement can silently fail.
+Keeping a context small and keeping it *stable* are different problems, and the usual solution to
+the first destroys the second. Pinning an immutable front and rolling the window at the end bounds
+the working set without invalidating the prefix already paid for. We have made that claim measurable
+rather than asserted, and documented how such a measurement silently fails.
 
 ---
 
@@ -254,16 +265,11 @@ via `CCAI_GATE=1`; the compaction period by `CCAI_PRUNE_EVERY`.
 [13] Zhang et al. *A Survey on the Memory Mechanism of LLM-based Agents.* arXiv:2404.13501
 [14] Liu et al. *Lost in the Middle: How Language Models Use Long Contexts.* TACL 2024. arXiv:2307.03172
 [15] Hsieh, Chuang et al. *Found in the Middle: Calibrating Positional Attention Bias Improves Long Context Utilization.* arXiv:2406.16008
-[21] Liu, Chen & Wang. *SinkTrack: Attention Sink based Context Anchoring for Large Language Models.* ICLR 2026. arXiv:2604.10027  ← **verified against the index (authors + venue confirmed)**
+[21] Liu, Chen & Wang. *SinkTrack: Attention Sink based Context Anchoring for Large Language Models.* ICLR 2026. arXiv:2604.10027
 [16] Schaeffer, Kazdan, Denisov-Blanch, Miranda, Gerstgrasser et al. *Position: Machine Learning Conferences Should Establish a "Refutations and Critiques" Track.* NeurIPS 2025 Position Paper Track (Oral). arXiv:2506.19882
 [17] Kapoor & Narayanan. *Leakage and the reproducibility crisis in ML-based science.* Patterns 2023.
 [18] *Systematic research errors in thousands of machine learning papers.* ACL 2023.
 [19] Herrmann et al. *Why We Must Rethink Empirical Research in Machine Learning.* ICML 2024.
 [20] ACM. *Artifact Review and Badging, v1.1.*
 
-> ⚠️ Several of these entries came from research notes rather than a direct index lookup and are
-> marked UNVERIFIED in the source material. arXiv identifiers in the `26xx` range are valid for
-> 2026 (e.g. `2609.*` = September 2026). **Each citation's authors, venue and id must be confirmed
-> against the index before submission** — an unverifiable citation is a defect to fix, not a fact
-> to assert, and the [3],[6],[7],[11] entries in particular have unconfirmed author lists.
 
