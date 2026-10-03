@@ -255,11 +255,11 @@ selected by `CCAI_ARM`; the retention gate is opt-in via `CCAI_GATE=1`; the comp
 [4] Li et al. *SnapKV: LLM Knows What You Are Looking For Before Generation.* NeurIPS 2024. arXiv:2404.14469
 [5] Yao et al. *CacheBlend: Fast LLM Serving for RAG with Cached Knowledge Fusion.* EuroSys 2025. arXiv:2405.16444
 [6] *CacheFocus: Dynamic Cache Re-Positioning for Efficient RAG.* arXiv:2502.11101
-[7] *DSCache: Decoupled Streaming Cache.* arXiv:2605.01858
+[7] Pang et al. *Decouple and Cache: KV Cache Construction for Streaming Video.* arXiv:2605.01858
 [8] Liu et al. *CacheGen: KV Cache Compression and Streaming for Fast LLM Serving.* ACM SIGCOMM 2024. arXiv:2310.07240
 [9] Xiao et al. *Efficient Streaming Language Models with Attention Sinks.* ICLR 2024. arXiv:2309.17453
 [10] Gu et al. *When Attention Sink Emerges in Language Models.* arXiv:2410.10781
-[11] *Separating Stream Stability from Long-Term Recall in LMs.* arXiv:2609.07282
+[11] Cao, Zhang & Tang. *Separating Stream Stability from Long-Term Recall in Language Models.* arXiv:2609.07282
 [12] Packer et al. *MemGPT: Towards LLMs as Operating Systems.* arXiv:2310.08560
 [13] Zhang et al. *A Survey on the Memory Mechanism of LLM-based Agents.* arXiv:2404.13501
 [14] Liu et al. *Lost in the Middle: How Language Models Use Long Contexts.* TACL 2024. arXiv:2307.03172
