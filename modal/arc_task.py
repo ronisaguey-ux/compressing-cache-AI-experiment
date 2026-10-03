@@ -149,11 +149,11 @@ def build(n, salt=""):
     task_id, train, test_input, test_output = load_task(salt)
     brief = _render_brief(task_id, train, test_input)
 
-    # ★ THE TEST MUST RAISE ON A WRONG GRID, NOT RETURN A BOOL. The harness grades a turn by the
-    # subprocess EXIT CODE, so `_arc_ok(m)` -- which returns True/False -- would return 0 on a
-    # WRONG answer and every turn would be scored a pass. That is the vacuous-grader trap this
-    # project has already been bitten by; the assertion makes a wrong grid a non-zero exit.
-    tests = ['assert _arc_ok(m), "output grid does not match the expected output"'] * n
+    # ★ THE TESTS MUST BE `(name, expr)` PAIRS, matching bug_task.build's contract.
+    # The first version returned bare strings; the harness does `[t for (_fn, t) in _ftests]`, so it
+    # crashed at turn 0 with "too many values to unpack (expected 2)" AFTER loading a 24 GB model --
+    # a full load wasted per arm. The interface is bug_task's; mirror it exactly, do not approximate.
+    tests = [("solve", 'assert _arc_ok(m), "output grid does not match the expected output"')] * n
 
     # The reference solver proves the grader is SATISFIABLE: it reads the same gold file the grader
     # compares against, so a correct answer exists and is accepted.
