@@ -1463,14 +1463,28 @@ def run_inc(model: str = "qwen2.5-coder-32b", arm: str = "linear", features: int
                             content, _cand = _alt, _alt_cand
                             _parsed = True
                             break
-                        # Retake the turn with the error in hand.
+                        # Retake the turn with the error in hand. NAME THE LINE AND THE FIX: a
+                        # generic "invalid syntax" left the model re-emitting the same shape three
+                        # times (measured, ARC turn 4), because it could not tell WHICH construct was
+                        # wrong. The most common fault is a condition broken across two lines with a
+                        # trailing `and` -- implicit continuation only works inside brackets.
+                        _line_txt = ""
+                        try:
+                            _line_txt = (content.split("\n")[_se.lineno - 1] or "").strip()
+                        except Exception:
+                            pass
                         _retry_prompt = (prompt + "\n" + txt +
                                          "\n\nYour last reply was REJECTED: it does not parse as "
-                                         "Python (%s, line %s). Reply again with exactly one json "
-                                         "object whose \"content\" is VALID Python with correct "
-                                         "indentation and no line broken inside an expression. Do "
-                                         "NOT use markdown fences. Do NOT add comments."
-                                         % (_se.msg, _se.lineno))
+                                         "Python (%s, line %s). The offending line was:\n\n    %s\n\n"
+                                         "If that line is part of a condition or expression that "
+                                         "continues onto the next line, it MUST be wrapped in "
+                                         "parentheses, e.g. `if (a and\n    b):` -- a bare line "
+                                         "ending in `and`/`or`/`+`/`,` is a syntax error. Reply "
+                                         "again with exactly one json object whose \"content\" is "
+                                         "VALID Python with correct indentation, every expression "
+                                         "on one line or parenthesised. Do NOT use markdown "
+                                         "fences. Do NOT add comments."
+                                         % (_se.msg, _se.lineno, _line_txt or "(unavailable)"))
                         _txt2, _m2 = complete(_retry_prompt, max_new)
                         _call2, _err2 = parse(_txt2)
                         if _err2 or not isinstance(_call2, dict) or \
