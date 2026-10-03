@@ -43,10 +43,10 @@ nothing.
 
 Work on KV-cache eviction reduces memory by scoring tokens and discarding low-scoring ones. H2O [1],
 Scissorhands [2], TOVA [3], and SnapKV [4] assume survivors stay valid after eviction, an assumption
-we do not share, for the reason in Section 6. A second line repairs positional integrity directly:
-CacheBlend [5] recomputes part of the cache and re-encodes positions, CacheFocus [6] re-positions
-after pruning, DSCache [7] stores pre-rotation keys, and CacheGen [8] recomputes as a fallback. We do
-none of this; never rewriting the region the cache depends on is what lets reuse survive.
+we do not share, for the reason in Section 6. A second line repairs positional integrity: CacheBlend [5] recomputes part of the cache and
+re-encodes positions, CacheFocus [6] re-positions after pruning, DSCache [7] stores pre-rotation keys,
+and CacheGen [8] recomputes as a fallback. We do none of this; never rewriting the region the cache
+depends on is what lets reuse survive.
 
 Attention-sink work explains why pinning a front is sensible. StreamingLLM [9] retains sink tokens
 with a sliding window, and the sink mechanism is characterised in [10]. Sinks stabilise a stream but
@@ -61,10 +61,9 @@ retained and measuring the serving-cost consequence over a long horizon.
 
 Work on agent memory addresses what to store. MemGPT [12] pages context operating-system style, and a
 survey [13] taxonomises memory operations; both concern storage, not the cost of rewriting it.
-Position-dependent use is well established: Lost in the Middle [14] and Found in the Middle [15] show
-that where information occurs changes how it is used. Gemma-4 makes this concrete, since forty of its
-forty-eight layers use a 1024-token local window, so a first-turn fact is unavailable to them
-regardless of policy; Section 6 states the caveat.
+Lost in the Middle [14] and Found in the Middle [15] show that where information occurs changes how
+it is used. Gemma-4 makes this concrete: forty of its forty-eight layers use a 1024-token local window,
+so a first-turn fact is unavailable to them regardless of policy; Section 6 states the caveat.
 
 Our own benchmark produced one result we traced to a defect in the task rather than the policy, and we
 report the corrected version. A position paper argues for a refutations track [16]. The literature
@@ -95,8 +94,8 @@ The claim is that stability, not size, is what a long-horizon agent needs. Two p
 retention and cost are measured independently. Retention: a fact stated early and required at
 the end survives under the anchored policy and not under the evicting ones, whose reach is a fixed
 number of turns however large the window. Cost: the anchored policy reuses a larger prefix, never
-rewriting the front the previous turn already paid for, whereas prune re-prefills at each compaction.
-A cost difference alone would not support the claim, so Section 5 reports them separately.
+rewriting the front the previous turn paid for, whereas prune re-prefills at each compaction. A cost
+difference alone would not support the claim, so Section 5 reports them separately.
 
 We registered a mechanism prediction before the run. We credit the instruction archive, the only home
 of each turn's code, since a file rewrite supersedes every earlier reply. We therefore run an ablation
@@ -195,8 +194,8 @@ list, and the release gate is the independent mid-session secret.
 The anchored policy reuses a prefix for 81 percent of its prefill against 31 percent, at 118,817
 compute units against 484,956, a factor of 4.08. Coding accuracy is identical at sixty of sixty, so
 the difference lies in what each retains, not in what the model can do. The separation is structural: a
-policy evicting from the front changes its first block as soon as eviction begins, while one pinning
-the front and advancing the window at the end keeps it.
+policy evicting from the front changes its first block once eviction begins, while one pinning the
+front and advancing the window at the end keeps it.
 
 The third arm, prune, behaves as linear does: sixty of sixty, nine of sixty codes unordered, gate
 passed, hit rate 0.310. Its turn-thirty compaction appears as a collapse of the reused prefix from
@@ -226,8 +225,11 @@ of policy, and the KV-cache peak is not a result of retention for the same reaso
 ## 7. Limitations
 
 The evaluation covers one model and one task family, and the task is synthetic so retention is
-measurable. The cost model uses an assumed hit multiplier rather than a measured billing figure,
-and the sensitivity of the conclusion to it is reported separately. Each policy ran once per
+measurable. The cost model uses an assumed hit multiplier rather than a measured billing figure, so we swept
+it: across multipliers from 0.05 to 1.00 the anchored policy stays cheaper by 4.71 to 1.52 times, and at
+a multiplier of 1.00 it still costs 1.52 times less because it processes fewer tokens. The conclusion
+does not rest on the value chosen. Each policy ran
+once per
 configuration, so the results carry no error bars, and repetition is across task instances, not seeds. The gate probe is a single value establishing that one
 mid-session fact survived, not a rate.
 
