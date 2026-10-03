@@ -13,6 +13,28 @@ name variants — all 404. Identity verification is already satisfied, so this i
 Until then the token returns **403 on `competitions download`** while `competitions files` works on
 the same token — that asymmetry is the signature of rules-not-accepted, not a broken key.
 
+### ★ VERIFIED END TO END: without rules acceptance the data does not even MOUNT
+
+The submission notebook was pushed and run on Kaggle (kernel
+`roni9999/arc-agi-2-baseline-submission`, `competition_sources: ["arc-prize-2026-arc-agi-2"]`). It
+ran, and the log shows:
+
+```
+input dir: None
+challenges: None
+SystemExit: no challenge file found under None -- refusing to write an empty submission
+```
+
+So the failure is upstream of the solver: **an unaccepted-rules competition does not mount its data
+into the kernel at all**, and `enable_internet` is false so it cannot be fetched at runtime. This is
+not a path bug -- the notebook discovers the directory rather than hardcoding it, and there is
+nothing to discover.
+
+★ The refusal is the correct outcome. Without the guard the notebook would have written an empty
+`submission.json`, exited 0, and scored 0.0 — indistinguishable from a solver that ran and failed.
+That distinction is the subject of the Gemma paper, so it would have been a poor way to lose the
+$450k track.
+
 Why ARC-AGI-2 matters: the ARC Prize 2026 **Paper Track** ($450k) requires the team to have
 submitted to ARC-AGI-2 or ARC-AGI-3. Participation, not score.
 
