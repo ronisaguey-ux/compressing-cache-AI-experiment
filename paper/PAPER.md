@@ -6,15 +6,15 @@
 ## Abstract
 
 Long-horizon autonomous agents are bounded by context economics, not model capability. The standard
-remedy — periodically compacting the context — keeps the window small by *rewriting* it, and a
-rewrite invalidates the shared prefix a serving engine's automatic prefix cache depends on, re-billing
-the whole prompt at full price. We describe a policy that keeps the window small *without* rewriting
-the front: the system prompt and the turn-1 brief are pinned, and the window advances at the end. We
-evaluate three policies over 60 turns of a bug-fixing task on one 12B model, measuring retention,
-compute cost and prefix-cache reuse directly rather than inferring them. The bounded-anchor policy
-holds a flat context, recovers **every** turn-1 fact, and costs **4.1× less** than the growing
-baseline — which recovers 15% of them; figures in §5. We also document four ways such an evaluation produces a clean-looking result that
-means nothing, and how each was caught.
+remedy — periodic compaction — keeps the window small by *rewriting* it, which invalidates the
+shared prefix a serving engine's prefix cache depends on, re-billing the whole prompt at full price.
+We describe a policy that keeps the window small *without* rewriting the front: the system prompt and
+the turn-1 brief are pinned, and the window advances at the end. We evaluate policies over 60 turns
+of a bug-fixing task on a 12B model, measuring retention, cost and prefix-cache reuse directly rather
+than inferring them. The bounded-anchor policy holds a flat context, recovers **every** turn-1 fact,
+and costs **4.1× less** than the growing baseline — which recovers 15% of them; figures in §5. We
+also document four ways such an evaluation produces a clean-looking result that means nothing, and
+how each was caught.
 
 ## 1. Introduction
 
@@ -84,12 +84,11 @@ Let the transcript be a sequence of turn blocks. Each turn appends the instructi
 The policies differ *only* in which blocks are retained when assembling the prompt.
 
 - **`runtime` (bounded anchor).** Retains the turn-1 block and every *instruction* so far, verbatim,
-  plus the single most recent *reply*. Instructions are small; a reply here is a full-file rewrite,
+  plus the single most recent *reply*. Instructions are small; a reply is a full-file rewrite,
   redundant with the newest one. Oldest instructions drop first if the budget is exceeded, so growth
   is one instruction per turn and the front is never rewritten.
 - **`linear` (grow and evict).** Retains the turn-1 block and as many recent instruction/reply pairs
-  as fit the model's ceiling, dropping the **oldest** block on overflow. The naive baseline: a fixed
-  window with no organisation.
+  as fit the ceiling, dropping the **oldest** block on overflow: a fixed window, no organisation.
 - **`prune` (grow, evict, compact).** Identical to `linear`, plus a compaction every 30 turns keeping
   the anchor and the most recent turns. The status quo for long-running agents.
 
@@ -109,14 +108,12 @@ predictions follow, because retention and cost are measured independently (§4.2
 
 A cost difference alone would not support the claim, so §5 states the two separately.
 
-**The mechanism prediction, registered before the run.** The anchored policy keeps three things: the
-turn-1 brief, every past *instruction*, and the single newest reply. The instruction archive is the
-part doing the explanatory work — it is the only home of each turn's code, since a full-file rewrite
-supersedes every earlier reply. To test that rather than assert it, we run an **ablation arm** that
-is the anchored policy *minus the archive*, identical in every other respect. **If the archive is the
-mechanism, its fact-recall collapses to the handful of instructions that fit beside the brief, while
-per-turn success stays high** (the newest reply still carries the file state the current bug refers
-to). **If it instead retains 60/60, the archive is not the mechanism and the explanation above is
+**Mechanism prediction, registered before the run.** The anchored policy keeps the turn-1 brief,
+every past *instruction*, and the single newest reply. The archive is what we credit: it is the only
+home of each turn's code, since a full-file rewrite supersedes earlier replies. So we run an
+**ablation** — the same policy *minus the archive*, identical otherwise. **If the archive is the
+mechanism, fact-recall collapses to the few instructions that fit beside the brief while per-turn
+success stays high. If it retains 60/60, the archive is not the mechanism and our explanation is
 wrong** — which we would report as such.
 
 ### 3.3 The task
@@ -126,16 +123,15 @@ for each bug, the exact wrong and required constant. Every later turn says only 
 list is repeated and no reminder is given.
 
 1. Every bug family is the **same shape**: a one-line body with a single wrong constant. An earlier
-   version used a keyword default and a table lookup; both invited the model to *rewrite* the shape,
-   and the rewrites failed with the brief one turn back. A periodic, deterministic failure is a task
-   defect, not a retention result (§6, F3).
+   version used a keyword default and a table lookup; both invited the model to *rewrite* the shape
+   and fail with the brief one turn back — a task defect, not a retention result (§6, F3).
 2. The required constants are **arbitrary and appear nowhere else**, so they cannot be re-derived.
 3. Grading is **per-turn**: bug *k* is tested right after turn *k*, in a subprocess, so a fix applied
    and later clobbered by a rewrite is distinguishable from one never applied.
-4. Repetition across *task instances* rather than sampling seeds: decoding is greedy, so re-running a
-   task is bit-identical and a seed would manufacture variance that does not exist. A **task salt**
-   re-derives every constant into a new instance of the same broken shape — a genuinely different
-   task with the same retention probes, so a run is comparable while the work underneath it varies.
+4. Repetition is across *task instances* rather than sampled seeds: decoding is greedy, so re-running
+   a task is bit-identical and a seed would fabricate variance. A **task salt** re-derives every
+   constant into a new instance of the same broken shape — a different task, the same retention
+   probes, so runs stay comparable while the work underneath varies.
 
 ### 3.4 Two independent retention probes
 
@@ -195,17 +191,13 @@ keeps a smaller context is faster per turn *by construction*, so a time-based st
 complete more turns and win on volume rather than on policy. Time is retained only as an emergency
 break, so that an interrupted run grades what it finished instead of being discarded.
 
-Because that break can fire at different turn counts per arm, the comparison script does **not**
-report unequal arms as a difference and does **not** discard the run. It reconciles to the
-**common prefix** — the turns both arms actually completed — re-summing the cost, context and
-latency figures over that prefix. The measurements are per-turn and indexed by turn, so the turns
-captured on both sides are the same turns, which is what comparability requires. It refuses only
-when fewer than two turns are comparable.
+Because that break can fire at different turn counts per arm, the comparison script reconciles to
+the **common prefix** — the turns both arms completed — re-summing cost, context and latency over it.
+Measurements are per-turn and indexed by turn, so the shared turns are the same turns. It refuses
+only when fewer than two are comparable.
 
-One asymmetry is deliberate: the **retention** counts are not reconstructed, because the artifact's
-state at turn *n* cannot be recovered from a later snapshot. A run that stops early is therefore
-compared on cost and context over the shared prefix, and its retention numbers describe only the
-turns it reached.
+One asymmetry is deliberate: **retention** counts are not reconstructed, because the artifact's state
+at turn *n* cannot be recovered from a later snapshot; they describe only the turns reached.
 
 ## 5. Results
 
