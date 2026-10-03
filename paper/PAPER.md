@@ -195,8 +195,26 @@ turns it reached.
 
 ## 5. Results
 
-*(to be completed from the run in flight; every arm reports the full §4.2 table, and no number is
-quoted until the final-turn probes have been checked on both arms)*
+Both arms ran 60 comparable turns under an identical prompt and tool budget (§3.1).
+
+**Figure 1** (`figs/trajectory.svg`) — growth (a) and reuse (b), per turn.
+**Table 1 — cost in raw compute units.** A cache-reused token costs 0.1 of a fresh one; the baseline prices every token as a miss.
+
+| policy | cache hit rate | miss tokens | cost units | no-cache cost | saving | prompt first → last | TTFT first → last |
+|---|---|---|---|---|---|---|---|
+| `runtime` | 81.3% | 82854 | 118817 | 442488 | 3.72× | 2057 → 9934 | 1786.2 → 5592.0 |
+| `linear` | 30.8% | 464305 | 484956 | 670822 | 1.38× | 2057 → 12142 | 1795.1 → 7370.6 |
+
+**Table 2 — retention.** Per-turn success is graded after each turn; code recall is the accumulated list; the release gate is the independent mid-session secret.
+
+| policy | per-turn success | final state | applied-then-lost | code recall | ordered | release gate |
+|---|---|---|---|---|---|---|
+| `runtime` | 1.000 | 1.000 | 0 | 1.000 | True | PASS |
+| `linear` | 1.000 | 1.000 | 0 | 0.150 | False | PASS |
+
+**Separation.** `runtime` reuses a prefix for 81% of its prefill against 31% for `linear`, at 118817 compute units against 484956 (4.08×).
+The difference is structural, not incidental: a policy that evicts from the front changes its first block as soon as eviction begins, while one that pins the front and advances the window at the end keeps it. Hence reuse separates where context size alone might not.
+
 
 ## 6. Failure modes of long-horizon benchmarks
 
