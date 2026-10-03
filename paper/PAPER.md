@@ -23,14 +23,19 @@ with it: the memory footprint of the key/value cache, and the compute spent re-r
 each turn. The dominant response is **compaction** — periodically summarising or discarding the
 middle of the conversation to return under the window.
 
-Compaction reduces the size of the context but changes its *content*. Under a serving engine with
-automatic prefix caching, a cached token is billed at a fraction of a fresh one; when the prefix
-changes, the cache no longer applies and the full prompt is re-processed. §4 quantifies this.
+Compaction shrinks the context but changes its *content*. With automatic prefix caching a cached
+token costs a fraction of a fresh one, so a changed prefix means the prompt is re-processed (§4).
+
+**Why this matters in deployment.** The Gemma 4 Developer Agent harness compacts the agent's history
+at 14,336 tokens -- 2,048 below the output ceiling it also requests -- and acts on the prompt just
+sent rather than prompt plus output, so it is one call late. The scorer refuses any call past 32,768
+tokens, and with a LoRA adapter the KV cache on four L4s falls from ~46,000 to ~7,600. Context
+capacity, not reasoning, is the binding constraint, and compaction is the field's response.
 
 We therefore ask a narrow, measurable question: **can an agent keep a small context without
 rewriting it?** Our policy pins an immutable front (system prompt and the turn-1 brief) and advances
-a bounded window at the end. Nothing is summarised; the cheap, information-dense part of each turn
-is retained and the large, superseded part is dropped.
+a bounded window at the end. Nothing is summarised: the information-dense part of each turn is
+kept, the superseded part dropped.
 
 **Contributions.**
 1. A context policy that bounds the working set while leaving the prefix shared with the previous
@@ -45,10 +50,10 @@ is retained and the large, superseded part is dropped.
 
 **Eviction and compression.** H2O [1], Scissorhands [2], TOVA [3] and SnapKV [4] shrink the cache by
 scoring tokens and dropping the low-scoring ones, assuming survivors stay valid after eviction — an
-assumption we do not share (§6, F4). Others repair that positional integrity directly: CacheBlend [5]
-recomputes part of the KV and re-encodes positions, CacheFocus [6] re-positions the cache after
-pruning, DSCache [7] stores pre-rotation keys, CacheGen [8] recomputes as a fallback. **We attempt
-none of that**: we avoid needing to, by never rewriting the region the cache depends on.
+assumption we do not share (§6, F4). Others repair positional integrity directly: CacheBlend [5]
+recomputes part of the KV and re-encodes positions, CacheFocus [6] re-positions after pruning,
+DSCache [7] stores pre-rotation keys, CacheGen [8] recomputes as a fallback. **We attempt none of
+that**: we never rewrite the region the cache depends on.
 
 **Attention sinks.** StreamingLLM [9] keeps sink tokens and a sliding window. The sink mechanism
 [10] — a learned, first-token attractor — makes pinning an immutable front mechanically sensible.
@@ -64,14 +69,12 @@ prefix to work: if the first token attracts attention, an agent that can keep it
 should.
 
 **Agent memory.** MemGPT [12] pages context OS-style; the survey [13] taxonomises memory
-operations. Both address what an agent should *store*; neither makes the *serving-cost* consequence
-of rewriting it measurable — the gap this paper fills.
+operations. Both address what an agent should *store*, not the serving cost of rewriting it.
 
 **Position and architecture.** *Lost in the Middle* [14] and *Found in the Middle* [15] establish
-position-dependent context use. Gemma-4 makes it concrete: 40 of 48 layers use local attention with a
-1024-token window, so beyond 1024 tokens a turn-1 fact is unavailable to those layers regardless of
-policy. Retention claims here concern **the tokens the agent retained**, not a fact the architecture
-had discarded (§6, F4).
+position-dependent context use. Gemma-4 makes it concrete: 40 of 48 layers use a 1024-token
+local-attention window, so a turn-1 fact is unavailable to those layers regardless of policy (§6,
+F4). Retention claims here concern **the tokens the agent retained**.
 
 **Corrected results.** The §6 F3 result is a defect in our own benchmark; we report the corrected
 task. A position paper argues venues need a refutations track [16], the literature documents leakage

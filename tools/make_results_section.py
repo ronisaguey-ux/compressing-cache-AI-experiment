@@ -80,19 +80,15 @@ def main():
     n = runs[order[0]].get("features_completed")
     inc = [a for a in order if runs[a].get("features_completed") != n]
     if inc:
-        L.append("Comparable turns: **%d** (arms ran differing lengths: %s); percentages are over "
-                 "that common prefix." % (min(runs[a].get("features_completed") or 0 for a in order),
-                                          ", ".join(inc)))
+        L.append("Common prefix: **%d** turns (arms ran unequal lengths: %s)." % (
+            min(runs[a].get("features_completed") or 0 for a in order), ", ".join(inc)))
         L.append("")
-    L.append("All three policies ran %s turns under an identical prompt and tool budget. `runtime` "
-             "pins the turn-1 brief and archives each turn's instruction; `linear` grows to the "
-             "ceiling and evicts the oldest block; `prune` is `linear` plus a compaction every 30 "
-             "turns." % n)
+    L.append("All three ran %s turns under an identical prompt and tool budget (\u00a73.1)." % n)
     L.append("")
 
     # ---- Table 1: cost and context ----
-    L.append("**Table 1 — cost in raw compute units.** A cache-reused token costs 0.1 of a fresh one; "
-             "the baseline prices every token as a miss.")
+    L.append("**Table 1 — cost in raw compute units.** A cache-reused token costs 0.1 of a fresh "
+             "one; the baseline prices every token as a miss.")
     L.append("")
     L.append("| policy | cache hit rate | miss tokens | cost units | no-cache cost | saving | "
              "prompt first → last | TTFT first → last |")
