@@ -182,15 +182,17 @@ reached.
 
 ## 5. Results
 
-Both policies ran sixty comparable turns under an identical prompt and tool budget. Figure 1 shows
+Four policies ran sixty comparable turns under an identical prompt and tool budget. Figure 1 shows
 growth and reuse per turn; in Table 1 a reused token is priced at one tenth of a fresh one.
 
 Table 1. Compute cost over sixty turns.
 
 | policy | hit rate | miss tokens | cost units | no-cache cost | saving | prompt first to last | TTFT first to last (ms) |
 |---|---|---|---|---|---|---|---|
-| anchored | 81.3% | 82,854 | 118,817 | 442,488 | 3.72x | 2,057 to 9,934 | 1,786.2 to 5,592.0 |
-| linear | 30.8% | 464,305 | 484,956 | 670,822 | 1.38x | 2,057 to 12,142 | 1,795.1 to 7,370.6 |
+| anchored | 76.0% | 81,067 | 106,678 | 337,173 | 3.16x | 2,057 to 8,149 | 1,943.1 to 4,245.4 |
+| linear | 30.8% | 464,305 | 484,957 | 670,822 | 1.38x | 2,057 to 12,142 | 1,795.1 to 7,370.6 |
+| prune | 31.0% | 458,050 | 478,585 | 663,398 | 1.39x | 2,057 to 12,142 | 1,769.0 to 7,347.5 |
+| ablate-recent | 25.4% | 411,948 | 425,952 | 551,988 | 1.30x | 2,057 to 9,722 | 1,774.1 to 5,394.5 |
 
 Table 2. Retention. Per-turn success is graded after each turn, code recall is the accumulated
 list, and the release gate is the independent mid-session secret.
@@ -199,17 +201,25 @@ list, and the release gate is the independent mid-session secret.
 |---|---|---|---|---|---|---|
 | anchored | 1.000 | 1.000 | 0 | 1.000 | yes | pass |
 | linear | 1.000 | 1.000 | 0 | 0.150 | no | pass |
+| prune | 1.000 | 1.000 | 0 | 0.150 | no | pass |
+| ablate-recent | not measured | 1.000 | not measured | 0.133 | no | pass |
 
-The anchored policy reuses a prefix for 81 percent of its prefill against 31 percent, at 118,817
-compute units against 484,956, a factor of 4.08. Coding accuracy is identical at sixty of sixty, so
-the difference lies in what each retains, not in what the model can do. The separation is structural: a
-policy evicting from the front changes its first block once eviction begins, while one pinning the
-front and advancing the window at the end keeps it.
+The anchored policy reuses a prefix for 76 percent of its prefill against 31 percent for prune, at
+106,678 compute units against 478,585, a factor of 4.49. Coding accuracy is identical at sixty of
+sixty, so the difference lies in what each retains, not in what the model can do. The separation is
+structural: a policy evicting from the front changes its first block once eviction begins, while one
+pinning the front and advancing the window at the end keeps it.
 
-The third arm, prune, behaves as linear does: sixty of sixty, nine of sixty codes unordered, gate
-passed, hit rate 0.310. Its turn-thirty compaction appears as a collapse of the reused prefix from
-3,226 tokens to 2,057, the anchored prefix alone, so compaction pays a re-prefill at every boundary
-rather than recovering that cost.
+Prune behaves as linear does, and its turn-thirty compaction appears as a collapse of the reused
+prefix from 3,226 tokens to 2,057, the anchored prefix alone, so compaction pays a re-prefill at
+every boundary rather than recovering that cost.
+
+The ablation isolates the archive as the mechanism. With the instruction archive removed, code
+recall collapses from 1.000 to 0.133, eight of sixty, while the final artifact still passes sixty of
+sixty: without the archive the model still writes a correct file, because the newest reply carries
+the file state, but it cannot reproduce a value stated once early in the session. Its per-turn
+grades are not reported, because the run resumed after a crash and its pre-crash grades were not
+checkpointed; code recall and final state come from the final artifact and are unaffected.
 
 ## 6. Failure Modes of the Evaluation
 
