@@ -34,19 +34,16 @@ We therefore ask a narrow, measurable question: can an agent keep a small contex
 it? Our policy pins an immutable front, the system prompt and the first-turn brief, and advances a
 bounded window at the end. Nothing is summarised: the informational part of each turn is kept and the
 superseded part dropped. The contributions are a retention policy that bounds the working set while
-leaving the prefix shared with the previous turn intact; a per-turn measurement of prefix-cache reuse
-treating cost as a function of retention rather than a constant; an evaluation using per-turn grading
-and probes recency cannot satisfy; and four failure modes by which such an evaluation measures
-nothing.
+leaving the shared prefix intact; a per-turn measurement of prefix-cache reuse, treating cost as a
+function of retention rather than a constant; an evaluation using per-turn grading and probes recency
+cannot satisfy; and four failure modes by which such an evaluation measures nothing.
 
 ## 2. Related Work
 
-Work on KV-cache eviction reduces memory by scoring tokens and discarding low-scoring ones. H2O [1],
-Scissorhands [2], TOVA [3], and SnapKV [4] assume survivors stay valid after eviction, an assumption
-we do not share, for the reason in Section 6. A second line repairs positional integrity: CacheBlend [5] recomputes part of the cache and
-re-encodes positions, CacheFocus [6] re-positions after pruning, DSCache [7] stores pre-rotation keys,
-and CacheGen [8] recomputes as a fallback. We do none of this; never rewriting the region the cache
-depends on is what lets reuse survive.
+Work on KV-cache eviction reduces memory by discarding low-scoring tokens. H2O [1], Scissorhands [2],
+TOVA [3], and SnapKV [4] assume survivors stay valid after eviction, which Section 6 contradicts. A
+second line repairs positional integrity: CacheBlend [5], CacheFocus [6], DSCache [7] and CacheGen [8].
+We do none of this; never rewriting the region the cache depends on is what lets reuse survive.
 
 Attention-sink work explains why pinning a front is sensible. StreamingLLM [9] retains sink tokens
 with a sliding window, and the sink mechanism is characterised in [10]. Sinks stabilise a stream but
@@ -54,20 +51,18 @@ are not a channel for specific information [11], which is why our probes test a 
 than fluency.
 
 Prefix caching is a serving-engine feature in paged-attention systems [21, 22] and modular attention
-reuse [23]. The subject closest to ours is a recent evaluation of prompt caching for agent workloads
-[24], which measures caching across three providers on a multi-turn web-search benchmark and finds
-cost reductions of 41 to 80 percent. That work operates at the provider level and its strategies
-concern where dynamic content is placed; it compares no retention policies and does not measure the
-discontinuity a compaction introduces. We compare no providers or prices. We measure, per turn from
-the token stream, what a retention policy does to prefix reuse and to the retention of early facts.
-A provider-level benefit holds whether or not the policy rewrites its prefix, whereas our measurement
-prices the rewrite itself and the recall lost alongside it.
+reuse [23]. The closest work is a recent evaluation of prompt caching for agent workloads [24], which measures
+caching across three providers on a multi-turn web-search benchmark and finds cost reductions of 41 to
+80 percent. It operates at the provider level and its strategies concern where dynamic content is
+placed; it compares no retention policies and does not measure the discontinuity a compaction
+introduces. We measure, per turn from the token stream, what a retention policy does to prefix reuse
+and to the retention of early facts, which prices the rewrite itself and the recall lost alongside it.
 
-The closest prior work in intent is SinkTrack [20]: it anchors a model to its initial context and identifies
-context forgetting as a real failure of long generation. The mechanisms differ in kind. SinkTrack is a
-model-level intervention injecting features into the beginning-of-sequence representation, evaluated
-on single-generation question answering. Ours operates at the agent level, deciding which tokens are
-retained and measuring the serving-cost consequence over a long horizon.
+The closest prior work in intent is SinkTrack [20], which anchors a model to its initial context and
+identifies context forgetting as a real failure of long generation. The mechanisms differ in kind:
+SinkTrack intervenes on the beginning-of-sequence representation and is evaluated on single-generation
+question answering, whereas ours decides at the agent level which tokens are retained and measures the
+serving-cost consequence over a long horizon.
 
 Work on agent memory addresses what to store. MemGPT [12] pages context operating-system style, and a
 survey [13] taxonomises memory operations; both concern storage, not the cost of rewriting it.
@@ -76,10 +71,9 @@ it is used. Gemma-4 makes this concrete: forty of its forty-eight layers use a 1
 so a first-turn fact is unavailable to them regardless of policy; Section 6 states the caveat.
 
 Our own benchmark produced one result we traced to a defect in the task rather than the policy, and we
-report the corrected version. A position paper argues for a refutations track [16]. The literature
-documents leakage and reporting error [17], and empirical work shows comparisons tend to favour the
-proposed method [18], the bias two of our failure modes produce. We follow artifact-review
-expectations [19].
+report the corrected version. A position paper argues for a refutations track [16]; the literature documents leakage and reporting
+error [17], and comparisons tend to favour the proposed method [18], the bias two of our failure modes
+produce. We follow artifact-review expectations [19].
 
 ## 3. Method
 
@@ -136,28 +130,28 @@ zero to n so partial retention appears as a prefix gap. The second is a release 
 turn an additional function must return a separate secret handed over at the session midpoint. It is deliberately not one of the codes, so a policy can recite the list and still ship a broken
 artifact; we verified independence on two simulated agents with identical bug and code scores.
 
-The policies diverge in growth rate by roughly an order of magnitude. Linear adds about 1,248
-tokens per turn, a full pair, while the anchored policy adds about 159. Against a 12,000-token
-ceiling linear reaches the limit near turn nine and evicts thereafter, holding the most recent four
-blocks, while the anchored policy holds every instruction and finishes at about 9,934 tokens. This was
-computed against the real tokenizer before the run and observed during it.
+The policies diverge in growth rate by roughly an order of magnitude. Linear adds about 1,248 tokens
+per turn, a full pair, while the anchored policy adds about 159. Against a 12,000-token ceiling linear
+reaches the limit near turn nine and evicts thereafter, while the anchored policy holds every
+instruction and finishes near 8,149 tokens. This was computed against the real tokenizer before the
+run and observed during it.
 
 One probe failed to discriminate, and we report that as a negative result. We predicted linear would
 fail the release gate; it passed, as did the anchored policy. The gate's value is a function the
-artifact already contains, so committing the secret to that function when it is handed over carries it
-through every later rewrite, and the gate measures artifact persistence rather than retention. The
-accumulated codes have no such escape, because they are forbidden from the file until the final turn,
-which is why the codes probe separates the arms and the gate does not.
+artifact already contains, so committing the secret when it is handed over carries it through every
+later rewrite, and the gate measures artifact persistence rather than retention. The accumulated codes
+have no such escape, because they are forbidden from the file until the final turn, which is why the
+codes probe separates the arms and the gate does not.
 
 ## 4. Measurement
 
 ### 4.1 Prefix-cache reuse
 
 Each turn we record the longest common token prefix between the current prompt and the previous one,
-exactly what an automatic prefix cache would reuse. Cost is in raw compute units, not currency: a
-fresh token costs 1.0 and a reused token an assumed multiplier of 0.1, so a turn costs the miss count
-plus the hit count times the multiplier, against a no-cache baseline where every token costs 1.0. The
-multiplier is one named constant, so the assumption is visible and re-runnable. We compare on total
+exactly what an automatic prefix cache would reuse. Cost is in raw compute units: a fresh token costs
+1.0 and a reused token an assumed multiplier of 0.1, so a turn costs the miss count plus the hit count
+times the multiplier, against a no-cache baseline where every token costs 1.0. The multiplier is one
+named constant, so the assumption is visible and re-runnable. We compare on total
 cost rather than hit rate alone, because cost separates two policies only if one both reuses its
 prefix and keeps the prompt small; a high hit rate on an unbounded prompt still processes far more
 tokens.
@@ -214,6 +208,14 @@ Prune behaves as linear does, and its turn-thirty compaction appears as a collap
 prefix from 3,226 tokens to 2,057, the anchored prefix alone, so compaction pays a re-prefill at
 every boundary rather than recovering that cost.
 
+On SWE-bench Lite, six sympy issues were attempted by both policies over Gemma-4-12B. Neither
+resolved any, and a gold control resolved all six, so the zero is a capability limit of a 12B model
+rather than a harness failure. The policies separate on cost and boundedness: the linear policy's
+prompt grows to the 12,000-token cap and its time to first token grows 14.8 times, from 588 to 8,692
+milliseconds, while the anchored policy stays bounded and grows 1.7 times, from 772 to 1,334
+milliseconds. On the final turn the anchored policy is 6.5 times faster on identical work, with a
+KV-cache peak of 409 against 533 megabytes.
+
 The ablation isolates the archive as the mechanism. With the archive removed, code recall collapses
 from 1.000 to 0.133, eight of sixty, while per-turn success stays high at 0.917 and the final artifact
 reaches fifty-five of sixty. The archive is not needed to keep the file correct turn by turn, because
@@ -226,36 +228,31 @@ final state varies across runs while the recall collapse does not.
 Each of the following produced, or would have produced, a clean-looking table that measured nothing.
 
 A shared ceiling. Two policies capped at the same limit converge on whatever fits: with one shared
-12,000-token cap both reached about 9,900 tokens at nearly identical latency, so the cap, not the policy,
-set the working set. Each budget is now sized to its own claim.
+cap both reached about 9,900 tokens at nearly identical latency, so the cap, not the policy, set the
+working set. Each budget is now sized to its own claim.
 
-A re-derivable probe. A rule the model re-applies each turn can be inferred from recent turns without
-the original, so both policies pass and the probe is vacuous. Only a value stated once and never
-repeated discriminates.
+A re-derivable probe. A rule the model re-applies each turn can be inferred from recent turns, so
+both policies pass and the probe is vacuous. Only a value stated once and never repeated discriminates.
 
 A periodic task defect. Two of six bug families failed on every instance from the second turn, one
-turn after the brief, so memory was not in question; their shapes invited a rewrite. A turn-indexed
-task must be checked for periodic failure before its losses count as retention.
+turn after the brief, so memory was not in question. A turn-indexed task must be checked for periodic
+failure before its losses count.
 
 An architectural confound. Gemma-4 uses local attention in forty of forty-eight layers with a
-1024-token window, so beyond 1024 tokens a first-turn fact is unavailable to those layers regardless
-of policy, and the KV-cache peak is not a result of retention for the same reason.
+1024-token window, so beyond it a first-turn fact is unavailable to those layers, and the KV-cache peak
+is not a retention result for the same reason.
 
 ## 7. Limitations
 
-The evaluation covers one model and one task family, and the task is synthetic so retention is
-measurable. The cost model uses an assumed hit multiplier rather than a measured billing figure, so we swept
-it: across multipliers from 0.05 to 1.00 the anchored policy stays cheaper by 4.71 to 1.52 times, and at
-a multiplier of 1.00 it still costs 1.52 times less because it processes fewer tokens. The conclusion
-does not rest on the value chosen. Each policy ran
-once per
-configuration, so the results carry no error bars, and repetition is across task instances, not seeds. The gate probe is a single value establishing that one
-mid-session fact survived, not a rate.
+The evaluation covers one model and one task family, and the synthetic task is designed so retention
+is measurable. The cost model uses an assumed hit multiplier rather than a measured billing figure, so
+we swept it: across multipliers from 0.05 to 1.00 the anchored policy stays cheaper by 4.71 to 1.52
+times, and at 1.00 it is still 1.52 times cheaper because it processes fewer tokens. Runs repeated
+across task instances rather than seeds, since greedy decoding would leave a seed to fabricate variance. The gate probe is a single value, establishing that
+one mid-session fact survived rather than measuring a rate, and the six-issue SWE-bench sample is small.
 
 The reported run uses Gemma-4-12B in bfloat16, which loads on one accelerator without a quantization
-confound; the competition checkpoint is 4-bit and would add a quantization variable. The policy is
-implemented outside the model, so a different checkpoint changes the numbers rather than the
-mechanism.
+confound; the competition checkpoint is 4-bit and would add a quantization variable. The policy sits outside the model, so a different checkpoint changes the numbers, not the mechanism.
 
 ## 8. Conclusion
 
