@@ -55,7 +55,7 @@ that**: we never rewrite the region the cache depends on.
 mechanism [10] makes pinning an immutable front mechanically sensible. Sinks stabilise a stream but
 are not a memory channel [11], which is why our probes test a *specific fact*, not fluency.
 
-**Closest prior art.** SinkTrack [21] is nearest in *intent*: it anchors a model to its initial
+**Closest prior art.** SinkTrack [20] is nearest in *intent*: it anchors a model to its initial
 context and reports context forgetting as a real failure of long generation. The mechanisms differ in
 kind — SinkTrack is **model-level**, injecting features into the `<BOS>` representation, evaluated on
 single-generation QA; ours is **policy-level**, deciding *which tokens the agent retains* and
@@ -73,8 +73,8 @@ F4). Retention claims here concern **the tokens the agent retained**.
 
 **Corrected results.** The §6 F3 result is a defect in our own benchmark; we report the corrected
 task. A position paper argues venues need a refutations track [16]; the literature documents leakage
-and reporting error [17,18], and empirical-method work [19] shows comparisons favour the proposed
-method — the bias F1 and F2 produce. We adopt artifact-review expectations [20].
+and reporting error [17], and empirical-method work [18] shows comparisons favour the proposed
+method — the bias F1 and F2 produce. We adopt artifact-review expectations [19].
 
 ## 3. Method
 
@@ -266,11 +266,8 @@ via `CCAI_GATE=1`; the compaction period by `CCAI_PRUNE_EVERY`.
 [13] Zhang et al. *A Survey on the Memory Mechanism of LLM-based Agents.* arXiv:2404.13501
 [14] Liu et al. *Lost in the Middle: How Language Models Use Long Contexts.* TACL 2024. arXiv:2307.03172
 [15] Hsieh, Chuang et al. *Found in the Middle: Calibrating Positional Attention Bias Improves Long Context Utilization.* arXiv:2406.16008
-[21] Liu, Chen & Wang. *SinkTrack: Attention Sink based Context Anchoring for Large Language Models.* ICLR 2026. arXiv:2604.10027
 [16] Schaeffer, Kazdan, Denisov-Blanch, Miranda, Gerstgrasser et al. *Position: Machine Learning Conferences Should Establish a "Refutations and Critiques" Track.* NeurIPS 2025 Position Paper Track (Oral). arXiv:2506.19882
 [17] Kapoor & Narayanan. *Leakage and the reproducibility crisis in ML-based science.* Patterns 2023.
-[18] *Systematic research errors in thousands of machine learning papers.* ACL 2023.
-[19] Herrmann et al. *Why We Must Rethink Empirical Research in Machine Learning.* ICML 2024.
-[20] ACM. *Artifact Review and Badging, v1.1.*
-
-
+[18] Herrmann et al. *Why We Must Rethink Empirical Research in Machine Learning.* ICML 2024.
+[19] ACM. *Artifact Review and Badging, v1.1.*
+[20] Liu, Chen & Wang. *SinkTrack: Attention Sink based Context Anchoring for Large Language Models.* ICLR 2026. arXiv:2604.10027
