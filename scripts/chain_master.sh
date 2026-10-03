@@ -34,7 +34,8 @@ say(){ echo "[$(date -u +%H:%M:%S)] $*"; }
 # run ONE arm, wait for its unique completion tag, then pull its result.
 #   run_arm <tag> <wait-minutes> <local-dest> <workdir> <env-string>
 run_arm(){
-  local tag="$1" mins="$2" dest="$3" work="$4" envs="$5" i rc
+  # $1 tag  $2 wait-min  $3 local-dest  $4 workdir  $5 env  $6 REMOTE FILENAME this run writes
+  local tag="$1" mins="$2" dest="$3" work="$4" envs="$5" remote="$6" i rc
   timeout 60 $SSH "rm -f /root/chain_master.marker" >/dev/null 2>&1
   timeout 60 $SSH "cd /root && setsid nohup bash -lc '
     export HF_HOME=/root/hf HF_TOKEN=\$(cat /root/.hftok 2>/dev/null || echo \"\") HF_XET_HIGH_PERFORMANCE=1
@@ -54,8 +55,13 @@ run_arm(){
   done
   [ "$i" -ge "$mins" ] && say "  $tag TIMED OUT after ${mins}m"
 
-  local rf
-  rf=$(timeout 60 $SSH "ls -t /root/ccai/results/*.json 2>/dev/null | head -1")
+  local rf want
+  # ★ Pull the EXACT file this run produces, computed from the same rule vast_entry.py uses, never
+  # 'the newest json'. A newest-file glob silently pulled one stale arm for six different runs,
+  # which read as six identical sweep instances -- a fixture masquerading as variance.
+  want=$(basename "$6")   # caller passes the expected remote filename
+  rf=$(timeout 60 $SSH "ls /root/ccai/results/$want 2>/dev/null | head -1")
+  [ -z "$rf" ] && rf=$(timeout 60 $SSH "ls -t /root/ccai/results/*${tag}*.json 2>/dev/null | head -1")
   if [ -n "$rf" ]; then
     timeout 180 scp -P 15322 -i "$HOME/.ssh/vast_ed25519" -o IdentitiesOnly=yes \
       -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
@@ -74,7 +80,8 @@ M12="CCAI_TASK=fix CCAI_MODEL=gemma-4-12b CCAI_QUANT=none CCAI_MAX_GPU_MEMORY=44
 
 say "--- [1/6] ablation: anchored policy minus the instruction archive ---"
 run_arm "ABLATE" 300 "fixmode-v3/incremental_gemma-4-12b_ablate-recent.json" "/work/ablate" \
-  "$M12 CCAI_ARM=ablate-recent CCAI_CKPT_DIR=/root/ccai/ckpt_ablate-recent"
+  "$M12 CCAI_ARM=ablate-recent CCAI_CKPT_DIR=/root/ccai/ckpt_ablate-recent" \
+  "incremental_gemma-4-12b_ablate-recent.json"
 
 say "--- [2/6] ARC: preflight, then both arms ---"
 timeout 120 scp -P 15322 -i "$HOME/.ssh/vast_ed25519" -o IdentitiesOnly=yes \
@@ -92,14 +99,16 @@ timeout 180 scp -P 15322 -i "$HOME/.ssh/vast_ed25519" -o IdentitiesOnly=yes \
   && say "  pulled arc_runtime" || say "  arc pull failed"
 
 say "--- [3/6] runtime_fixed (corrected runtime) ---"
-run_arm "RUNTIMEFIX" 300 "fixmode-v3/incremental_gemma-4-12b_runtime_fixed.json" "/work/rfix" \
-  "$M12 CCAI_ARM=runtime CCAI_CKPT_DIR=/root/ccai/ckpt_runtime_fixed"
+run_arm "RUNTIMEFIX" 300 "fixmode-v3/incremental_gemma-4-12b_runtime.json" "/work/rfix" \
+  "$M12 CCAI_ARM=runtime CCAI_RUN_TAG=_fixed CCAI_CKPT_DIR=/root/ccai/ckpt_runtime_fixed" \
+  "incremental_gemma-4-12b_runtime_fixed.json"
 
 say "--- [4/6] variance: 3 salts x 2 arms ---"
 for SALT in salt1 salt2 salt3; do
   for ARM in runtime linear; do
     run_arm "VAR_${SALT}_${ARM}" 300 "variance/var_${SALT}_${ARM}.json" "/work/v_${SALT}_${ARM}" \
-      "$M12 CCAI_ARM=$ARM CCAI_TASK_SALT=$SALT CCAI_CKPT_DIR=/root/ccai/ckpt_${SALT}_${ARM}"
+      "$M12 CCAI_ARM=$ARM CCAI_TASK_SALT=$SALT CCAI_RUN_TAG=_var_${SALT} CCAI_CKPT_DIR=/root/ccai/ckpt_${SALT}_${ARM}" \
+      "incremental_gemma-4-12b_${ARM}_${SALT}_var_${SALT}.json"
   done
 done
 

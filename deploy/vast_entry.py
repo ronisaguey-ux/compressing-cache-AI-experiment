@@ -65,7 +65,14 @@ r = inc.run_inc(model, arm, features, keep_turns)
 
 out = "/root/ccai/results"
 os.makedirs(out, exist_ok=True)
-p = os.path.join(out, "incremental_%s_%s.json" % (model.replace("/", "-"), arm))
+# ★ THE SALT MUST BE IN THE FILENAME. Without it every variance run writes the SAME path and each
+# instance silently overwrites the last, so a sweep of five salts produces one file repeated five
+# times -- which is exactly how this went wrong: six md5-identical files that all turned out to be
+# the prune arm from an earlier run. A run's identity belongs in its artifact name.
+_salt = os.environ.get("CCAI_TASK_SALT", "")
+_tag = ("_%s" % _salt) if _salt else ""
+_sfx = os.environ.get("CCAI_RUN_TAG", "")
+p = os.path.join(out, "incremental_%s_%s%s%s.json" % (model.replace("/", "-"), arm, _tag, _sfx))
 with open(p, "w") as f:
     json.dump(r, f, indent=2)
 
