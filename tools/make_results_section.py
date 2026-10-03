@@ -89,12 +89,12 @@ def main():
     L.append("All three policies ran %s turns of the broken-repository task on one model under an "
              "identical prompt and tool budget. `runtime` pins the turn-1 brief and archives each "
              "turn's instruction; `linear` grows to the ceiling and evicts the oldest block; `prune` "
-             "is `linear` plus a context compaction every 30 turns." % n)
+             "is `linear` plus a compaction every 30 turns." % n)
     L.append("")
 
     # ---- Table 1: cost and context ----
-    L.append("**Table 1 — cost, measured in raw compute units.** A cache-reused token is priced at "
-             "0.1 of a fresh one; the baseline column prices every token as a miss.")
+    L.append("**Table 1 — cost in raw compute units.** A cache-reused token is priced at 0.1 of a "
+             "fresh one; the baseline prices every token as a miss.")
     L.append("")
     L.append("| policy | cache hit rate | miss tokens | cost units | no-cache cost | saving | "
              "prompt first → last | TTFT first → last |")
@@ -113,9 +113,8 @@ def main():
     L.append("")
 
     # ---- Table 2: retention ----
-    L.append("**Table 2 — retention.** Per-turn success is graded immediately after each turn; "
-             "code recall is the accumulated list; the release gate is the independent mid-session "
-             "secret, which is not one of the codes.")
+    L.append("**Table 2 — retention.** Per-turn success is graded after each turn; code recall is "
+             "the accumulated list; the release gate is the independent mid-session secret.")
     L.append("")
     L.append("| policy | per-turn success | final state | applied-then-lost | code recall | "
              "ordered | release gate |")

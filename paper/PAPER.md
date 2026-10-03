@@ -10,11 +10,11 @@ remedy — periodically compacting the context — keeps the window small by *re
 rewrite invalidates the shared prefix a serving engine's automatic prefix cache depends on, re-billing
 the whole prompt at full price. We describe a policy that keeps the window small *without* rewriting
 the front: the system prompt and the turn-1 brief are pinned, and the window advances at the end. We
-evaluate three policies (bounded-anchor, grow-and-evict, grow-compact) over 60 turns of a bug-fixing
-task on one 12B model, measuring retention, compute cost and prefix-cache reuse directly rather than
-inferring them. The bounded-anchor policy holds a flat context while the alternatives grow to the
-ceiling or collapse on each compaction; exact figures are in §5. We also document four ways such an
-evaluation can produce a clean-looking result that means nothing, and how each was detected.
+evaluate three policies over 60 turns of a bug-fixing task on one 12B model, measuring retention,
+compute cost and prefix-cache reuse directly rather than inferring them. The bounded-anchor policy
+holds a flat context while the alternatives grow to the ceiling or collapse on each compaction;
+figures are in §5. We also document four ways such an evaluation produces a clean-looking result that
+means nothing, and how each was detected.
 
 ## 1. Introduction
 
@@ -43,46 +43,40 @@ is retained and the large, superseded part is dropped.
 
 ## 2. Related work
 
-**Key/value eviction and compression.** H2O [1], Scissorhands [2], TOVA [3] and SnapKV [4] reduce
-cache size by scoring tokens and dropping the low-scoring ones. They assume survivors remain valid
-after eviction — an assumption we do not share (§6, F4). A parallel line works on that positional
-integrity directly: CacheBlend [5] selectively recomputes part of the KV and re-encodes positional
-indices, CacheFocus [6] re-positions the cache after pruning, DSCache [7] stores pre-rotation keys
-and reintroduces position at use, and CacheGen [8] recomputes as a correctness fallback. **We attempt
-none of that.** We do not repair a cache; we avoid needing to, by never rewriting the region it
-depends on.
+**Eviction and compression.** H2O [1], Scissorhands [2], TOVA [3] and SnapKV [4] shrink the cache by
+scoring tokens and dropping the low-scoring ones, assuming survivors stay valid after eviction — an
+assumption we do not share (§6, F4). A parallel line repairs that positional integrity directly:
+CacheBlend [5] recomputes part of the KV and re-encodes positions, CacheFocus [6] re-positions the
+cache after pruning, DSCache [7] stores pre-rotation keys, CacheGen [8] recomputes as a fallback.
+**We attempt none of that**: we avoid needing to, by never rewriting the region the cache depends on.
 
-**Streaming and attention sinks.** StreamingLLM [9] keeps sink tokens and a sliding window to stream
-millions of tokens. The sink mechanism [10] — a learned, softmax-driven first-token attractor — makes
-pinning an immutable front mechanically sensible rather than merely a bookkeeping convenience. Sinks
-stabilise a stream without acting as a memory channel [11], which is why our probes test a *specific
-fact* rather than fluency.
+**Attention sinks.** StreamingLLM [9] keeps sink tokens and a sliding window. The sink mechanism
+[10] — a learned, first-token attractor — makes pinning an immutable front mechanically sensible.
+Sinks stabilise a stream without acting as a memory channel [11], which is why our probes test a
+*specific fact* rather than fluency.
 
-**Closest prior art, and the distinction that matters.** SinkTrack [21] is the nearest work in
-*intent*: it also keeps a model anchored to its initial context, and also reports context forgetting
-as a real failure of long generation. The mechanisms differ in kind. SinkTrack is a **model-level**
-intervention — it injects contextual features into the `<BOS>` representation so the attention sink
-carries them forward — evaluated on single-generation QA. Ours is **policy-level** and does not touch
-the model: it decides *which tokens the agent retains* and measures the serving-cost consequence over
-a long horizon. The two are complementary, and SinkTrack is a reason to expect a pinned prefix to
-work: if the first token attracts attention, an agent that can keep its brief at the front should.
+**Closest prior art.** SinkTrack [21] is nearest in *intent*: it anchors a model to its initial
+context and reports context forgetting as a real failure of long generation. The mechanisms differ in
+kind — SinkTrack is **model-level**, injecting features into the `<BOS>` representation, evaluated on
+single-generation QA; ours is **policy-level**, deciding *which tokens the agent retains* and
+measuring the serving-cost consequence over a long horizon. It is also a reason to expect a pinned
+prefix to work: if the first token attracts attention, an agent that can keep its brief at the front
+should.
 
-**Agent memory.** MemGPT [12] pages context in and out OS-style, and the agent-memory survey [13]
-taxonomises memory sources, forms and operations. Both address what an agent should *store*; neither
-makes the *serving-cost* consequence of rewriting it measurable — the gap this paper fills.
+**Agent memory.** MemGPT [12] pages context OS-style and the survey [13] taxonomises memory
+operations. Both address what an agent should *store*; neither makes the *serving-cost* consequence
+of rewriting it measurable — the gap this paper fills.
 
 **Position and architecture.** *Lost in the Middle* [14] and *Found in the Middle* [15] establish
-that context use is position-dependent. Gemma-4 makes this concrete: 40 of its 48 layers use local
-attention with a 1024-token window, so beyond 1024 tokens a turn-1 fact is unavailable to those
-layers regardless of policy. Every retention claim here is therefore about **the tokens the agent
-chose to retain**, not about recovering a fact the architecture had already discarded (§6, F4).
+position-dependent context use. Gemma-4 makes it concrete: 40 of 48 layers use local attention with a
+1024-token window, so beyond 1024 tokens a turn-1 fact is unavailable to those layers regardless of
+policy. Retention claims here concern **the tokens the agent retained**, not a fact the architecture
+had discarded (§6, F4).
 
-**On reporting corrected results.** The §6 F3 result is a defect in our own benchmark, and we report
-the corrected task rather than the number the broken task produced. A position paper argues venues
-should have a formal refutations track [16]; the reproducibility literature documents systematic
-leakage and reporting error [17,18]; and work on empirical-method bias [19] shows comparisons are
-biased toward the newly proposed method — precisely the bias the F1 and F2 failures produce. We adopt
-artifact-review expectations [20].
+**Corrected results.** The §6 F3 result is a defect in our own benchmark; we report the corrected
+task, not the number the broken one produced. A position paper argues venues need a refutations track
+[16], the literature documents leakage and reporting error [17,18], and work on empirical-method bias
+[19] shows comparisons favour the proposed method — the bias F1 and F2 produce.
 
 ## 3. Method
 
@@ -91,20 +85,18 @@ artifact-review expectations [20].
 Let the transcript be a sequence of turn blocks. Each turn appends the instruction and the reply.
 The policies differ *only* in which blocks are retained when assembling the prompt.
 
-- **`runtime` (bounded anchor).** Retains the turn-1 block and every *instruction* seen so far,
-  verbatim, plus the single most recent *reply*. The instructions are small; a reply in our task is
-  a full-file rewrite and is therefore redundant with the newest one. Oldest instructions are
-  dropped first if the budget is exceeded. Growth is therefore one instruction per turn, and the
-  front is never rewritten.
+- **`runtime` (bounded anchor).** Retains the turn-1 block and every *instruction* so far, verbatim,
+  plus the single most recent *reply*. Instructions are small; a reply here is a full-file rewrite,
+  redundant with the newest one. Oldest instructions drop first if the budget is exceeded, so growth
+  is one instruction per turn and the front is never rewritten.
 - **`linear` (grow and evict).** Retains the turn-1 block and as many recent instruction/reply pairs
-  as fit the model's ceiling, dropping the **oldest** block when it overflows. This is the naive
-  baseline: a fixed window with no organisation.
-- **`prune` (grow, evict, compact).** Identical to `linear`, plus a compaction every 30 turns that
-  keeps the anchor and the most recent turns and discards everything between. This is the status quo
-  for long-running agents.
+  as fit the model's ceiling, dropping the **oldest** block on overflow. The naive baseline: a fixed
+  window with no organisation.
+- **`prune` (grow, evict, compact).** Identical to `linear`, plus a compaction every 30 turns keeping
+  the anchor and the most recent turns. The status quo for long-running agents.
 
-The three share the model, prompts, tools, turn budget and the turn-1 anchor, so a difference is
-attributable to the retention policy. `prune` is anchored deliberately: without that it would differ
+All three share the model, prompts, tools, turn budget and turn-1 anchor, so a difference is
+attributable to the retention policy. `prune` is anchored deliberately: otherwise it would differ
 from `linear` by two things at once and a collapse could not be attributed to either.
 
 ### 3.2 The task
@@ -113,13 +105,13 @@ from `linear` by two things at once and a collapse could not be attributed to ei
 for each bug, the exact wrong and required constant. Every later turn says only "Fix bug *k*." No
 list is repeated and no reminder is given.
 
-1. Every bug family is the **same shape**: a one-line body containing a single wrong constant. An
-   earlier version used a keyword default and a table lookup; both invited the model to *rewrite*
-   the shape, and those rewrites failed with the brief one turn back. A periodic, deterministic
-   failure is a task defect, not a retention result (§6, F3).
+1. Every bug family is the **same shape**: a one-line body with a single wrong constant. An earlier
+   version used a keyword default and a table lookup; both invited the model to *rewrite* the shape,
+   and the rewrites failed with the brief one turn back. A periodic, deterministic failure is a task
+   defect, not a retention result (§6, F3).
 2. The required constants are **arbitrary and appear nowhere else**, so they cannot be re-derived.
-3. Grading is **per-turn**: bug *k* is tested immediately after turn *k*, in a subprocess. A fix
-   applied and later clobbered by a rewrite is distinguishable from one never applied.
+3. Grading is **per-turn**: bug *k* is tested right after turn *k*, in a subprocess, so a fix applied
+   and later clobbered by a rewrite is distinguishable from one never applied.
 
 ### 3.3 Two independent retention probes
 
@@ -166,9 +158,9 @@ not separate on hit rate, the argument does not hold.
 
 Retention (per-turn success, final accuracy, fixes applied then lost, code recall and ordering, gate
 verdict); cost (hit rate, miss tokens, cost units, no-cache baseline, saving ratio); context (first,
-last, peak, growth); latency (TTFT first/last/growth, wall per turn, decode throughput); memory (KV
-peak, total prefill). All are derived from data the loop already collects, so one run yields the
-full table rather than one run per question.
+last, peak, growth); latency (TTFT, wall per turn, decode throughput); memory (KV peak, total
+prefill). All derive from data the loop already collects, so one run yields the whole table rather
+than one run per question.
 
 ### 4.3 Fairness gate
 
@@ -199,38 +191,33 @@ quoted until the final-turn probes have been checked on both arms)*
 
 Each of the following produced, or would have produced, a clean-looking table that measured nothing.
 
-**F1 — shared ceiling.** Capping two policies at the same token limit makes them both converge on
-"whatever fits". Measured: the bounded policy grew to 9.9k against a limit of 12k and the two arms
-had identical latency (4180 vs 4308 ms). Each policy needs a budget sized to its own claim.
+**F1 — shared ceiling.** Capping two policies at the same limit makes both converge on "whatever
+fits". Measured: both arms hit ~9.9k against a 12k limit and had identical latency (4180 vs 4308 ms).
+Each policy needs a budget sized to its own claim.
 
 **F2 — re-derivable probes.** A rule the model re-applies every turn can be inferred from recent
-turns without the original ever being seen; both arms pass and the probe is vacuous. Only a value
+turns without the original ever being seen, so both arms pass and the probe is vacuous. Only a value
 stated once and never repeated can discriminate.
 
-**F3 — periodic failures are task defects.** Two of six bug families failed on *every* instance
-from turn 2 and turn 5. Since turn 2 is one turn after the brief, memory was not in question: the
-families had unusual shapes that the model rewrote, and the rewrites failed. Fixing the shapes
-uniformised the task. A turn-indexed task must be checked for periodic failure before its losses are
-interpreted.
+**F3 — periodic failures are task defects.** Two of six bug families failed on *every* instance from
+turn 2. Since turn 2 is one turn after the brief, memory was not in question: the families had
+unusual shapes the model rewrote, and the rewrites failed. A turn-indexed task must be checked for
+periodic failure before its losses are interpreted.
 
 **F4 — architectural confound.** Gemma-4 uses local attention in 40 of 48 layers with a 1024-token
-window, so beyond 1024 tokens a turn-1 fact is invisible to those layers regardless of the agent's
-policy. Any claim about retaining an early fact must be stated against that background.
+window, so beyond 1024 tokens a turn-1 fact is invisible to those layers regardless of policy. Any
+claim about retaining an early fact must be stated against that background.
 
 ## 7. Limitations
 
-The evaluation uses one model and one task family; the task is synthetic by design, to make retention
-measurable. The cost model uses an assumed hit multiplier rather than a billing measurement — it is a
-compute model, and is stated as such. The gate probe is a single value; a single probe establishes
-that a mid-session fact survived, not a rate.
+One model, one task family; the task is synthetic by design so retention is measurable. The cost model
+uses an assumed hit multiplier rather than a billing measurement, and is stated as such. The gate
+probe is a single value: it establishes that a mid-session fact survived, not a rate.
 
-**Model choice.** The reported run uses Gemma-4-12B in bf16, which loads entirely on one accelerator
-with no quantization and therefore carries no quantization confound. The competition's main track
-mandates a specific quantized 31B checkpoint for the agent core. Nothing in the policy depends on the
-model: it is a decision about which token blocks are retained when assembling a prompt, and it is
-implemented outside the model. Re-running it on a different checkpoint changes the numbers, not the
-mechanism, and any submission must state the checkpoint it measured on rather than imply the mandate
-was met.
+**Model choice.** The reported run uses Gemma-4-12B bf16, which loads entirely on one accelerator with
+no quantization confound. The policy is model-independent — a decision about which token blocks are
+retained, implemented outside the model — so a different checkpoint changes the numbers, not the
+mechanism. A submission must name the checkpoint it measured on.
 
 ## 8. Conclusion
 
