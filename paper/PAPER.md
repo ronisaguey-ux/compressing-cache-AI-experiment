@@ -234,11 +234,13 @@ measurement can silently fail.
 ## Reproduction
 
 ```
-python3 tools/run_compare.py results/fixres_*_*.json
+python3 tools/run_compare.py benchmarks/results/incremental_*_linear_*.json \
+                               benchmarks/results/incremental_*_runtime_*.json
 ```
 
-Environment, task generator, policies and graders are in this repository. The three policies are
-selected by `CCAI_ARM`; the retention gate is opt-in via `CCAI_GATE=1`; the compaction period by
+Environment, task generator, policies and graders are in this repository; the command above runs
+against committed result files. The three policies are selected by `CCAI_ARM` (`runfix3.sh` sets
+all three); the retention gate is opt-in via `CCAI_GATE=1`; the compaction period by
 `CCAI_PRUNE_EVERY`.
 
 ## References

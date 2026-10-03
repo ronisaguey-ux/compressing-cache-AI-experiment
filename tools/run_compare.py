@@ -124,9 +124,30 @@ def main(argv):
     # sides describe the same turns, which is exactly the requirement. Refusing outright would throw
     # away a run because a safety break fired, and reporting 60-vs-57 would be the volume artefact
     # this gate exists to prevent.
-    counts = {a: r.get("features_completed") for a, r in runs.items()}
+    def _count(r):
+        """Turns an arm completed, across both result schemas.
+
+        ★ Older benchmark results carry `turns` as a LIST of per-turn records, not a count -- reading
+        it directly made the gate compare two dicts and raise TypeError. A missing count is reported
+        as missing so the gate still refuses rather than guessing.
+        """
+        v = r.get("features_completed")
+        if isinstance(v, int):
+            return v
+        if v is None:
+            t = r.get("turns")
+            if isinstance(t, int):
+                return t
+            if isinstance(t, list):
+                return len(t)
+            if isinstance(t, dict):
+                return len(t)
+        return None
+
+    counts = {a: _count(r) for a, r in runs.items()}
     if any(c is None for c in counts.values()):
-        print("REFUSING: an arm did not report features_completed: %s" % counts)
+        print("REFUSING: an arm reported neither features_completed nor a usable turn count: %s"
+              % counts)
         return 1
     n = min(counts.values())
     if len(set(counts.values())) != 1:
