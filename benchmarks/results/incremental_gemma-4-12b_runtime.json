@@ -5,7 +5,7 @@
   "features": 60,
   "features_completed": 60,
   "stopped_early": null,
-  "seconds": 7314.4,
+  "seconds": 6503.0,
   "gpu": "A100-40GB",
   "passed": 60,
   "total": 60,
@@ -158,9 +158,9 @@
   "codes_ordered": true,
   "codes_dup": false,
   "gate_ok": true,
-  "cache_hit_tokens": 359634,
-  "cache_total_tokens": 442488,
-  "cache_hit_rate": 0.8128,
+  "cache_hit_tokens": 256106,
+  "cache_total_tokens": 337173,
+  "cache_hit_rate": 0.7596,
   "cache_rows": [
     {
       "turn": 0,
@@ -169,298 +169,298 @@
     },
     {
       "turn": 1,
-      "prompt": 5090,
-      "hit": 2051
+      "prompt": 3305,
+      "hit": 2053
     },
     {
       "turn": 2,
-      "prompt": 5169,
-      "hit": 3836
+      "prompt": 3384,
+      "hit": 2051
     },
     {
       "turn": 3,
-      "prompt": 5248,
-      "hit": 3915
+      "prompt": 3463,
+      "hit": 2130
     },
     {
       "turn": 4,
-      "prompt": 5327,
-      "hit": 3994
+      "prompt": 3542,
+      "hit": 2209
     },
     {
       "turn": 5,
-      "prompt": 5406,
-      "hit": 4073
+      "prompt": 3621,
+      "hit": 2288
     },
     {
       "turn": 6,
-      "prompt": 5485,
-      "hit": 4152
+      "prompt": 3700,
+      "hit": 2367
     },
     {
       "turn": 7,
-      "prompt": 5564,
-      "hit": 4231
+      "prompt": 3779,
+      "hit": 2446
     },
     {
       "turn": 8,
-      "prompt": 5643,
-      "hit": 4310
+      "prompt": 3858,
+      "hit": 2525
     },
     {
       "turn": 9,
-      "prompt": 5722,
-      "hit": 4389
+      "prompt": 3937,
+      "hit": 2604
     },
     {
       "turn": 10,
-      "prompt": 5804,
-      "hit": 4468
+      "prompt": 4019,
+      "hit": 2683
     },
     {
       "turn": 11,
-      "prompt": 5886,
-      "hit": 4547
+      "prompt": 4101,
+      "hit": 2762
     },
     {
       "turn": 12,
-      "prompt": 5968,
-      "hit": 4629
+      "prompt": 4183,
+      "hit": 2844
     },
     {
       "turn": 13,
-      "prompt": 6050,
-      "hit": 4711
+      "prompt": 4265,
+      "hit": 2926
     },
     {
       "turn": 14,
-      "prompt": 6132,
-      "hit": 4793
+      "prompt": 4347,
+      "hit": 3008
     },
     {
       "turn": 15,
-      "prompt": 6214,
-      "hit": 4875
+      "prompt": 4429,
+      "hit": 3090
     },
     {
       "turn": 16,
-      "prompt": 6296,
-      "hit": 4957
+      "prompt": 4511,
+      "hit": 3172
     },
     {
       "turn": 17,
-      "prompt": 6378,
-      "hit": 5039
+      "prompt": 4593,
+      "hit": 3254
     },
     {
       "turn": 18,
-      "prompt": 6460,
-      "hit": 5121
+      "prompt": 4675,
+      "hit": 3336
     },
     {
       "turn": 19,
-      "prompt": 6542,
-      "hit": 5203
+      "prompt": 4757,
+      "hit": 3418
     },
     {
       "turn": 20,
-      "prompt": 6624,
-      "hit": 5285
+      "prompt": 4839,
+      "hit": 3500
     },
     {
       "turn": 21,
-      "prompt": 6706,
-      "hit": 5367
+      "prompt": 4921,
+      "hit": 3582
     },
     {
       "turn": 22,
-      "prompt": 6788,
-      "hit": 5449
+      "prompt": 5003,
+      "hit": 3664
     },
     {
       "turn": 23,
-      "prompt": 6870,
-      "hit": 5531
+      "prompt": 5085,
+      "hit": 3746
     },
     {
       "turn": 24,
-      "prompt": 6952,
-      "hit": 5613
+      "prompt": 5167,
+      "hit": 3828
     },
     {
       "turn": 25,
-      "prompt": 7034,
-      "hit": 5695
+      "prompt": 5249,
+      "hit": 3910
     },
     {
       "turn": 26,
-      "prompt": 7116,
-      "hit": 5777
+      "prompt": 5331,
+      "hit": 3992
     },
     {
       "turn": 27,
-      "prompt": 7198,
-      "hit": 5859
+      "prompt": 5413,
+      "hit": 4074
     },
     {
       "turn": 28,
-      "prompt": 7280,
-      "hit": 5941
+      "prompt": 5495,
+      "hit": 4156
     },
     {
       "turn": 29,
-      "prompt": 7362,
-      "hit": 6023
+      "prompt": 5577,
+      "hit": 4238
     },
     {
       "turn": 30,
-      "prompt": 7479,
-      "hit": 6105
+      "prompt": 5694,
+      "hit": 4320
     },
     {
       "turn": 31,
-      "prompt": 7561,
-      "hit": 6187
+      "prompt": 5776,
+      "hit": 4402
     },
     {
       "turn": 32,
-      "prompt": 7643,
-      "hit": 6304
+      "prompt": 5858,
+      "hit": 4519
     },
     {
       "turn": 33,
-      "prompt": 7725,
-      "hit": 6386
+      "prompt": 5940,
+      "hit": 4601
     },
     {
       "turn": 34,
-      "prompt": 7807,
-      "hit": 6468
+      "prompt": 6022,
+      "hit": 4683
     },
     {
       "turn": 35,
-      "prompt": 7889,
-      "hit": 6550
+      "prompt": 6104,
+      "hit": 4765
     },
     {
       "turn": 36,
-      "prompt": 7971,
-      "hit": 6632
+      "prompt": 6186,
+      "hit": 4847
     },
     {
       "turn": 37,
-      "prompt": 8053,
-      "hit": 6714
+      "prompt": 6268,
+      "hit": 4929
     },
     {
       "turn": 38,
-      "prompt": 8135,
-      "hit": 6796
+      "prompt": 6350,
+      "hit": 5011
     },
     {
       "turn": 39,
-      "prompt": 8217,
-      "hit": 6878
+      "prompt": 6432,
+      "hit": 5093
     },
     {
       "turn": 40,
-      "prompt": 8299,
-      "hit": 6960
+      "prompt": 6514,
+      "hit": 5175
     },
     {
       "turn": 41,
-      "prompt": 8381,
-      "hit": 7042
+      "prompt": 6596,
+      "hit": 5257
     },
     {
       "turn": 42,
-      "prompt": 8463,
-      "hit": 7124
+      "prompt": 6678,
+      "hit": 5339
     },
     {
       "turn": 43,
-      "prompt": 8545,
-      "hit": 7206
+      "prompt": 6760,
+      "hit": 5421
     },
     {
       "turn": 44,
-      "prompt": 8627,
-      "hit": 7288
+      "prompt": 6842,
+      "hit": 5503
     },
     {
       "turn": 45,
-      "prompt": 8709,
-      "hit": 7370
+      "prompt": 6924,
+      "hit": 5585
     },
     {
       "turn": 46,
-      "prompt": 8791,
-      "hit": 7452
+      "prompt": 7006,
+      "hit": 5667
     },
     {
       "turn": 47,
-      "prompt": 8873,
-      "hit": 7534
+      "prompt": 7088,
+      "hit": 5749
     },
     {
       "turn": 48,
-      "prompt": 8955,
-      "hit": 7616
+      "prompt": 7170,
+      "hit": 5831
     },
     {
       "turn": 49,
-      "prompt": 9037,
-      "hit": 7698
+      "prompt": 7252,
+      "hit": 5913
     },
     {
       "turn": 50,
-      "prompt": 9119,
-      "hit": 7780
+      "prompt": 7334,
+      "hit": 5995
     },
     {
       "turn": 51,
-      "prompt": 9201,
-      "hit": 7862
+      "prompt": 7416,
+      "hit": 6077
     },
     {
       "turn": 52,
-      "prompt": 9283,
-      "hit": 7944
+      "prompt": 7498,
+      "hit": 6159
     },
     {
       "turn": 53,
-      "prompt": 9365,
-      "hit": 8026
+      "prompt": 7580,
+      "hit": 6241
     },
     {
       "turn": 54,
-      "prompt": 9447,
-      "hit": 8108
+      "prompt": 7662,
+      "hit": 6323
     },
     {
       "turn": 55,
-      "prompt": 9529,
-      "hit": 8190
+      "prompt": 7744,
+      "hit": 6405
     },
     {
       "turn": 56,
-      "prompt": 9611,
-      "hit": 8272
+      "prompt": 7826,
+      "hit": 6487
     },
     {
       "turn": 57,
-      "prompt": 9693,
-      "hit": 8354
+      "prompt": 7908,
+      "hit": 6569
     },
     {
       "turn": 58,
-      "prompt": 9775,
-      "hit": 8436
+      "prompt": 7990,
+      "hit": 6651
     },
     {
       "turn": 59,
-      "prompt": 9934,
-      "hit": 8518
+      "prompt": 8149,
+      "hit": 6733
     }
   ],
   "metrics": {
@@ -471,22 +471,22 @@
     "codes_ordered": true,
     "codes_duplicated": false,
     "release_gate": true,
-    "cache_hit_rate": 0.8127542441828931,
-    "cache_miss_tokens": 82854,
-    "cost_units": 118817.4,
-    "cost_units_no_cache": 442488.0,
-    "cost_saving_ratio": 3.72410101550783,
+    "cache_hit_rate": 0.7595685301017578,
+    "cache_miss_tokens": 81067,
+    "cost_units": 106677.6,
+    "cost_units_no_cache": 337173.0,
+    "cost_saving_ratio": 3.160672906027132,
     "prompt_first": 2057,
-    "prompt_last": 9934,
-    "prompt_peak": 9934,
-    "prompt_growth": 4.829363150218765,
-    "ttft_first_ms": 1786.2356450641528,
-    "ttft_last_ms": 5591.995917027816,
-    "ttft_growth": 3.1306036986105377,
-    "kv_peak_bytes": 4068556800,
-    "wall_per_turn_s": 121.79695389281842,
-    "decode_tokens_per_s": 10.005311687088996,
-    "total_prefill_tokens": 442488
+    "prompt_last": 8149,
+    "prompt_peak": 8149,
+    "prompt_growth": 3.961594555177443,
+    "ttft_first_ms": 1943.1071759900078,
+    "ttft_last_ms": 4245.446879998781,
+    "ttft_growth": 2.1848753030494765,
+    "kv_peak_bytes": 3454402560,
+    "wall_per_turn_s": 108.28865499583965,
+    "decode_tokens_per_s": 11.181818132314893,
+    "total_prefill_tokens": 337173
   },
   "clauses": {
     "C1": null,
@@ -500,13 +500,13 @@
   "manifest_total": null,
   "manifest_ordered": null,
   "manifest_dup": null,
-  "ttft_first": 1786.2356450641528,
-  "ttft_last": 5591.995917027816,
-  "ttft_mean": 3854.6011800334477,
-  "kv_peak": 4068556800,
-  "kv_last": 4068556800,
+  "ttft_first": 1943.1071759900078,
+  "ttft_last": 4245.446879998781,
+  "ttft_mean": 2755.72769936407,
+  "kv_peak": 3454402560,
+  "kv_last": 3454402560,
   "prompt_first": 2057,
-  "prompt_last": 9934,
+  "prompt_last": 8149,
   "solution_chars": 3008,
   "turns": [
     {
@@ -515,12 +515,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 1786.2356450641528,
+      "ttft_ms": 1943.1071759900078,
       "kv_bytes": 1109262336,
       "prompt_tokens": 2057,
-      "wall_ms": 89521.29176701419,
+      "wall_ms": 94219.21222901437,
       "decode_tokens": 1168,
-      "decode_ms": 87735.05612195004
+      "decode_ms": 92276.10505302437
     },
     {
       "turn": 1,
@@ -528,12 +528,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 2353.583830059506,
-      "kv_bytes": 2152808448,
-      "prompt_tokens": 5090,
-      "wall_ms": 100160.95880209468,
+      "ttft_ms": 1431.306813028641,
+      "kv_bytes": 1538654208,
+      "prompt_tokens": 3305,
+      "wall_ms": 94563.70521907229,
       "decode_tokens": 1168,
-      "decode_ms": 97807.37497203518
+      "decode_ms": 93132.39840604365
     },
     {
       "turn": 2,
@@ -541,12 +541,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 2908.3998859860003,
-      "kv_bytes": 2179989504,
-      "prompt_tokens": 5169,
-      "wall_ms": 101159.99710303731,
+      "ttft_ms": 1464.0774379950017,
+      "kv_bytes": 1565835264,
+      "prompt_tokens": 3384,
+      "wall_ms": 94414.33731291909,
       "decode_tokens": 1168,
-      "decode_ms": 98251.59721705131
+      "decode_ms": 92950.25987492409
     },
     {
       "turn": 3,
@@ -554,12 +554,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 2460.746480966918,
-      "kv_bytes": 2207170560,
-      "prompt_tokens": 5248,
-      "wall_ms": 101352.0614199806,
+      "ttft_ms": 1515.313746058382,
+      "kv_bytes": 1593016320,
+      "prompt_tokens": 3463,
+      "wall_ms": 93994.7996030096,
       "decode_tokens": 1168,
-      "decode_ms": 98891.31493901368
+      "decode_ms": 92479.48585695121
     },
     {
       "turn": 4,
@@ -567,12 +567,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 2514.5297839771956,
-      "kv_bytes": 2234351616,
-      "prompt_tokens": 5327,
-      "wall_ms": 102105.74556095526,
+      "ttft_ms": 1527.3520030314103,
+      "kv_bytes": 1620197376,
+      "prompt_tokens": 3542,
+      "wall_ms": 93027.60898205452,
       "decode_tokens": 1168,
-      "decode_ms": 99591.21577697806
+      "decode_ms": 91500.2569790231
     },
     {
       "turn": 5,
@@ -580,12 +580,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 2558.8707729475573,
-      "kv_bytes": 2261532672,
-      "prompt_tokens": 5406,
-      "wall_ms": 102810.19260094035,
+      "ttft_ms": 1628.8546459982172,
+      "kv_bytes": 1647378432,
+      "prompt_tokens": 3621,
+      "wall_ms": 91926.00723006763,
       "decode_tokens": 1168,
-      "decode_ms": 100251.3218279928
+      "decode_ms": 90297.15258406941
     },
     {
       "turn": 6,
@@ -593,12 +593,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 2597.2099299542606,
-      "kv_bytes": 2288713728,
-      "prompt_tokens": 5485,
-      "wall_ms": 103598.68020797148,
+      "ttft_ms": 1632.3874599765986,
+      "kv_bytes": 1674559488,
+      "prompt_tokens": 3700,
+      "wall_ms": 92697.27445894387,
       "decode_tokens": 1168,
-      "decode_ms": 101001.47027801722
+      "decode_ms": 91064.88699896727
     },
     {
       "turn": 7,
@@ -606,12 +606,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 2621.0879280697554,
-      "kv_bytes": 2315894784,
-      "prompt_tokens": 5564,
-      "wall_ms": 104278.812338016,
+      "ttft_ms": 1681.4992689760402,
+      "kv_bytes": 1701740544,
+      "prompt_tokens": 3779,
+      "wall_ms": 94700.04310098011,
       "decode_tokens": 1168,
-      "decode_ms": 101657.72440994624
+      "decode_ms": 93018.54383200407
     },
     {
       "turn": 8,
@@ -619,12 +619,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 2745.7310730824247,
-      "kv_bytes": 2343075840,
-      "prompt_tokens": 5643,
-      "wall_ms": 105113.35676605813,
+      "ttft_ms": 1726.9867550348863,
+      "kv_bytes": 1728921600,
+      "prompt_tokens": 3858,
+      "wall_ms": 93897.33348798472,
       "decode_tokens": 1168,
-      "decode_ms": 102367.62569297571
+      "decode_ms": 92170.34673294984
     },
     {
       "turn": 9,
@@ -632,12 +632,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 2757.9646919621155,
-      "kv_bytes": 2370256896,
-      "prompt_tokens": 5722,
-      "wall_ms": 105826.72993291635,
+      "ttft_ms": 1753.4855990670621,
+      "kv_bytes": 1756102656,
+      "prompt_tokens": 3937,
+      "wall_ms": 93534.32015900034,
       "decode_tokens": 1168,
-      "decode_ms": 103068.76524095424
+      "decode_ms": 91780.83455993328
     },
     {
       "turn": 10,
@@ -645,12 +645,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 2801.6795159783214,
-      "kv_bytes": 2398470144,
-      "prompt_tokens": 5804,
-      "wall_ms": 106612.30996798258,
+      "ttft_ms": 1779.0335750905797,
+      "kv_bytes": 1784315904,
+      "prompt_tokens": 4019,
+      "wall_ms": 94411.90097201616,
       "decode_tokens": 1168,
-      "decode_ms": 103810.63045200426
+      "decode_ms": 92632.86739692558
     },
     {
       "turn": 11,
@@ -658,12 +658,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 2829.7632180619985,
-      "kv_bytes": 2426683392,
-      "prompt_tokens": 5886,
-      "wall_ms": 107423.0239239987,
+      "ttft_ms": 1939.194145030342,
+      "kv_bytes": 1812529152,
+      "prompt_tokens": 4101,
+      "wall_ms": 94667.82691201661,
       "decode_tokens": 1168,
-      "decode_ms": 104593.2607059367
+      "decode_ms": 92728.63276698627
     },
     {
       "turn": 12,
@@ -671,12 +671,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 2890.644234023057,
-      "kv_bytes": 2454896640,
-      "prompt_tokens": 5968,
-      "wall_ms": 108107.10993397515,
+      "ttft_ms": 1897.0045229652897,
+      "kv_bytes": 1840742400,
+      "prompt_tokens": 4183,
+      "wall_ms": 95217.37184899393,
       "decode_tokens": 1168,
-      "decode_ms": 105216.4656999521
+      "decode_ms": 93320.36732602865
     },
     {
       "turn": 13,
@@ -684,12 +684,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 2929.2133189737797,
-      "kv_bytes": 2483109888,
-      "prompt_tokens": 6050,
-      "wall_ms": 108866.18268303573,
+      "ttft_ms": 1932.6922290492803,
+      "kv_bytes": 1868955648,
+      "prompt_tokens": 4265,
+      "wall_ms": 99616.52326898184,
       "decode_tokens": 1168,
-      "decode_ms": 105936.96936406195
+      "decode_ms": 97683.83103993256
     },
     {
       "turn": 14,
@@ -697,12 +697,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 2956.459626904689,
-      "kv_bytes": 2511323136,
-      "prompt_tokens": 6132,
-      "wall_ms": 109665.72131600697,
+      "ttft_ms": 1965.0159990414977,
+      "kv_bytes": 1897168896,
+      "prompt_tokens": 4347,
+      "wall_ms": 99434.04472607654,
       "decode_tokens": 1168,
-      "decode_ms": 106709.26168910228
+      "decode_ms": 97469.02872703504
     },
     {
       "turn": 15,
@@ -710,12 +710,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 3066.3836350431666,
-      "kv_bytes": 2539536384,
-      "prompt_tokens": 6214,
-      "wall_ms": 110457.89040497039,
+      "ttft_ms": 2018.9985750475898,
+      "kv_bytes": 1925382144,
+      "prompt_tokens": 4429,
+      "wall_ms": 100099.45621807128,
       "decode_tokens": 1168,
-      "decode_ms": 107391.50676992722
+      "decode_ms": 98080.45764302369
     },
     {
       "turn": 16,
@@ -723,12 +723,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 3088.9301769202575,
-      "kv_bytes": 2567749632,
-      "prompt_tokens": 6296,
-      "wall_ms": 111217.2480019508,
+      "ttft_ms": 2049.1296539548784,
+      "kv_bytes": 1953595392,
+      "prompt_tokens": 4511,
+      "wall_ms": 99215.12535691727,
       "decode_tokens": 1168,
-      "decode_ms": 108128.31782503054
+      "decode_ms": 97165.99570296239
     },
     {
       "turn": 17,
@@ -736,12 +736,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 3143.3323230594397,
-      "kv_bytes": 2595962880,
-      "prompt_tokens": 6378,
-      "wall_ms": 111897.52276206855,
+      "ttft_ms": 2075.263574020937,
+      "kv_bytes": 1981808640,
+      "prompt_tokens": 4593,
+      "wall_ms": 98608.776385081,
       "decode_tokens": 1168,
-      "decode_ms": 108754.19043900911
+      "decode_ms": 96533.51281106006
     },
     {
       "turn": 18,
@@ -749,12 +749,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 3170.721128000878,
-      "kv_bytes": 2624176128,
-      "prompt_tokens": 6460,
-      "wall_ms": 112759.93964308873,
+      "ttft_ms": 2172.2380799474195,
+      "kv_bytes": 2010021888,
+      "prompt_tokens": 4675,
+      "wall_ms": 100356.05042299721,
       "decode_tokens": 1168,
-      "decode_ms": 109589.21851508785
+      "decode_ms": 98183.8123430498
     },
     {
       "turn": 19,
@@ -762,12 +762,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 3231.682701036334,
-      "kv_bytes": 2652389376,
-      "prompt_tokens": 6542,
-      "wall_ms": 113412.09290106781,
+      "ttft_ms": 2195.6959280651063,
+      "kv_bytes": 2038235136,
+      "prompt_tokens": 4757,
+      "wall_ms": 97597.56487910636,
       "decode_tokens": 1168,
-      "decode_ms": 110180.41020003147
+      "decode_ms": 95401.86895104125
     },
     {
       "turn": 20,
@@ -775,12 +775,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 3246.671586064622,
-      "kv_bytes": 2680602624,
-      "prompt_tokens": 6624,
-      "wall_ms": 114116.53694498818,
+      "ttft_ms": 2235.7565639540553,
+      "kv_bytes": 2066448384,
+      "prompt_tokens": 4839,
+      "wall_ms": 98901.66938793845,
       "decode_tokens": 1168,
-      "decode_ms": 110869.86535892356
+      "decode_ms": 96665.9128239844
     },
     {
       "turn": 21,
@@ -788,12 +788,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 3379.773343913257,
-      "kv_bytes": 2708815872,
-      "prompt_tokens": 6706,
-      "wall_ms": 114893.48371792585,
+      "ttft_ms": 2263.3120119571686,
+      "kv_bytes": 2094661632,
+      "prompt_tokens": 4921,
+      "wall_ms": 98987.48677095864,
       "decode_tokens": 1168,
-      "decode_ms": 111513.71037401259
+      "decode_ms": 96724.17475900147
     },
     {
       "turn": 22,
@@ -801,12 +801,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 3411.07184602879,
-      "kv_bytes": 2737029120,
-      "prompt_tokens": 6788,
-      "wall_ms": 115525.81529004965,
+      "ttft_ms": 2319.891417049803,
+      "kv_bytes": 2122874880,
+      "prompt_tokens": 5003,
+      "wall_ms": 99881.95906300098,
       "decode_tokens": 1168,
-      "decode_ms": 112114.74344402086
+      "decode_ms": 97562.06764595117
     },
     {
       "turn": 23,
@@ -814,12 +814,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 3448.4962719725445,
-      "kv_bytes": 2765242368,
-      "prompt_tokens": 6870,
-      "wall_ms": 116276.79605502635,
+      "ttft_ms": 2352.0285399863496,
+      "kv_bytes": 2151088128,
+      "prompt_tokens": 5085,
+      "wall_ms": 100099.44680496119,
       "decode_tokens": 1168,
-      "decode_ms": 112828.29978305381
+      "decode_ms": 97747.41826497484
     },
     {
       "turn": 24,
@@ -827,12 +827,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 3500.2326070098206,
-      "kv_bytes": 2793455616,
-      "prompt_tokens": 6952,
-      "wall_ms": 116973.96899806336,
+      "ttft_ms": 2454.723413102329,
+      "kv_bytes": 2179301376,
+      "prompt_tokens": 5167,
+      "wall_ms": 101504.4421190396,
       "decode_tokens": 1168,
-      "decode_ms": 113473.73639105354
+      "decode_ms": 99049.71870593727
     },
     {
       "turn": 25,
@@ -840,12 +840,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 3539.6550410659984,
-      "kv_bytes": 2821668864,
-      "prompt_tokens": 7034,
-      "wall_ms": 117722.46543609072,
+      "ttft_ms": 2480.708065908402,
+      "kv_bytes": 2207514624,
+      "prompt_tokens": 5249,
+      "wall_ms": 101735.34244892653,
       "decode_tokens": 1168,
-      "decode_ms": 114182.81039502472
+      "decode_ms": 99254.63438301813
     },
     {
       "turn": 26,
@@ -853,12 +853,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 3569.678348954767,
-      "kv_bytes": 2849882112,
-      "prompt_tokens": 7116,
-      "wall_ms": 118348.7167119747,
+      "ttft_ms": 2515.8884100383148,
+      "kv_bytes": 2235727872,
+      "prompt_tokens": 5331,
+      "wall_ms": 102260.62882400583,
       "decode_tokens": 1168,
-      "decode_ms": 114779.03836301994
+      "decode_ms": 99744.74041396752
     },
     {
       "turn": 27,
@@ -866,12 +866,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 4012.815215974115,
-      "kv_bytes": 2878095360,
-      "prompt_tokens": 7198,
-      "wall_ms": 119392.67508196644,
+      "ttft_ms": 2558.973114937544,
+      "kv_bytes": 2263941120,
+      "prompt_tokens": 5413,
+      "wall_ms": 102980.66253599245,
       "decode_tokens": 1168,
-      "decode_ms": 115379.85986599233
+      "decode_ms": 100421.6894210549
     },
     {
       "turn": 28,
@@ -879,12 +879,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 3723.292678943835,
-      "kv_bytes": 2906308608,
-      "prompt_tokens": 7280,
-      "wall_ms": 119816.77161692642,
+      "ttft_ms": 2596.182966022752,
+      "kv_bytes": 2292154368,
+      "prompt_tokens": 5495,
+      "wall_ms": 104090.55366402026,
       "decode_tokens": 1168,
-      "decode_ms": 116093.47893798258
+      "decode_ms": 101494.37069799751
     },
     {
       "turn": 29,
@@ -892,12 +892,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 3781.059083994478,
-      "kv_bytes": 2934521856,
-      "prompt_tokens": 7362,
-      "wall_ms": 120404.75435205735,
+      "ttft_ms": 2626.7451299354434,
+      "kv_bytes": 2320367616,
+      "prompt_tokens": 5577,
+      "wall_ms": 104592.4258499872,
       "decode_tokens": 1168,
-      "decode_ms": 116623.69526806287
+      "decode_ms": 101965.68072005175
     },
     {
       "turn": 30,
@@ -905,12 +905,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 3830.6146200047806,
-      "kv_bytes": 2974777344,
-      "prompt_tokens": 7479,
-      "wall_ms": 121391.05048403144,
+      "ttft_ms": 2754.6524319332093,
+      "kv_bytes": 2360623104,
+      "prompt_tokens": 5694,
+      "wall_ms": 105688.69369698223,
       "decode_tokens": 1168,
-      "decode_ms": 117560.43586402666
+      "decode_ms": 102934.04126504902
     },
     {
       "turn": 31,
@@ -918,12 +918,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 3891.260380973108,
-      "kv_bytes": 3002990592,
-      "prompt_tokens": 7561,
-      "wall_ms": 122112.66971495934,
+      "ttft_ms": 2776.964613934979,
+      "kv_bytes": 2388836352,
+      "prompt_tokens": 5776,
+      "wall_ms": 106388.3691088995,
       "decode_tokens": 1168,
-      "decode_ms": 118221.40933398623
+      "decode_ms": 103611.40449496452
     },
     {
       "turn": 32,
@@ -931,12 +931,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 3906.942901900038,
-      "kv_bytes": 3031203840,
-      "prompt_tokens": 7643,
-      "wall_ms": 122694.14531893563,
+      "ttft_ms": 2822.4760169396177,
+      "kv_bytes": 2417049600,
+      "prompt_tokens": 5858,
+      "wall_ms": 107529.76117294747,
       "decode_tokens": 1168,
-      "decode_ms": 118787.20241703559
+      "decode_ms": 104707.28515600786
     },
     {
       "turn": 33,
@@ -944,12 +944,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 4051.574684912339,
-      "kv_bytes": 3059417088,
-      "prompt_tokens": 7725,
-      "wall_ms": 123457.21474592574,
+      "ttft_ms": 2867.671943968162,
+      "kv_bytes": 2445262848,
+      "prompt_tokens": 5940,
+      "wall_ms": 108149.12272093352,
       "decode_tokens": 1168,
-      "decode_ms": 119405.6400610134
+      "decode_ms": 105281.45077696536
     },
     {
       "turn": 34,
@@ -957,12 +957,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 4068.180900067091,
-      "kv_bytes": 3087630336,
-      "prompt_tokens": 7807,
-      "wall_ms": 124160.56930006016,
+      "ttft_ms": 2917.0957210008055,
+      "kv_bytes": 2473476096,
+      "prompt_tokens": 6022,
+      "wall_ms": 109202.79855502304,
       "decode_tokens": 1168,
-      "decode_ms": 120092.38839999307
+      "decode_ms": 106285.70283402223
     },
     {
       "turn": 35,
@@ -970,12 +970,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 4129.604579997249,
-      "kv_bytes": 3115843584,
-      "prompt_tokens": 7889,
-      "wall_ms": 124803.98251395673,
+      "ttft_ms": 2930.9160410193726,
+      "kv_bytes": 2501689344,
+      "prompt_tokens": 6104,
+      "wall_ms": 109872.65405699145,
       "decode_tokens": 1168,
-      "decode_ms": 120674.37793395948
+      "decode_ms": 106941.73801597208
     },
     {
       "turn": 36,
@@ -983,12 +983,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 4174.127358011901,
-      "kv_bytes": 3144056832,
-      "prompt_tokens": 7971,
-      "wall_ms": 125492.26787197404,
+      "ttft_ms": 3066.399689996615,
+      "kv_bytes": 2529902592,
+      "prompt_tokens": 6186,
+      "wall_ms": 110801.52389698196,
       "decode_tokens": 1168,
-      "decode_ms": 121318.14051396213
+      "decode_ms": 107735.12420698535
     },
     {
       "turn": 37,
@@ -996,12 +996,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 4219.865045975894,
-      "kv_bytes": 3172270080,
-      "prompt_tokens": 8053,
-      "wall_ms": 126106.29917599726,
+      "ttft_ms": 3071.0960439173505,
+      "kv_bytes": 2558115840,
+      "prompt_tokens": 6268,
+      "wall_ms": 111313.26679489575,
       "decode_tokens": 1168,
-      "decode_ms": 121886.43413002137
+      "decode_ms": 108242.1707509784
     },
     {
       "turn": 38,
@@ -1009,12 +1009,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 4251.313745044172,
-      "kv_bytes": 3200483328,
-      "prompt_tokens": 8135,
-      "wall_ms": 126781.37184900697,
+      "ttft_ms": 3125.9268280118704,
+      "kv_bytes": 2586329088,
+      "prompt_tokens": 6350,
+      "wall_ms": 112020.29906096868,
       "decode_tokens": 1168,
-      "decode_ms": 122530.0581039628
+      "decode_ms": 108894.37223295681
     },
     {
       "turn": 39,
@@ -1022,12 +1022,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 4395.310768974014,
-      "kv_bytes": 3228696576,
-      "prompt_tokens": 8217,
-      "wall_ms": 127516.44135103561,
+      "ttft_ms": 3171.892381971702,
+      "kv_bytes": 2614542336,
+      "prompt_tokens": 6432,
+      "wall_ms": 112934.4941729214,
       "decode_tokens": 1168,
-      "decode_ms": 123121.1305820616
+      "decode_ms": 109762.6017909497
     },
     {
       "turn": 40,
@@ -1035,12 +1035,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 4410.6645319843665,
-      "kv_bytes": 3256909824,
-      "prompt_tokens": 8299,
-      "wall_ms": 127881.23010192066,
+      "ttft_ms": 3213.3522399235517,
+      "kv_bytes": 2642755584,
+      "prompt_tokens": 6514,
+      "wall_ms": 113113.79966291133,
       "decode_tokens": 1168,
-      "decode_ms": 123470.5655699363
+      "decode_ms": 109900.44742298778
     },
     {
       "turn": 41,
@@ -1048,12 +1048,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 4460.448442026973,
-      "kv_bytes": 3285123072,
-      "prompt_tokens": 8381,
-      "wall_ms": 128713.2381470874,
+      "ttft_ms": 3244.6972540346906,
+      "kv_bytes": 2670968832,
+      "prompt_tokens": 6596,
+      "wall_ms": 113960.12761502061,
       "decode_tokens": 1168,
-      "decode_ms": 124252.78970506042
+      "decode_ms": 110715.43036098592
     },
     {
       "turn": 42,
@@ -1061,12 +1061,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 4516.824324033223,
-      "kv_bytes": 3313336320,
-      "prompt_tokens": 8463,
-      "wall_ms": 129364.54982601572,
+      "ttft_ms": 3410.654808045365,
+      "kv_bytes": 2699182080,
+      "prompt_tokens": 6678,
+      "wall_ms": 114709.36683309264,
       "decode_tokens": 1168,
-      "decode_ms": 124847.7255019825
+      "decode_ms": 111298.71202504728
     },
     {
       "turn": 43,
@@ -1074,12 +1074,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 4562.430375954136,
-      "kv_bytes": 3341549568,
-      "prompt_tokens": 8545,
-      "wall_ms": 129898.85033399332,
+      "ttft_ms": 3385.944033972919,
+      "kv_bytes": 2727395328,
+      "prompt_tokens": 6760,
+      "wall_ms": 115301.08534393366,
       "decode_tokens": 1168,
-      "decode_ms": 125336.41995803919
+      "decode_ms": 111915.14130996075
     },
     {
       "turn": 44,
@@ -1087,12 +1087,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 4597.408052999526,
-      "kv_bytes": 3369762816,
-      "prompt_tokens": 8627,
-      "wall_ms": 130484.19619200286,
+      "ttft_ms": 3434.9654619581997,
+      "kv_bytes": 2755608576,
+      "prompt_tokens": 6842,
+      "wall_ms": 116119.65299595613,
       "decode_tokens": 1168,
-      "decode_ms": 125886.78813900333
+      "decode_ms": 112684.68753399793
     },
     {
       "turn": 45,
@@ -1100,12 +1100,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 4944.722875021398,
-      "kv_bytes": 3397976064,
-      "prompt_tokens": 8709,
-      "wall_ms": 131410.42229300365,
+      "ttft_ms": 3493.298821966164,
+      "kv_bytes": 2783821824,
+      "prompt_tokens": 6924,
+      "wall_ms": 116855.92981101945,
       "decode_tokens": 1168,
-      "decode_ms": 126465.69941798225
+      "decode_ms": 113362.63098905329
     },
     {
       "turn": 46,
@@ -1113,12 +1113,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 4760.520423064008,
-      "kv_bytes": 3426189312,
-      "prompt_tokens": 8791,
-      "wall_ms": 131900.848218007,
+      "ttft_ms": 3537.7535390434787,
+      "kv_bytes": 2812035072,
+      "prompt_tokens": 7006,
+      "wall_ms": 117435.01525500324,
       "decode_tokens": 1168,
-      "decode_ms": 127140.327794943
+      "decode_ms": 113897.26171595976
     },
     {
       "turn": 47,
@@ -1126,12 +1126,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 4819.170971983112,
-      "kv_bytes": 3454402560,
-      "prompt_tokens": 8873,
-      "wall_ms": 132659.41917698365,
+      "ttft_ms": 3562.871634028852,
+      "kv_bytes": 2840248320,
+      "prompt_tokens": 7088,
+      "wall_ms": 118151.148756966,
       "decode_tokens": 1168,
-      "decode_ms": 127840.24820500053
+      "decode_ms": 114588.27712293714
     },
     {
       "turn": 48,
@@ -1139,12 +1139,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 4845.865546027198,
-      "kv_bytes": 3482615808,
-      "prompt_tokens": 8955,
-      "wall_ms": 133125.30004093423,
+      "ttft_ms": 3984.544874052517,
+      "kv_bytes": 2868461568,
+      "prompt_tokens": 7170,
+      "wall_ms": 118936.44313700497,
       "decode_tokens": 1168,
-      "decode_ms": 128279.43449490704
+      "decode_ms": 114951.89826295245
     },
     {
       "turn": 49,
@@ -1152,12 +1152,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 4922.940458985977,
-      "kv_bytes": 3510829056,
-      "prompt_tokens": 9037,
-      "wall_ms": 133857.95793798752,
+      "ttft_ms": 3707.260802970268,
+      "kv_bytes": 2896674816,
+      "prompt_tokens": 7252,
+      "wall_ms": 119375.50884997472,
       "decode_tokens": 1168,
-      "decode_ms": 128935.01747900154
+      "decode_ms": 115668.24804700445
     },
     {
       "turn": 50,
@@ -1165,12 +1165,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 4954.134005005471,
-      "kv_bytes": 3539042304,
-      "prompt_tokens": 9119,
-      "wall_ms": 134493.74086700846,
+      "ttft_ms": 3762.481288984418,
+      "kv_bytes": 2924888064,
+      "prompt_tokens": 7334,
+      "wall_ms": 120024.51865794137,
       "decode_tokens": 1168,
-      "decode_ms": 129539.60686200298
+      "decode_ms": 116262.03736895695
     },
     {
       "turn": 51,
@@ -1178,12 +1178,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 5002.886874019168,
-      "kv_bytes": 3567255552,
-      "prompt_tokens": 9201,
-      "wall_ms": 135103.48393197637,
+      "ttft_ms": 3785.117255989462,
+      "kv_bytes": 2953101312,
+      "prompt_tokens": 7416,
+      "wall_ms": 120484.0465739835,
       "decode_tokens": 1168,
-      "decode_ms": 130100.5970579572
+      "decode_ms": 116698.92931799404
     },
     {
       "turn": 52,
@@ -1191,12 +1191,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 5133.587918011472,
-      "kv_bytes": 3595468800,
-      "prompt_tokens": 9283,
-      "wall_ms": 135850.85523303133,
+      "ttft_ms": 3857.929182006046,
+      "kv_bytes": 2981314560,
+      "prompt_tokens": 7498,
+      "wall_ms": 121194.3319659913,
       "decode_tokens": 1168,
-      "decode_ms": 130717.26731501985
+      "decode_ms": 117336.40278398525
     },
     {
       "turn": 53,
@@ -1204,12 +1204,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 5156.962175038643,
-      "kv_bytes": 3623682048,
-      "prompt_tokens": 9365,
-      "wall_ms": 136542.4017290352,
+      "ttft_ms": 3887.3847509967163,
+      "kv_bytes": 3009527808,
+      "prompt_tokens": 7580,
+      "wall_ms": 121771.03693597019,
       "decode_tokens": 1168,
-      "decode_ms": 131385.43955399655
+      "decode_ms": 117883.65218497347
     },
     {
       "turn": 54,
@@ -1217,12 +1217,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 5218.970276997425,
-      "kv_bytes": 3651895296,
-      "prompt_tokens": 9447,
-      "wall_ms": 137202.36680505332,
+      "ttft_ms": 3923.034615931101,
+      "kv_bytes": 3037741056,
+      "prompt_tokens": 7662,
+      "wall_ms": 122295.28188391123,
       "decode_tokens": 1168,
-      "decode_ms": 131983.3965280559
+      "decode_ms": 118372.24726798013
     },
     {
       "turn": 55,
@@ -1230,12 +1230,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 5250.423149089329,
-      "kv_bytes": 3680108544,
-      "prompt_tokens": 9529,
-      "wall_ms": 137828.98962602485,
+      "ttft_ms": 4296.915266895667,
+      "kv_bytes": 3065954304,
+      "prompt_tokens": 7744,
+      "wall_ms": 123344.65786698274,
       "decode_tokens": 1168,
-      "decode_ms": 132578.56647693552
+      "decode_ms": 119047.74260008708
     },
     {
       "turn": 56,
@@ -1243,12 +1243,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 5329.224915942177,
-      "kv_bytes": 3708321792,
-      "prompt_tokens": 9611,
-      "wall_ms": 138452.99955597147,
+      "ttft_ms": 4072.769145015627,
+      "kv_bytes": 3094167552,
+      "prompt_tokens": 7826,
+      "wall_ms": 123688.37796500884,
       "decode_tokens": 1168,
-      "decode_ms": 133123.7746400293
+      "decode_ms": 119615.60881999321
     },
     {
       "turn": 57,
@@ -1256,12 +1256,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 5340.451359981671,
-      "kv_bytes": 3736535040,
-      "prompt_tokens": 9693,
-      "wall_ms": 139145.2612449648,
+      "ttft_ms": 4129.414914990775,
+      "kv_bytes": 3122380800,
+      "prompt_tokens": 7908,
+      "wall_ms": 124258.7097940268,
       "decode_tokens": 1168,
-      "decode_ms": 133804.80988498311
+      "decode_ms": 120129.29487903602
     },
     {
       "turn": 58,
@@ -1269,12 +1269,12 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"def bug_00(x):\\n    return x * 222\\n\\ndef bug_01(x):\\n    return x + 57\\n\\ndef bug_02(x):\\n    return x - 13\\n\\ndef bug_03(x):\\n    return x >= 321\\n\\ndef bug_04(x):\\n    return x[:7]\\n\\ndef bug_05(x):\\n    return x // 8\\n\\ndef bug_06(x):\\n    return x * 493\\n\\ndef bug_07(x):\\n    return x + 39\\n\\ndef bug_08(x):\\n    return x - 220\\n\\ndef bug_09(x):\\n    ",
-      "ttft_ms": 5511.727298959158,
-      "kv_bytes": 3764748288,
-      "prompt_tokens": 9775,
-      "wall_ms": 139955.23663703352,
+      "ttft_ms": 4169.886658084579,
+      "kv_bytes": 3150594048,
+      "prompt_tokens": 7990,
+      "wall_ms": 124924.05058001168,
       "decode_tokens": 1168,
-      "decode_ms": 134443.50933807436
+      "decode_ms": 120754.1639219271
     },
     {
       "turn": 59,
@@ -1282,15 +1282,13 @@
       "tool": "write_file",
       "parse_error": null,
       "raw_reply": "```json\n{\"tool\": \"write_file\", \"content\": \"TURN_CODES = [\\n    \\\"9974-0\\\",\\n    \\\"3736-1\\\",\\n    \\\"3133-2\\\",\\n    \\\"3178-3\\\",\\n    \\\"4829-4\\\",\\n    \\\"3217-5\\\",\\n    \\\"7520-6\\\",\\n    \\\"8482-7\\\",\\n    \\\"5604-8\\\",\\n    \\\"4981-9\\\",\\n    \\\"1753-10\\\",\\n    \\\"8183-11\\\",\\n    \\\"2695-12\\\",\\n    \\\"7026-13\\\",\\n    \\\"9481-14\\\",\\n    \\\"4310-15\\\",\\n    \\\"9681-16\\\",\\n    \\\"7037-17\\\",\\n    \\\"0150-18\\\",\\n    \\\"700",
-      "ttft_ms": 5591.995917027816,
-      "kv_bytes": 4068556800,
-      "prompt_tokens": 9934,
-      "wall_ms": 229611.02110298816,
+      "ttft_ms": 4245.446879998781,
+      "kv_bytes": 3454402560,
+      "prompt_tokens": 8149,
+      "wall_ms": 206241.325785988,
       "decode_tokens": 1891,
-      "decode_ms": 224019.02518596034
+      "decode_ms": 201995.87890598923
     }
   ],
-  "failed": [
-    "codes_dup"
-  ]
+  "failed": []
 }
