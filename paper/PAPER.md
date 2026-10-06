@@ -10,7 +10,7 @@ shared prefix a serving engine's prefix cache depends on, so the prompt is bille
 describe a retention policy that bounds the working set without rewriting the front: the system prompt
 and the first-turn brief are pinned, and the window advances at the end. Over sixty turns of a
 bug-fixing task on a 12B model we measure retention, compute cost, and prefix-cache reuse. The
-anchored policy recovers every per-turn secret, sixty of sixty against nine, at 4.1 times less compute
+anchored policy recovers every per-turn secret, sixty of sixty against nine, at 4.55 times less compute
 and identical coding accuracy. We also document four ways such an evaluation can produce a
 clean-looking table that measures nothing.
 
